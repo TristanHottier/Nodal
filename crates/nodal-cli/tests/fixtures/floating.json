@@ -1,0 +1,11 @@
+{
+  "irVersion": 1,
+  "title": "Floating through a capacitor",
+  "elements": [
+    { "kind": "V", "name": "V1", "nodes": ["in", "0"], "dc": 5 },
+    { "kind": "R", "name": "R1", "nodes": ["in", "0"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["in", "x"], "value": 1e-6 },
+    { "kind": "R", "name": "R2", "nodes": ["x", "y"], "value": 1000 }
+  ],
+  "analyses": [{ "type": "op" }]
+}

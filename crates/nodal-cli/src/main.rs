@@ -1,28 +1,95 @@
 //! `nodal-cli`: command-line front end for the Nodal circuit engine.
 
 use std::io::{self, Write};
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-const USAGE: &str = "usage: nodal-cli --version";
+use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
+use nodal_engine::{AnalysisResult, parse_netlist, simulate, to_spice_deck};
+use serde::Serialize;
+
+#[derive(Parser)]
+#[command(
+    name = "nodal-cli",
+    about = "Command-line front end for the Nodal circuit engine"
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Simulate a netlist and print the results as JSON.
+    Run {
+        /// Path to the JSON netlist.
+        ir: PathBuf,
+    },
+    /// Print the netlist as an ngspice deck.
+    ExportSpice {
+        /// Path to the JSON netlist.
+        ir: PathBuf,
+    },
+}
+
+/// The JSON printed by `run`.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RunOutput<'a> {
+    ir_version: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<&'a str>,
+    results: &'a [AnalysisResult],
+}
+
+fn load(path: &Path) -> Result<nodal_engine::ir::Netlist, String> {
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    parse_netlist(&text).map_err(|e| e.to_string())
+}
+
+fn execute(command: &Command) -> Result<String, String> {
+    match command {
+        Command::Run { ir } => {
+            let netlist = load(ir)?;
+            let results = simulate(&netlist).map_err(|e| e.to_string())?;
+            let output = RunOutput {
+                ir_version: netlist.ir_version,
+                title: netlist.title.as_deref(),
+                results: &results,
+            };
+            let mut json = serde_json::to_string(&output).map_err(|e| e.to_string())?;
+            json.push('\n');
+            Ok(json)
+        }
+        Command::ExportSpice { ir } => Ok(to_spice_deck(&load(ir)?)),
+    }
+}
 
 fn main() -> ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    match args.as_slice() {
-        [flag] if flag == "--version" => {
-            let line = format!(
-                "nodal-cli {} (engine {})",
-                env!("CARGO_PKG_VERSION"),
-                nodal_engine::VERSION
-            );
-            match writeln!(io::stdout(), "{line}") {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(_) => ExitCode::FAILURE,
-            }
-        }
-        _ => {
-            // A failed write to stderr leaves no channel to report it, so the usage exit code stands.
-            let _ = writeln!(io::stderr(), "{USAGE}");
-            ExitCode::from(2)
+    // clap needs a 'static version string; the leak happens once per process.
+    let version: &'static str = Box::leak(
+        format!(
+            "{} (engine {})",
+            env!("CARGO_PKG_VERSION"),
+            nodal_engine::VERSION
+        )
+        .into_boxed_str(),
+    );
+    let mut matches = Cli::command().version(version).get_matches();
+    let cli = match Cli::from_arg_matches_mut(&mut matches) {
+        Ok(cli) => cli,
+        Err(e) => e.exit(),
+    };
+    match execute(&cli.command) {
+        Ok(text) => match io::stdout().write_all(text.as_bytes()) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(_) => ExitCode::FAILURE,
+        },
+        Err(message) => {
+            // A failed write to stderr leaves no channel to report it, so the exit code stands.
+            let _ = writeln!(io::stderr(), "error: {message}");
+            ExitCode::from(1)
         }
     }
 }

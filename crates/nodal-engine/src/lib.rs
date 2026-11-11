@@ -7,12 +7,14 @@ pub mod analysis;
 pub mod circuit;
 pub mod devices;
 pub mod error;
+pub mod export;
 pub mod ir;
 pub mod linalg;
 pub mod mna;
 
 pub use analysis::AnalysisResult;
 pub use error::Error;
+pub use export::to_spice_deck;
 pub use ir::parse_netlist;
 
 use ir::{Analysis, Netlist};
