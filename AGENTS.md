@@ -7,6 +7,7 @@ Rules for anyone, human or AI agent, writing code in this repository.
 1. Read [`docs/ROADMAP.md`](docs/ROADMAP.md) and work on the current milestone only. The one exception is M5, which may run in parallel with M3 or M4. Don't add features that no milestone asks for.
 2. Read the ADRs in [`docs/adr/`](docs/adr/). If your change contradicts one, stop: write a new ADR that supersedes it, and get it accepted before changing code.
 3. For engine work, read [`docs/reference/`](docs/reference/). Sign conventions there are binding.
+4. Each milestone has a task-by-task plan in [`docs/plans/`](docs/plans/) (for example `2026-11-11-m0-bootstrap.md`). Follow it in order. If the current milestone has no plan yet, write one and get it approved before writing code.
 
 ## Commands
 
