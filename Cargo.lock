@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "nodal-cli"
+version = "0.1.0"
+dependencies = [
+ "nodal-engine",
+]
+
+[[package]]
 name = "nodal-engine"
 version = "0.1.0"
