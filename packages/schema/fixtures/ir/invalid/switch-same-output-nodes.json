@@ -1,0 +1,35 @@
+{
+  "irVersion": 1,
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "a"],
+      "value": 1000
+    },
+    {
+      "kind": "S",
+      "name": "S1",
+      "nodes": ["a", "a"],
+      "controlNodes": ["in", "0"],
+      "model": "SW1"
+    }
+  ],
+  "models": [
+    {
+      "name": "SW1",
+      "type": "SW"
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ]
+}

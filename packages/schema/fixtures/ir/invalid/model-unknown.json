@@ -5,30 +5,30 @@
       "kind": "V",
       "name": "V1",
       "nodes": ["in", "0"],
-      "dc": 10
+      "dc": 5
     },
     {
       "kind": "R",
       "name": "R1",
-      "nodes": ["in", "out"],
+      "nodes": ["in", "a"],
       "value": 1000
     },
     {
-      "kind": "R",
-      "name": "R2",
-      "nodes": ["out", "0"],
-      "value": 3000
+      "kind": "D",
+      "name": "D1",
+      "nodes": ["a", "0"],
+      "model": "NOPE"
+    }
+  ],
+  "models": [
+    {
+      "name": "DMOD",
+      "type": "D"
     }
   ],
   "analyses": [
     {
       "type": "op"
-    }
-  ],
-  "models": [
-    {
-      "name": "D1N",
-      "type": "D"
     }
   ]
 }

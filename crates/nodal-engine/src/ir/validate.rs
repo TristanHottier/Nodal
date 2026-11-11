@@ -1,10 +1,14 @@
-//! Validation rules V1 to V11 (see the Task 2 brief). The TypeScript
+//! Validation rules V1 to V15 (see the Task 2 briefs; the model rules V10
+//! and V12 live in `models.rs`). The TypeScript
 //! validator in `@nodal/schema` implements the same rules.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{Element, Netlist, Options};
+use super::{Analysis, Element, ModelKind, Netlist, Options, models};
 use crate::error::Error;
+
+/// Largest allowed number of points in a DC sweep.
+const MAX_SWEEP_POINTS: f64 = 1_000_000.0;
 
 fn invalid<T>(msg: String) -> Result<T, Error> {
     Err(Error::Invalid(msg))
@@ -16,7 +20,7 @@ fn ascii_word(s: &str) -> bool {
 
 fn valid_element_name(name: &str) -> bool {
     let mut chars = name.chars();
-    matches!(chars.next(), Some(c) if "RLCVIEGHF".contains(c))
+    matches!(chars.next(), Some(c) if "RLCVIEGHFDQMS".contains(c))
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
@@ -46,16 +50,14 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
     if n.analyses.is_empty() {
         return invalid("analyses must not be empty".into());
     }
-    // V10
-    if !n.models.is_empty() {
-        return invalid("models must be empty".into());
-    }
+    // V10 and V12
+    models::validate_models(n)?;
     for e in &n.elements {
         let name = e.name();
         // V3
         if !valid_element_name(name) {
             return invalid(format!(
-                "element name {name:?} must match ^[RLCVIEGHF][A-Za-z0-9_]*$"
+                "element name {name:?} must match ^[RLCVIEGHFDQMS][A-Za-z0-9_]*$"
             ));
         }
         if !name.starts_with(e.kind_letter()) {
@@ -65,11 +67,7 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             ));
         }
         // V4
-        let control_nodes: &[String] = match e {
-            Element::E { control_nodes, .. } | Element::G { control_nodes, .. } => control_nodes,
-            _ => &[],
-        };
-        for node in e.nodes().iter().chain(control_nodes) {
+        for node in e.nodes().iter().chain(e.control_nodes()) {
             if !ascii_word(node) {
                 return invalid(format!(
                     "element {name}: node {node:?} must match ^[A-Za-z0-9_]+$"
@@ -93,13 +91,10 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
         .elements
         .iter()
         .flat_map(|e| {
-            let control: &[String] = match e {
-                Element::E { control_nodes, .. } | Element::G { control_nodes, .. } => {
-                    control_nodes
-                }
-                _ => &[],
-            };
-            e.nodes().iter().chain(control).map(String::as_str)
+            e.nodes()
+                .iter()
+                .chain(e.control_nodes())
+                .map(String::as_str)
         })
         .collect();
     if let Some(names) = case_collision(nodes.into_iter()) {
@@ -127,12 +122,28 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             {
                 return invalid(format!("element {name}: gain must be finite"));
             }
+            Element::M { w, l, .. } => {
+                for (key, v) in [("w", w), ("l", l)] {
+                    if let Some(v) = v
+                        && !(v.is_finite() && *v > 0.0)
+                    {
+                        return invalid(format!(
+                            "element {name}: {key} must be finite and > 0, got {v}"
+                        ));
+                    }
+                }
+            }
             _ => {}
         }
-        // V8
-        let [a, b] = e.nodes();
-        if a == b {
+        // V8: Q and M may share terminals.
+        if let [a, b] = e.nodes()
+            && a == b
+        {
             return invalid(format!("element {name}: both terminals are node {a}"));
+        }
+        // V13
+        if let Some(model) = e.model() {
+            validate_model_ref(n, name, e, model)?;
         }
         // V9
         if let Element::H { control_source, .. } | Element::F { control_source, .. } = e {
@@ -151,6 +162,33 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             }
         }
     }
+    // V14
+    for a in &n.analyses {
+        if let Analysis::Dc {
+            source,
+            start,
+            stop,
+            step,
+        } = a
+        {
+            validate_dc(n, source, *start, *stop, *step)?;
+        }
+    }
+    // V15
+    if let Some(set) = &n.nodeset {
+        for (node, value) in set {
+            let known = n
+                .elements
+                .iter()
+                .any(|e| e.nodes().iter().chain(e.control_nodes()).any(|x| x == node));
+            if node == "0" || !known {
+                return invalid(format!("nodeset: unknown node {node}"));
+            }
+            if !value.is_finite() {
+                return invalid(format!("nodeset: value for node {node} must be finite"));
+            }
+        }
+    }
     // V11
     if let Some(o) = &n.options {
         validate_options(o)?;
@@ -158,11 +196,69 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
     Ok(())
 }
 
+fn validate_model_ref(n: &Netlist, name: &str, e: &Element, model: &str) -> Result<(), Error> {
+    let Some(m) = n.models.iter().find(|m| m.name == model) else {
+        return invalid(format!("element {name}: unknown model {model}"));
+    };
+    let (ok, expected) = match e {
+        Element::D { .. } => (m.kind == ModelKind::D, "D"),
+        Element::Q { .. } => (
+            matches!(m.kind, ModelKind::NPN | ModelKind::PNP),
+            "NPN or PNP",
+        ),
+        Element::M { .. } => (
+            matches!(m.kind, ModelKind::NMOS | ModelKind::PMOS),
+            "NMOS or PMOS",
+        ),
+        _ => (m.kind == ModelKind::SW, "SW"),
+    };
+    if !ok {
+        return invalid(format!(
+            "element {name}: model {model} has type {}, expected {expected}",
+            m.kind.as_str()
+        ));
+    }
+    Ok(())
+}
+
+fn validate_dc(n: &Netlist, source: &str, start: f64, stop: f64, step: f64) -> Result<(), Error> {
+    match n.elements.iter().find(|x| x.name() == source) {
+        None => return invalid(format!("analysis dc: unknown source {source}")),
+        Some(Element::V { .. } | Element::I { .. }) => {}
+        Some(_) => {
+            return invalid(format!(
+                "analysis dc: source {source} is not an independent source"
+            ));
+        }
+    }
+    if !(start.is_finite() && stop.is_finite() && step.is_finite()) {
+        return invalid("analysis dc: start, stop and step must be finite".into());
+    }
+    if step == 0.0 {
+        return invalid("analysis dc: step must not be zero".into());
+    }
+    let k = (stop - start) / step;
+    if !k.is_finite() || k.round() + 1.0 > MAX_SWEEP_POINTS {
+        return invalid(format!(
+            "analysis dc: sweep has more than {MAX_SWEEP_POINTS} points"
+        ));
+    }
+    if k < 0.0 || (k - k.round()).abs() > 1e-9 * k.abs().max(1.0) {
+        return invalid(format!(
+            "analysis dc: step {step} does not reach stop {stop} from start {start}"
+        ));
+    }
+    Ok(())
+}
+
 fn validate_options(o: &Options) -> Result<(), Error> {
-    if let Some(t) = o.temp
-        && !(t.is_finite() && t > -273.15)
-    {
-        return invalid(format!("option temp must be finite and > -273.15, got {t}"));
+    if let Some(t) = o.temp {
+        if !t.is_finite() {
+            return invalid(format!("option temp must be finite, got {t}"));
+        }
+        if t != 27.0 {
+            return invalid("option temp must be 27 (temperature is fixed in v1)".into());
+        }
     }
     let positive = [
         ("reltol", o.reltol),
@@ -205,6 +301,7 @@ mod tests {
                 extra,
             ],
             models: vec![],
+            nodeset: None,
             analyses: vec![Analysis::Op {}],
             options: None,
         }

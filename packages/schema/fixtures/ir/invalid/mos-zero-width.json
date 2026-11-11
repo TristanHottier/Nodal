@@ -1,0 +1,29 @@
+{
+  "irVersion": 1,
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["d", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "M",
+      "name": "M1",
+      "nodes": ["d", "d", "0", "0"],
+      "model": "MN",
+      "w": 0
+    }
+  ],
+  "models": [
+    {
+      "name": "MN",
+      "type": "NMOS"
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ]
+}

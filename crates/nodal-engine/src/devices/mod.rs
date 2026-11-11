@@ -60,8 +60,16 @@ fn control_branch(circuit: &Circuit, element: &str, source: &str) -> Result<usiz
 
 /// Builds the device for one element, resolving node and branch indices.
 pub(crate) fn instantiate(circuit: &Circuit, element: &Element) -> Result<Box<dyn Device>, Error> {
-    let [p, n] = element.nodes();
-    let (p, n) = (node(circuit, p), node(circuit, n));
+    if let Element::D { .. } | Element::Q { .. } | Element::M { .. } | Element::S { .. } = element {
+        return Err(Error::Invalid(format!(
+            "{} elements are not simulated yet",
+            element.kind_letter()
+        )));
+    }
+    let (p, n) = match element.nodes() {
+        [p, n, ..] => (node(circuit, p), node(circuit, n)),
+        _ => return Err(Error::Internal("element has fewer than two nodes".into())),
+    };
     let name = element.name().to_string();
     Ok(match element {
         Element::R { value, .. } => Box::new(Resistor::new(name, p, n, *value)),
@@ -119,6 +127,9 @@ pub(crate) fn instantiate(circuit: &Circuit, element: &Element) -> Result<Box<dy
         } => {
             let c = control_branch(circuit, &name, control_source)?;
             Box::new(Cccs::new(name, p, n, c, *gain))
+        }
+        Element::D { .. } | Element::Q { .. } | Element::M { .. } | Element::S { .. } => {
+            return Err(Error::Internal("nonlinear element was not rejected".into()));
         }
     })
 }

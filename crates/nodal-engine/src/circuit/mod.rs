@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::devices::{self, Device};
 use crate::error::Error;
-use crate::ir::{Element, Netlist};
+use crate::ir::Netlist;
 
 /// Name of the ground node. It has no unknown.
 pub const GROUND: &str = "0";
@@ -40,10 +40,10 @@ impl Circuit {
             branch_index: HashMap::new(),
         };
         for element in &netlist.elements {
-            for node in element.nodes().iter().chain(control_nodes(element)) {
+            for node in element.nodes().iter().chain(element.control_nodes()) {
                 circuit.add_node(node);
             }
-            if has_branch(element) {
+            if element.has_branch() {
                 circuit
                     .branch_index
                     .insert(element.name().to_string(), circuit.branch_names.len());
@@ -103,18 +103,4 @@ impl Circuit {
             "?".to_string()
         }
     }
-}
-
-fn control_nodes(element: &Element) -> &[String] {
-    match element {
-        Element::E { control_nodes, .. } | Element::G { control_nodes, .. } => control_nodes,
-        _ => &[],
-    }
-}
-
-fn has_branch(element: &Element) -> bool {
-    matches!(
-        element,
-        Element::V { .. } | Element::E { .. } | Element::H { .. } | Element::L { .. }
-    )
 }

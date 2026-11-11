@@ -27,6 +27,7 @@ pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
         .iter()
         .map(|analysis| match analysis {
             Analysis::Op {} => analysis::solve_op(&circuit).map(AnalysisResult::Op),
+            Analysis::Dc { .. } => Err(Error::Invalid("dc analysis is not simulated yet".into())),
         })
         .collect()
 }

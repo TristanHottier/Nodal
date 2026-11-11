@@ -14,8 +14,8 @@
       "value": 1000
     },
     {
-      "kind": "D",
-      "name": "D1",
+      "kind": "X",
+      "name": "X1",
       "nodes": ["out", "0"],
       "value": 1
     }

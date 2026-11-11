@@ -63,7 +63,7 @@ fn valid_fixtures_parse() -> TestResult {
 #[test]
 fn invalid_fixtures_are_rejected() -> TestResult {
     let files = json_files(&repo_root().join("packages/schema/fixtures/ir/invalid"))?;
-    assert!(files.len() >= 21);
+    assert!(files.len() >= 34);
     for path in files {
         let text = fs::read_to_string(&path)?;
         assert!(
@@ -79,7 +79,7 @@ fn invalid_fixtures_are_rejected() -> TestResult {
 const NEEDLES: &[(&str, &str)] = &[
     ("ir-version-2", "irVersion must be 1"),
     ("unknown-field", "unknown field `bogus`"),
-    ("unknown-kind", "unknown variant `D`"),
+    ("unknown-kind", "unknown variant `X`"),
     ("unsupported-analysis", "unknown variant `ac`"),
     ("analysis-extra-field", "unknown field `x`"),
     ("empty-elements", "elements must not be empty"),
@@ -120,7 +120,47 @@ const NEEDLES: &[(&str, &str)] = &[
         "control-not-vsource",
         "element F1: controlling source R1 is not a voltage source",
     ),
-    ("models-nonempty", "models must be empty"),
+    ("model-unknown", "element D1: unknown model NOPE"),
+    (
+        "model-wrong-type",
+        "element D1: model QMOD has type NPN, expected D",
+    ),
+    (
+        "model-duplicate-case",
+        "model names must be unique ignoring case: DMOD, dmod",
+    ),
+    (
+        "model-lowercase-param",
+        "unsupported parameter is for model DMOD (D)",
+    ),
+    (
+        "model-bv-rejected",
+        "unsupported parameter BV for model DMOD (D)",
+    ),
+    (
+        "model-param-out-of-range",
+        "parameter M of model DMOD must be in [0, 1), got 1",
+    ),
+    ("mos-zero-width", "element M1: w must be finite and > 0"),
+    (
+        "switch-same-output-nodes",
+        "element S1: both terminals are node a",
+    ),
+    ("dc-unknown-source", "analysis dc: unknown source V9"),
+    (
+        "dc-source-not-independent",
+        "analysis dc: source R1 is not an independent source",
+    ),
+    ("dc-zero-step", "analysis dc: step must not be zero"),
+    (
+        "dc-step-misses-stop",
+        "analysis dc: step 0.3 does not reach stop 1 from start 0",
+    ),
+    ("nodeset-unknown-node", "nodeset: unknown node zz"),
+    (
+        "temp-not-27",
+        "option temp must be 27 (temperature is fixed in v1)",
+    ),
     ("bad-option", "option reltol must be finite and > 0"),
 ];
 

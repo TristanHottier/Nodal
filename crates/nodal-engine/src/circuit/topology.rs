@@ -34,28 +34,18 @@ impl UnionFind {
     }
 }
 
-/// Terminal indices of an element. Ground is `node_count`.
-fn terminals(element: &Element, circuit: &Circuit) -> [usize; 2] {
-    let n = circuit.node_names.len();
-    let [a, b] = element.nodes();
-    [circuit.node(a).unwrap_or(n), circuit.node(b).unwrap_or(n)]
+/// Index of a node in the union-find. Ground is `node_count`.
+fn index(name: &str, circuit: &Circuit) -> usize {
+    circuit.node(name).unwrap_or(circuit.node_names.len())
 }
 
-/// Every node must reach ground through R, L, V, E or H output edges.
+/// Every node must reach ground through the DC edges of `Element::dc_edges`.
 pub(super) fn check_floating(netlist: &Netlist, circuit: &Circuit) -> Result<(), Error> {
     let ground = circuit.node_names.len();
     let mut sets = UnionFind::new(ground + 1);
     for element in &netlist.elements {
-        if matches!(
-            element,
-            Element::R { .. }
-                | Element::L { .. }
-                | Element::V { .. }
-                | Element::E { .. }
-                | Element::H { .. }
-        ) {
-            let [a, b] = terminals(element, circuit);
-            sets.union(a, b);
+        for (a, b) in element.dc_edges() {
+            sets.union(index(a, circuit), index(b, circuit));
         }
     }
     let ground_root = sets.find(ground);
@@ -75,7 +65,7 @@ pub(super) fn check_floating(netlist: &Netlist, circuit: &Circuit) -> Result<(),
         .filter(|e| {
             e.nodes()
                 .iter()
-                .chain(super::control_nodes(e))
+                .chain(e.control_nodes())
                 .any(|n| nodes.contains(n.as_str()))
         })
         .map(Element::name)
@@ -93,13 +83,11 @@ pub(super) fn check_source_loops(netlist: &Netlist, circuit: &Circuit) -> Result
     // Adjacency over the edges added so far: (neighbor, element name).
     let mut adjacency: Vec<Vec<(usize, &str)>> = vec![Vec::new(); total];
     for element in &netlist.elements {
-        if !matches!(
-            element,
-            Element::V { .. } | Element::E { .. } | Element::H { .. } | Element::L { .. }
-        ) {
+        if !element.has_branch() {
             continue;
         }
-        let [a, b] = terminals(element, circuit);
+        let nodes = element.nodes();
+        let (a, b) = (index(&nodes[0], circuit), index(&nodes[1], circuit));
         if sets.find(a) == sets.find(b) {
             let mut members: BTreeSet<&str> = path_elements(&adjacency, a, b).into_iter().collect();
             members.insert(element.name());

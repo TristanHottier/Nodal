@@ -1,0 +1,160 @@
+{
+  "irVersion": 1,
+  "title": "One nonlinear element of each kind",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "a"],
+      "value": 1000
+    },
+    {
+      "kind": "D",
+      "name": "D1",
+      "nodes": ["a", "0"],
+      "model": "DMOD"
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["in", "c"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R3",
+      "nodes": ["in", "b"],
+      "value": 100000
+    },
+    {
+      "kind": "R",
+      "name": "R4",
+      "nodes": ["e", "0"],
+      "value": 100
+    },
+    {
+      "kind": "Q",
+      "name": "Q1",
+      "nodes": ["c", "b", "e"],
+      "model": "QN"
+    },
+    {
+      "kind": "R",
+      "name": "R5",
+      "nodes": ["in", "d"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R6",
+      "nodes": ["in", "g"],
+      "value": 100000
+    },
+    {
+      "kind": "R",
+      "name": "R7",
+      "nodes": ["g", "0"],
+      "value": 100000
+    },
+    {
+      "kind": "M",
+      "name": "M1",
+      "nodes": ["d", "g", "0", "0"],
+      "model": "MN",
+      "w": 1e-5,
+      "l": 1e-6
+    },
+    {
+      "kind": "R",
+      "name": "R8",
+      "nodes": ["in", "sw"],
+      "value": 1000
+    },
+    {
+      "kind": "S",
+      "name": "S1",
+      "nodes": ["sw", "0"],
+      "controlNodes": ["a", "0"],
+      "model": "SW1"
+    }
+  ],
+  "models": [
+    {
+      "name": "DMOD",
+      "type": "D",
+      "params": {
+        "IS": 1e-14,
+        "N": 1.5,
+        "RS": 10
+      }
+    },
+    {
+      "name": "QN",
+      "type": "NPN",
+      "params": {
+        "IS": 1e-16,
+        "BF": 100,
+        "VAF": 75
+      }
+    },
+    {
+      "name": "QP",
+      "type": "PNP",
+      "params": {
+        "IS": 2e-16,
+        "BF": 50
+      }
+    },
+    {
+      "name": "MN",
+      "type": "NMOS",
+      "params": {
+        "VTO": 1,
+        "KP": 2e-5,
+        "LAMBDA": 0.01
+      }
+    },
+    {
+      "name": "MP",
+      "type": "PMOS",
+      "params": {
+        "VTO": -1,
+        "KP": 1e-5
+      }
+    },
+    {
+      "name": "SW1",
+      "type": "SW",
+      "params": {
+        "VT": 0.5,
+        "VH": 0.1,
+        "RON": 1
+      }
+    }
+  ],
+  "nodeset": {
+    "c": 2,
+    "a": 0.6
+  },
+  "analyses": [
+    {
+      "type": "op"
+    },
+    {
+      "type": "dc",
+      "source": "V1",
+      "start": 0,
+      "stop": 5,
+      "step": 0.5
+    }
+  ],
+  "options": {
+    "gmin": 1e-12
+  }
+}
