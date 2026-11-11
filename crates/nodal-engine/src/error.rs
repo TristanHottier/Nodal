@@ -27,13 +27,13 @@ impl fmt::Display for Error {
             Error::Invalid(msg) => write!(f, "invalid netlist: {msg}"),
             Error::Floating { nodes, elements } => write!(
                 f,
-                "floating node(s) with no DC path to ground: {} (elements: {})",
+                "floating nodes with no DC path to ground: {} (connected elements: {})",
                 nodes.join(", "),
                 elements.join(", ")
             ),
             Error::SourceLoop { elements } => write!(
                 f,
-                "loop of voltage sources and/or inductors: {}",
+                "loop of voltage sources and inductors: {}",
                 elements.join(", ")
             ),
             Error::Singular { unknown } => write!(f, "singular matrix at unknown {unknown}"),

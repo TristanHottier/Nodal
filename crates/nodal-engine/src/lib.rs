@@ -3,6 +3,7 @@
 //! This crate performs no I/O, reads no clock and has no browser dependency.
 //! File, process and browser access belong in `nodal-cli` and `nodal-wasm`.
 
+pub mod circuit;
 pub mod error;
 pub mod ir;
 
