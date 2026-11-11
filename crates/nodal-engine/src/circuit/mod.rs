@@ -65,10 +65,16 @@ impl Circuit {
         self.node_index.get(name).copied()
     }
 
-    /// Index into `branch_names` for an element. The unknown index is
-    /// `node_names.len()` plus this value.
+    /// Index into `branch_names` for an element. See `branch_unknown` for
+    /// the unknown index.
     pub fn branch(&self, element: &str) -> Option<usize> {
         self.branch_index.get(element).copied()
+    }
+
+    /// MNA unknown index of an element's branch current: `node_names.len()`
+    /// plus the `branch()` index.
+    pub fn branch_unknown(&self, element: &str) -> Option<usize> {
+        self.branch(element).map(|j| self.node_names.len() + j)
     }
 
     /// Total number of unknowns: node voltages plus branch currents.

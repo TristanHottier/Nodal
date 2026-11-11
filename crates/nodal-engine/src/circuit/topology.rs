@@ -72,7 +72,12 @@ pub(super) fn check_floating(netlist: &Netlist, circuit: &Circuit) -> Result<(),
     let elements: BTreeSet<&str> = netlist
         .elements
         .iter()
-        .filter(|e| e.nodes().iter().any(|n| nodes.contains(n.as_str())))
+        .filter(|e| {
+            e.nodes()
+                .iter()
+                .chain(super::control_nodes(e))
+                .any(|n| nodes.contains(n.as_str()))
+        })
         .map(Element::name)
         .collect();
     Err(Error::Floating {

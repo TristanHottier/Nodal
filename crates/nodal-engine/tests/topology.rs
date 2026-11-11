@@ -94,6 +94,18 @@ fn no_ground() -> TestResult {
 }
 
 #[test]
+fn floating_control_port_names_controlling_element() -> TestResult {
+    let e1 = r#"{"kind":"E","name":"E1","nodes":["a","0"],"controlNodes":["q","0"],"gain":2}"#;
+    let e = err_of(&[
+        el("V", "V1", ["a", "0"], 1.0),
+        el("R", "R1", ["z", "0"], 1e3),
+        e1.to_string(),
+    ])?;
+    assert_eq!(e, floating(&["q"], &["E1"]));
+    Ok(())
+}
+
+#[test]
 fn vsource_loop() -> TestResult {
     let e = err_of(&[
         el("V", "V1", ["a", "0"], 1.0),
@@ -158,6 +170,10 @@ fn indexing_order() -> TestResult {
     assert_eq!(c.branch("V1"), Some(0));
     assert_eq!(c.branch("L1"), Some(1));
     assert_eq!(c.branch("R1"), None);
+    assert_eq!(c.branch_unknown("V1"), Some(2));
+    assert_eq!(c.branch_unknown("L1"), Some(3));
+    assert_eq!(c.branch_unknown("R1"), None);
+    assert_eq!(c.unknown_label(2), "I(V1)");
     assert_eq!(c.unknown_label(0), "V(in)");
     assert_eq!(c.unknown_label(1), "V(out)");
     assert_eq!(c.unknown_label(2), "I(V1)");
