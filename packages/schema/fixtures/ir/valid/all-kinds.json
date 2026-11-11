@@ -1,0 +1,78 @@
+{
+  "irVersion": 1,
+  "title": "One element of each kind",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "I",
+      "name": "I1",
+      "nodes": ["0", "a"],
+      "dc": 0.001
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "a"],
+      "value": 1000
+    },
+    {
+      "kind": "L",
+      "name": "L1",
+      "nodes": ["a", "b"],
+      "value": 0.001
+    },
+    {
+      "kind": "C",
+      "name": "C1",
+      "nodes": ["b", "0"],
+      "value": 1e-6
+    },
+    {
+      "kind": "E",
+      "name": "E1",
+      "nodes": ["e", "0"],
+      "controlNodes": ["a", "0"],
+      "gain": 2
+    },
+    {
+      "kind": "G",
+      "name": "G1",
+      "nodes": ["g", "0"],
+      "controlNodes": ["a", "0"],
+      "gain": 0.01
+    },
+    {
+      "kind": "H",
+      "name": "H1",
+      "nodes": ["h", "0"],
+      "controlSource": "V1",
+      "gain": 100
+    },
+    {
+      "kind": "F",
+      "name": "F1",
+      "nodes": ["f", "0"],
+      "controlSource": "V1",
+      "gain": 3
+    }
+  ],
+  "models": [],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "temp": 27,
+    "reltol": 0.001,
+    "vntol": 1e-6,
+    "abstol": 1e-12,
+    "chgtol": 1e-14,
+    "gmin": 1e-12
+  }
+}

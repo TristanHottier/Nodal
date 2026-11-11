@@ -1,0 +1,155 @@
+//! Shared IR fixtures. The TypeScript validator in `@nodal/schema` runs the
+//! same files, so both implementations agree on what is valid.
+//!
+//! Tests return `Result` instead of unwrapping, so the workspace
+//! `unwrap_used` and `expect_used` lints hold in test code too.
+
+use std::error::Error;
+use std::fs;
+use std::path::PathBuf;
+
+use nodal_engine::ir::Element;
+use nodal_engine::{Error as EngineError, parse_netlist};
+
+type TestResult = Result<(), Box<dyn Error>>;
+
+fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn json_files(dir: &std::path::Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+    if !dir.exists() {
+        return Ok(Vec::new());
+    }
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.extension().is_some_and(|e| e == "json") {
+            files.push(path);
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn fixture(kind: &str, name: &str) -> Result<String, Box<dyn Error>> {
+    let path = repo_root()
+        .join("packages/schema/fixtures/ir")
+        .join(kind)
+        .join(format!("{name}.json"));
+    Ok(fs::read_to_string(path)?)
+}
+
+fn rejection(name: &str) -> Result<String, Box<dyn Error>> {
+    match parse_netlist(&fixture("invalid", name)?) {
+        Ok(_) => Err(format!("{name} was accepted").into()),
+        Err(e) => Ok(e.to_string()),
+    }
+}
+
+#[test]
+fn valid_fixtures_parse() -> TestResult {
+    let mut files = json_files(&repo_root().join("packages/schema/fixtures/ir/valid"))?;
+    files.extend(json_files(&repo_root().join("validation/circuits"))?);
+    assert!(!files.is_empty());
+    for path in files {
+        let text = fs::read_to_string(&path)?;
+        parse_netlist(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+    }
+    Ok(())
+}
+
+#[test]
+fn invalid_fixtures_are_rejected() -> TestResult {
+    let files = json_files(&repo_root().join("packages/schema/fixtures/ir/invalid"))?;
+    assert!(files.len() >= 18);
+    for path in files {
+        let text = fs::read_to_string(&path)?;
+        assert!(
+            parse_netlist(&text).is_err(),
+            "{} was accepted",
+            path.display()
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn each_invalid_fixture_breaks_its_own_rule() -> TestResult {
+    let expected = [
+        ("ir-version-2", "irVersion"),
+        ("unknown-field", "bogus"),
+        ("unknown-kind", "unknown variant"),
+        ("unsupported-analysis", "unknown variant"),
+        ("empty-elements", "elements"),
+        ("empty-analyses", "analyses"),
+        ("name-kind-mismatch", "X1"),
+        ("bad-node-name", "n 1"),
+        ("duplicate-name-case", "R_a"),
+        ("node-case-collision", "out"),
+        ("zero-resistor", "R1"),
+        ("negative-capacitor", "C1"),
+        ("infinite-value", "out of range"),
+        ("same-node-terminals", "R1"),
+        ("unknown-control-source", "unknown controlling source"),
+        ("control-not-vsource", "is not a voltage source"),
+        ("models-nonempty", "models"),
+        ("bad-option", "reltol"),
+    ];
+    for (name, needle) in expected {
+        let msg = rejection(name)?;
+        assert!(msg.contains(needle), "{name}: {msg:?} lacks {needle:?}");
+    }
+    Ok(())
+}
+
+#[test]
+fn messages_name_the_culprit() -> TestResult {
+    let msg = rejection("duplicate-name-case")?;
+    assert!(msg.contains("R_A") && msg.contains("R_a"), "{msg}");
+    assert!(msg.find("R_A") < msg.find("R_a"), "not sorted: {msg}");
+
+    let msg = rejection("node-case-collision")?;
+    assert!(msg.contains("OUT") && msg.contains("out"), "{msg}");
+    assert!(msg.find("OUT") < msg.find("out"), "not sorted: {msg}");
+
+    let msg = rejection("unknown-control-source")?;
+    assert!(msg.contains("F1") && msg.contains("unknown controlling source"));
+
+    let msg = rejection("control-not-vsource")?;
+    assert!(msg.contains("F1") && msg.contains("R1") && msg.contains("is not a voltage source"));
+    Ok(())
+}
+
+#[test]
+fn errors_are_typed() -> TestResult {
+    let parse = parse_netlist("{");
+    assert!(matches!(parse, Err(EngineError::Parse(_))));
+    let invalid = parse_netlist(&fixture("invalid", "empty-elements")?);
+    assert!(matches!(invalid, Err(EngineError::Invalid(_))));
+    Ok(())
+}
+
+#[test]
+fn dc_defaults_to_zero() -> TestResult {
+    let netlist = parse_netlist(&fixture("valid", "dc-default")?)?;
+    match netlist.elements.first() {
+        Some(Element::V { dc, .. }) => assert_eq!(*dc, 0.0),
+        other => return Err(format!("expected V source, got {other:?}").into()),
+    }
+    Ok(())
+}
+
+#[test]
+fn all_kinds_round_trip() -> TestResult {
+    let netlist = parse_netlist(&fixture("valid", "all-kinds")?)?;
+    let names: Vec<&str> = netlist.elements.iter().map(Element::name).collect();
+    assert_eq!(
+        names,
+        ["V1", "I1", "R1", "L1", "C1", "E1", "G1", "H1", "F1"]
+    );
+    assert_eq!(netlist.title.as_deref(), Some("One element of each kind"));
+    let json = serde_json::to_string(&netlist)?;
+    assert_eq!(parse_netlist(&json)?, netlist);
+    Ok(())
+}

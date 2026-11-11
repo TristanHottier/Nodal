@@ -1,0 +1,28 @@
+{
+  "irVersion": 1,
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 10
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "n 1"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["n 1", "0"],
+      "value": 3000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ]
+}
