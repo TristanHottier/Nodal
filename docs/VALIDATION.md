@@ -16,7 +16,7 @@ How Nodal proves its numbers are right. Policy: [ADR 0008](adr/0008-ngspice-gold
 
 1. Each reference circuit exists once, as netlist IR: `validation/circuits/<id>.json`.
 2. `nodal-cli export-spice` writes the equivalent SPICE deck. The export is part of the engine and is itself tested.
-3. `validation/scripts/regen-goldens` runs `ngspice -b` on the deck and writes `validation/golden/<id>.<analysis>.csv`.
+3. `validation/scripts/regen-goldens.mjs` runs `ngspice -b` on the deck and writes `validation/golden/<id>.<analysis>.csv`.
 4. Each golden starts with a comment header: circuit id, analysis, ngspice version, options, and generation date.
 5. Goldens are committed. CI does not run ngspice, so results don't depend on the ngspice package of the CI image.
 

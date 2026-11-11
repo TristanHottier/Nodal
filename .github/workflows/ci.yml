@@ -18,6 +18,14 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo run -q -p nodal-cli --release -- validate validation --report validation-report.md
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: validation-report
+          path: validation-report.md
+          if-no-files-found: ignore
 
   web:
     runs-on: ubuntu-latest

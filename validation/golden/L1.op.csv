@@ -1,0 +1,9 @@
+# circuit: L1
+# analysis: op
+# ngspice: ngspice-42 : Circuit level simulation program
+# options: reltol=1e-6 vntol=1e-9 abstol=1e-15 chgtol=1e-18
+# generated: 2026-11-11
+signal,value
+V(in),1.0000000000000000e+01
+V(out),7.5000000000000000e+00
+I(V1),-2.5000000000000001e-03

@@ -4,6 +4,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+mod validate;
+
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use nodal_engine::{AnalysisResult, parse_netlist, simulate, to_spice_deck};
 use serde::Serialize;
@@ -30,6 +32,14 @@ enum Command {
         /// Path to the JSON netlist.
         ir: PathBuf,
     },
+    /// Compare Nodal's results with the ngspice goldens under a validation directory.
+    Validate {
+        /// Directory holding `circuits/` and `golden/`.
+        dir: PathBuf,
+        /// Also write the table to this file.
+        #[arg(long)]
+        report: Option<PathBuf>,
+    },
 }
 
 /// The JSON printed by `run`.
@@ -42,13 +52,14 @@ struct RunOutput<'a> {
     results: &'a [AnalysisResult],
 }
 
-fn load(path: &Path) -> Result<nodal_engine::ir::Netlist, String> {
+pub(crate) fn load(path: &Path) -> Result<nodal_engine::ir::Netlist, String> {
     let text = std::fs::read_to_string(path)
         .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
     parse_netlist(&text).map_err(|e| e.to_string())
 }
 
-fn execute(command: &Command) -> Result<String, String> {
+/// Returns the text for stdout and whether the command succeeded.
+fn execute(command: &Command) -> Result<(String, bool), String> {
     match command {
         Command::Run { ir } => {
             let netlist = load(ir)?;
@@ -60,9 +71,17 @@ fn execute(command: &Command) -> Result<String, String> {
             };
             let mut json = serde_json::to_string(&output).map_err(|e| e.to_string())?;
             json.push('\n');
-            Ok(json)
+            Ok((json, true))
         }
-        Command::ExportSpice { ir } => Ok(to_spice_deck(&load(ir)?)),
+        Command::ExportSpice { ir } => Ok((to_spice_deck(&load(ir)?), true)),
+        Command::Validate { dir, report } => {
+            let (table, passed) = validate::validate_dir(dir)?;
+            if let Some(path) = report {
+                std::fs::write(path, &table)
+                    .map_err(|e| format!("cannot write {}: {e}", path.display()))?;
+            }
+            Ok((table, passed))
+        }
     }
 }
 
@@ -82,9 +101,9 @@ fn main() -> ExitCode {
         Err(e) => e.exit(),
     };
     match execute(&cli.command) {
-        Ok(text) => match io::stdout().write_all(text.as_bytes()) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(_) => ExitCode::FAILURE,
+        Ok((text, success)) => match io::stdout().write_all(text.as_bytes()) {
+            Ok(()) if success => ExitCode::SUCCESS,
+            Ok(()) | Err(_) => ExitCode::FAILURE,
         },
         Err(message) => {
             // A failed write to stderr leaves no channel to report it, so the exit code stands.
