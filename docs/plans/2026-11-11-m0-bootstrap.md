@@ -192,7 +192,7 @@ test("format identifiers match ARCHITECTURE §3 and §7", () => {
   - `web` (ubuntu-latest): Rust toolchain plus `taiki-e/install-action` with `wasm-pack@0.15.1`, `pnpm/action-setup`, and `actions/setup-node` (`node-version-file: .nvmrc`, `cache: pnpm`). Then `wasm-pack test --node crates/nodal-wasm`, `pnpm install --frozen-lockfile`, `pnpm build:wasm`, `pnpm lint`, `pnpm format:check`, `pnpm typecheck` and `pnpm test`. Then `pnpm --filter @nodal/web build`, `node scripts/check-base-path.mjs apps/web/dist`, the Playwright install and `pnpm --filter @nodal/web e2e`. Finally a gzip-size check that fails if the `.wasm` file is ≥ 1 MB gzipped, then `actions/upload-pages-artifact` with `path: apps/web/dist`.
   - `deploy`: `needs: [rust, web]`, `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`, `permissions: { pages: write, id-token: write }`, `environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }`, using `actions/deploy-pages` with `id: deployment`.
   - Top-level `permissions: { contents: read }`.
-- [ ] **Step 2 (manual, Tristan):** In GitHub, open repo Settings → Pages and set Source to **GitHub Actions**.
+- [x] **Step 2 (manual, Tristan):** In GitHub, open repo Settings → Pages and set Source to **GitHub Actions**. Done 2026-11-11.
 - [ ] **Step 3:** Push. Expected: all three jobs green. Then run `curl -sI https://tristanhottier.github.io/Nodal/`. Expected: `HTTP/2 200`.
 - [ ] **Step 4:** Open the URL in a browser. Expected: `Engine 0.1.0`. In DevTools, the `.wasm` request returns 200 with `content-type: application/wasm`.
 
