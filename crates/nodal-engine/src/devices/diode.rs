@@ -138,8 +138,10 @@ impl Device for Diode {
         limited
     }
 
-    /// `dioconv.c`: the current predicted by the linearization against the
-    /// current recomputed at the new junction voltage.
+    /// Deliberately differs from `dioconv.c`, which compares the prediction
+    /// with the stored current. Here the prediction is compared with the
+    /// current recomputed at the new junction voltage, as docs/reference/
+    /// numerical-methods.md section 1.2 rules. Do not change it back.
     fn converged(&self, x: &[f64], state: &[f64], ctx: &LoadContext) -> bool {
         let (Some(&vd), Some(&id), Some(&gd)) =
             (state.get(STATE_V), state.get(STATE_I), state.get(STATE_G))

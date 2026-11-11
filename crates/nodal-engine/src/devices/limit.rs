@@ -34,12 +34,13 @@ pub fn pnjlim(vnew: f64, vold: f64, vt: f64, vcrit: f64) -> (f64, bool) {
 
 /// `DEVfetlim`: limits a MOSFET gate voltage step around the threshold `vto`.
 ///
-/// Two ngspice branches cannot trigger (on and going off with `-delv > vtstlo`
-/// while `vnew >= vtox`; off and rising with `delv > vtstlo` while
-/// `vnew <= vto + 0.5`). They are ported anyway, to stay faithful.
+/// Two ngspice branches cannot trigger, the only readers of `vtstlo`. With
+/// `vtstlo = |vold - vto| + 1`: on and going off needs `vnew < vto - 1` while
+/// `vnew >= vto + 3.5`; off and rising needs `vnew > vto + 1` while
+/// `vnew <= vto + 0.5`. They are ported anyway, to stay faithful.
 pub fn fetlim(vnew: f64, vold: f64, vto: f64) -> f64 {
     let vtsthi = (2.0 * (vold - vto)).abs() + 2.0;
-    let vtstlo = vtsthi / 2.0 + 2.0;
+    let vtstlo = (vold - vto).abs() + 1.0;
     let vtox = vto + 3.5;
     let delv = vnew - vold;
     if vold >= vto {
@@ -160,7 +161,7 @@ mod tests {
         assert_eq!(fetlim(5.0, 10.0, 1.0), 5.0);
         // vold 10, vnew -5 < vtox: clamped to vto + 2.
         assert_eq!(fetlim(-5.0, 10.0, 1.0), 3.0);
-        // vnew 2.5 < vtox but above vto + 2: unchanged.
+        // vnew 3.5 < vtox but above vto + 2: unchanged.
         assert_eq!(fetlim(3.5, 10.0, 1.0), 3.5);
     }
 
@@ -183,7 +184,7 @@ mod tests {
 
     #[test]
     fn fetlim_off_region() {
-        // vold -2, vto 1: vtsthi = 2*3 + 2 = 8, vtstlo = 6.
+        // vold -2, vto 1: vtsthi = 2*3 + 2 = 8, vtstlo = 4.
         assert_eq!(fetlim(-20.0, -2.0, 1.0), -10.0); // decreasing past vtsthi
         assert_eq!(fetlim(-5.0, -2.0, 1.0), -5.0);
         assert_eq!(fetlim(0.5, -2.0, 1.0), 0.5); // increasing, small
