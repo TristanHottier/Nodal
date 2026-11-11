@@ -1,0 +1,35 @@
+{
+  "irVersion": 1,
+  "title": "L1 divider",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 10
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "out"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["out", "0"],
+      "value": 3000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

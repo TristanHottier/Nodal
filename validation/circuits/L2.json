@@ -1,0 +1,53 @@
+{
+  "irVersion": 1,
+  "title": "L2 unbalanced Wheatstone bridge",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["top", "0"],
+      "dc": 10
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["top", "a"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["a", "0"],
+      "value": 2000
+    },
+    {
+      "kind": "R",
+      "name": "R3",
+      "nodes": ["top", "b"],
+      "value": 3000
+    },
+    {
+      "kind": "R",
+      "name": "R4",
+      "nodes": ["b", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R5",
+      "nodes": ["a", "b"],
+      "value": 5000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

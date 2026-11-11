@@ -1,0 +1,81 @@
+{
+  "irVersion": 1,
+  "title": "L3 controlled sources",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 1
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "E",
+      "name": "E1",
+      "nodes": ["e", "0"],
+      "controlNodes": ["in", "0"],
+      "gain": 2
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["e", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "G",
+      "name": "G1",
+      "nodes": ["g", "0"],
+      "controlNodes": ["e", "0"],
+      "gain": 0.001
+    },
+    {
+      "kind": "R",
+      "name": "R3",
+      "nodes": ["g", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "H",
+      "name": "H1",
+      "nodes": ["h", "0"],
+      "controlSource": "V1",
+      "gain": 1000
+    },
+    {
+      "kind": "R",
+      "name": "R4",
+      "nodes": ["h", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "F",
+      "name": "F1",
+      "nodes": ["f", "0"],
+      "controlSource": "V1",
+      "gain": 2
+    },
+    {
+      "kind": "R",
+      "name": "R5",
+      "nodes": ["f", "0"],
+      "value": 1000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

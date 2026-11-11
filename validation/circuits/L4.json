@@ -1,0 +1,161 @@
+{
+  "irVersion": 1,
+  "title": "L4 8-bit R-2R DAC, code 128",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VB0",
+      "nodes": ["b0", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB0",
+      "nodes": ["b0", "n0"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB1",
+      "nodes": ["b1", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB1",
+      "nodes": ["b1", "n1"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB2",
+      "nodes": ["b2", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB2",
+      "nodes": ["b2", "n2"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB3",
+      "nodes": ["b3", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB3",
+      "nodes": ["b3", "n3"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB4",
+      "nodes": ["b4", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB4",
+      "nodes": ["b4", "n4"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB5",
+      "nodes": ["b5", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB5",
+      "nodes": ["b5", "n5"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB6",
+      "nodes": ["b6", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "R",
+      "name": "RB6",
+      "nodes": ["b6", "n6"],
+      "value": 2000
+    },
+    {
+      "kind": "V",
+      "name": "VB7",
+      "nodes": ["b7", "0"],
+      "dc": 1
+    },
+    {
+      "kind": "R",
+      "name": "RB7",
+      "nodes": ["b7", "n7"],
+      "value": 2000
+    },
+    {
+      "kind": "R",
+      "name": "RT",
+      "nodes": ["n0", "0"],
+      "value": 2000
+    },
+    {
+      "kind": "R",
+      "name": "RL0",
+      "nodes": ["n0", "n1"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL1",
+      "nodes": ["n1", "n2"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL2",
+      "nodes": ["n2", "n3"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL3",
+      "nodes": ["n3", "n4"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL4",
+      "nodes": ["n4", "n5"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL5",
+      "nodes": ["n5", "n6"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RL6",
+      "nodes": ["n6", "n7"],
+      "value": 1000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}
