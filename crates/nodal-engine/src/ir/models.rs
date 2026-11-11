@@ -215,3 +215,83 @@ pub(super) fn validate_models(n: &Netlist) -> Result<(), Error> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+    /// One entry of packages/schema/fixtures/param-specs.json. A default
+    /// that is not a finite number is `null` plus `defaultKind`: "inf" for
+    /// Infinity, "1/gmin" for NaN.
+    #[derive(Debug, PartialEq, Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct Entry {
+        key: String,
+        default: Option<f64>,
+        #[serde(default)]
+        default_kind: Option<String>,
+        range: String,
+    }
+
+    fn range_name(r: Range) -> &'static str {
+        match r {
+            Range::Any => "any",
+            Range::Positive => "positive",
+            Range::NonNegative => "nonNegative",
+            Range::UnitInterval => "unitInterval",
+        }
+    }
+
+    fn encoded(kind: ModelKind) -> Vec<Entry> {
+        param_spec(kind)
+            .iter()
+            .map(|s| {
+                let (default, default_kind) = if s.default.is_nan() {
+                    (None, Some("1/gmin".to_string()))
+                } else if s.default.is_infinite() {
+                    (None, Some("inf".to_string()))
+                } else {
+                    (Some(s.default), None)
+                };
+                Entry {
+                    key: s.key.to_string(),
+                    default,
+                    default_kind,
+                    range: range_name(s.rule).to_string(),
+                }
+            })
+            .collect()
+    }
+
+    /// Compares the committed JSON table of `@nodal/schema` with `param_spec`.
+    /// It only reads: regenerate the file from `encodeParamSpecs()` in
+    /// packages/schema/src/models.ts when the table changes on purpose.
+    #[test]
+    fn spec_matches_ts() -> TestResult {
+        let text = include_str!("../../../../packages/schema/fixtures/param-specs.json");
+        let file: BTreeMap<String, Vec<Entry>> = serde_json::from_str(text)?;
+        let kinds = [
+            ModelKind::D,
+            ModelKind::NPN,
+            ModelKind::PNP,
+            ModelKind::NMOS,
+            ModelKind::PMOS,
+            ModelKind::SW,
+        ];
+        assert_eq!(file.len(), kinds.len(), "model type count differs");
+        for kind in kinds {
+            let theirs = file
+                .get(kind.as_str())
+                .ok_or_else(|| format!("missing {}", kind.as_str()))?;
+            assert_eq!(
+                theirs,
+                &encoded(kind),
+                "table for {} differs",
+                kind.as_str()
+            );
+        }
+        Ok(())
+    }
+}

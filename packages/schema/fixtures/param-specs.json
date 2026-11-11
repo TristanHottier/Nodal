@@ -1,0 +1,307 @@
+{
+  "D": [
+    {
+      "key": "IS",
+      "default": 1e-14,
+      "range": "positive"
+    },
+    {
+      "key": "N",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "RS",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CJO",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "VJ",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "M",
+      "default": 0.5,
+      "range": "unitInterval"
+    },
+    {
+      "key": "FC",
+      "default": 0.5,
+      "range": "unitInterval"
+    },
+    {
+      "key": "TT",
+      "default": 0,
+      "range": "nonNegative"
+    }
+  ],
+  "NPN": [
+    {
+      "key": "IS",
+      "default": 1e-16,
+      "range": "positive"
+    },
+    {
+      "key": "BF",
+      "default": 100,
+      "range": "positive"
+    },
+    {
+      "key": "BR",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "NF",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "NR",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "VAF",
+      "default": null,
+      "defaultKind": "inf",
+      "range": "positive"
+    },
+    {
+      "key": "CJE",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "VJE",
+      "default": 0.75,
+      "range": "positive"
+    },
+    {
+      "key": "MJE",
+      "default": 0.33,
+      "range": "unitInterval"
+    },
+    {
+      "key": "CJC",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "VJC",
+      "default": 0.75,
+      "range": "positive"
+    },
+    {
+      "key": "MJC",
+      "default": 0.33,
+      "range": "unitInterval"
+    },
+    {
+      "key": "TF",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "TR",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "FC",
+      "default": 0.5,
+      "range": "unitInterval"
+    }
+  ],
+  "PNP": [
+    {
+      "key": "IS",
+      "default": 1e-16,
+      "range": "positive"
+    },
+    {
+      "key": "BF",
+      "default": 100,
+      "range": "positive"
+    },
+    {
+      "key": "BR",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "NF",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "NR",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "VAF",
+      "default": null,
+      "defaultKind": "inf",
+      "range": "positive"
+    },
+    {
+      "key": "CJE",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "VJE",
+      "default": 0.75,
+      "range": "positive"
+    },
+    {
+      "key": "MJE",
+      "default": 0.33,
+      "range": "unitInterval"
+    },
+    {
+      "key": "CJC",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "VJC",
+      "default": 0.75,
+      "range": "positive"
+    },
+    {
+      "key": "MJC",
+      "default": 0.33,
+      "range": "unitInterval"
+    },
+    {
+      "key": "TF",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "TR",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "FC",
+      "default": 0.5,
+      "range": "unitInterval"
+    }
+  ],
+  "NMOS": [
+    {
+      "key": "VTO",
+      "default": 0,
+      "range": "any"
+    },
+    {
+      "key": "KP",
+      "default": 0.00002,
+      "range": "positive"
+    },
+    {
+      "key": "GAMMA",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "PHI",
+      "default": 0.6,
+      "range": "positive"
+    },
+    {
+      "key": "LAMBDA",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGSO",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGDO",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGBO",
+      "default": 0,
+      "range": "nonNegative"
+    }
+  ],
+  "PMOS": [
+    {
+      "key": "VTO",
+      "default": 0,
+      "range": "any"
+    },
+    {
+      "key": "KP",
+      "default": 0.00002,
+      "range": "positive"
+    },
+    {
+      "key": "GAMMA",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "PHI",
+      "default": 0.6,
+      "range": "positive"
+    },
+    {
+      "key": "LAMBDA",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGSO",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGDO",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "CGBO",
+      "default": 0,
+      "range": "nonNegative"
+    }
+  ],
+  "SW": [
+    {
+      "key": "VT",
+      "default": 0,
+      "range": "any"
+    },
+    {
+      "key": "VH",
+      "default": 0,
+      "range": "nonNegative"
+    },
+    {
+      "key": "RON",
+      "default": 1,
+      "range": "positive"
+    },
+    {
+      "key": "ROFF",
+      "default": null,
+      "defaultKind": "1/gmin",
+      "range": "positive"
+    }
+  ]
+}

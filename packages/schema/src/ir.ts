@@ -1,8 +1,10 @@
 // Netlist IR (version 1). Mirrors crates/nodal-engine/src/ir; both validate
-// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V11 are
-// listed in the engine's validate.rs.
+// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V15 are
+// listed in the engine's validate.rs and models.rs.
 import { z } from "zod";
 import { IR_VERSION } from "./constants";
+import type { ModelKind } from "./models";
+import { MODEL_KINDS, PARAM_SPECS, describeRange, inRange } from "./models";
 
 // Zod 4 already rejects Infinity and NaN; the refine keeps that explicit and gives one message.
 const finite = z
@@ -15,6 +17,8 @@ const optional = <T extends z.ZodType>(schema: T) =>
 
 const nodeName = z.string();
 const nodePair = z.tuple([nodeName, nodeName]);
+const nodeTriple = z.tuple([nodeName, nodeName, nodeName]);
+const nodeQuad = z.tuple([nodeName, nodeName, nodeName, nodeName]);
 const elementName = z.string();
 
 const element = z.discriminatedUnion("kind", [
@@ -61,9 +65,44 @@ const element = z.discriminatedUnion("kind", [
     controlSource: z.string(),
     gain: finite,
   }),
+  z.strictObject({ kind: z.literal("D"), name: elementName, nodes: nodePair, model: z.string() }),
+  z.strictObject({ kind: z.literal("Q"), name: elementName, nodes: nodeTriple, model: z.string() }),
+  z.strictObject({
+    kind: z.literal("M"),
+    name: elementName,
+    nodes: nodeQuad,
+    model: z.string(),
+    w: optional(finite),
+    l: optional(finite),
+  }),
+  z.strictObject({
+    kind: z.literal("S"),
+    name: elementName,
+    nodes: nodePair,
+    controlNodes: nodePair,
+    model: z.string(),
+  }),
 ]);
 
-const analysis = z.strictObject({ type: z.literal("op") });
+const model = z.strictObject({
+  name: z.string(),
+  type: z.enum(MODEL_KINDS),
+  params: z.record(z.string(), z.number()).default({}),
+});
+
+const analysis = z.discriminatedUnion("type", [
+  z.strictObject({ type: z.literal("op") }),
+  z.strictObject({
+    type: z.literal("dc"),
+    source: z.string(),
+    start: z.number(),
+    stop: z.number(),
+    step: z.number(),
+  }),
+]);
+
+/** Largest allowed number of points in a DC sweep. */
+const MAX_SWEEP_POINTS = 1_000_000;
 
 const options = z.strictObject({
   temp: optional(finite),
@@ -74,7 +113,8 @@ const options = z.strictObject({
   gmin: optional(finite),
 });
 
-const ELEMENT_NAME = /^[RLCVIEGHF][A-Za-z0-9_]*$/;
+const ELEMENT_NAME = /^[RLCVIEGHFDQMS][A-Za-z0-9_]*$/;
+const MODEL_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 const NODE_NAME = /^[A-Za-z0-9_]+$/;
 
 /** First group of names equal ignoring ASCII case, sorted and joined; else undefined. */
@@ -98,12 +138,100 @@ const netlistBase = z.strictObject({
   irVersion: z.number(),
   title: optional(z.string()),
   elements: z.array(element),
-  models: z.array(z.unknown()).default([]),
+  models: z.array(model).default([]),
+  nodeset: optional(z.record(z.string(), z.number())),
   analyses: z.array(analysis),
   options: optional(options),
 });
 
 type NetlistBase = z.output<typeof netlistBase>;
+
+type Issue = { message: string; path: (string | number)[] };
+
+/** V10 and V12: model names and parameters. */
+function checkModels(models: NetlistModel[]): Issue | undefined {
+  // V10
+  for (const [i, m] of models.entries()) {
+    if (!MODEL_NAME.test(m.name)) {
+      return {
+        message: `model name ${JSON.stringify(m.name)} must match ^[A-Za-z][A-Za-z0-9_]*$`,
+        path: ["models", i],
+      };
+    }
+  }
+  const dup = caseCollision(models.map((m) => m.name));
+  if (dup !== undefined) {
+    return { message: `model names must be unique ignoring case: ${dup}`, path: ["models"] };
+  }
+  // V12
+  for (const [i, m] of models.entries()) {
+    const spec = PARAM_SPECS[m.type];
+    // Rust walks a BTreeMap: keys in ascending order.
+    for (const key of Object.keys(m.params).sort()) {
+      const value = m.params[key] as number;
+      const s = spec.find((x) => x.key === key);
+      const path = ["models", i, "params", key];
+      if (!s) {
+        return {
+          message: `unsupported parameter ${key} for model ${m.name} (${m.type})`,
+          path,
+        };
+      }
+      if (!inRange(s.range, value)) {
+        return {
+          message: `parameter ${key} of model ${m.name} must be ${describeRange(s.range)}, got ${String(value)}`,
+          path,
+        };
+      }
+    }
+  }
+  return undefined;
+}
+
+/** V13: the model exists and has the right type. */
+function checkModelRef(
+  models: NetlistModel[],
+  e: Extract<NetlistElement, { model: string }>,
+): string | undefined {
+  const m = models.find((x) => x.name === e.model);
+  if (!m) return `element ${e.name}: unknown model ${e.model}`;
+  const allowed: Record<typeof e.kind, readonly ModelKind[]> = {
+    D: ["D"],
+    Q: ["NPN", "PNP"],
+    M: ["NMOS", "PMOS"],
+    S: ["SW"],
+  };
+  const expected = { D: "D", Q: "NPN or PNP", M: "NMOS or PMOS", S: "SW" }[e.kind];
+  if (!allowed[e.kind].includes(m.type)) {
+    return `element ${e.name}: model ${e.model} has type ${m.type}, expected ${expected}`;
+  }
+  return undefined;
+}
+
+/** Rust's f64::round: halves go away from zero. */
+const roundHalfAway = (x: number): number => Math.sign(x) * Math.round(Math.abs(x));
+
+/** V14: a dc sweep names an independent source and its step reaches stop. */
+function checkDc(elements: NetlistElement[], a: DcAnalysis): string | undefined {
+  const src = elements.find((x) => x.name === a.source);
+  if (!src) return `analysis dc: unknown source ${a.source}`;
+  if (src.kind !== "V" && src.kind !== "I") {
+    return `analysis dc: source ${a.source} is not an independent source`;
+  }
+  const { start, stop, step } = a;
+  if (!(Number.isFinite(start) && Number.isFinite(stop) && Number.isFinite(step))) {
+    return "analysis dc: start, stop and step must be finite";
+  }
+  if (step === 0) return "analysis dc: step must not be zero";
+  const k = (stop - start) / step;
+  if (!Number.isFinite(k) || roundHalfAway(k) + 1 > MAX_SWEEP_POINTS) {
+    return `analysis dc: sweep has more than ${String(MAX_SWEEP_POINTS)} points`;
+  }
+  if (k < 0 || Math.abs(k - roundHalfAway(k)) > 1e-9 * Math.max(Math.abs(k), 1)) {
+    return `analysis dc: step ${String(step)} does not reach stop ${String(stop)} from start ${String(start)}`;
+  }
+  return undefined;
+}
 
 /** Cross-field rules. Stops at the first violated rule, like the Rust validator. */
 function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
@@ -120,18 +248,21 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
   // V2
   if (n.elements.length === 0) return fail("elements must not be empty", ["elements"]);
   if (n.analyses.length === 0) return fail("analyses must not be empty", ["analyses"]);
-  // V10
-  if (n.models.length > 0) return fail("models must be empty", ["models"]);
+  // V10 and V12
+  const modelIssue = checkModels(n.models);
+  if (modelIssue) return fail(modelIssue.message, modelIssue.path);
 
   const nodesOf = (e: (typeof n.elements)[number]): string[] =>
-    e.kind === "E" || e.kind === "G" ? [...e.nodes, ...e.controlNodes] : [...e.nodes];
+    e.kind === "E" || e.kind === "G" || e.kind === "S"
+      ? [...e.nodes, ...e.controlNodes]
+      : [...e.nodes];
 
   for (const [i, e] of n.elements.entries()) {
     const at = ["elements", i];
     // V3
     if (!ELEMENT_NAME.test(e.name)) {
       return fail(
-        `element name ${JSON.stringify(e.name)} must match ^[RLCVIEGHF][A-Za-z0-9_]*$`,
+        `element name ${JSON.stringify(e.name)} must match ^[RLCVIEGHFDQMS][A-Za-z0-9_]*$`,
         at,
       );
     }
@@ -171,9 +302,27 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
     if ((e.kind === "R" || e.kind === "L" || e.kind === "C") && !(e.value > 0)) {
       return fail(`element ${e.name}: value must be finite and > 0, got ${String(e.value)}`, at);
     }
-    // V8
-    if (e.nodes[0] === e.nodes[1]) {
+    if (e.kind === "V" || e.kind === "I") {
+      if (!Number.isFinite(e.dc)) return fail(`element ${e.name}: dc must be finite`, at);
+    }
+    if (e.kind === "M") {
+      for (const [key, v] of [
+        ["w", e.w],
+        ["l", e.l],
+      ] as const) {
+        if (v !== undefined && !(v > 0)) {
+          return fail(`element ${e.name}: ${key} must be finite and > 0, got ${String(v)}`, at);
+        }
+      }
+    }
+    // V8: Q and M may share terminals.
+    if (e.kind !== "Q" && e.kind !== "M" && e.nodes[0] === e.nodes[1]) {
       return fail(`element ${e.name}: both terminals are node ${e.nodes[0]}`, at);
+    }
+    // V13
+    if (e.kind === "D" || e.kind === "Q" || e.kind === "M" || e.kind === "S") {
+      const issue = checkModelRef(n.models, e);
+      if (issue) return fail(issue, at);
     }
     // V9
     if (e.kind === "H" || e.kind === "F") {
@@ -189,15 +338,39 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
       }
     }
   }
+  // V14
+  for (const [i, a] of n.analyses.entries()) {
+    if (a.type === "dc") {
+      const issue = checkDc(n.elements, a);
+      if (issue) return fail(issue, ["analyses", i]);
+    }
+  }
+  // V15
+  if (n.nodeset) {
+    const known = new Set(n.elements.flatMap(nodesOf));
+    // Rust walks a BTreeMap: keys in ascending order.
+    for (const node of Object.keys(n.nodeset).sort()) {
+      if (node === "0" || !known.has(node))
+        return fail(`nodeset: unknown node ${node}`, ["nodeset"]);
+      if (!Number.isFinite(n.nodeset[node])) {
+        return fail(`nodeset: value for node ${node} must be finite`, ["nodeset", node]);
+      }
+    }
+  }
   // V11
   const o = n.options;
   if (o) {
-    if (o.temp !== undefined && !(o.temp > -273.15)) {
-      return fail(`option temp must be finite and > -273.15, got ${String(o.temp)}`, ["options"]);
+    if (o.temp !== undefined) {
+      if (!Number.isFinite(o.temp)) {
+        return fail(`option temp must be finite, got ${String(o.temp)}`, ["options"]);
+      }
+      if (o.temp !== 27) {
+        return fail("option temp must be 27 (temperature is fixed in v1)", ["options"]);
+      }
     }
     for (const key of ["reltol", "vntol", "abstol", "chgtol", "gmin"] as const) {
       const v = o[key];
-      if (v !== undefined && !(v > 0)) {
+      if (v !== undefined && !(Number.isFinite(v) && v > 0)) {
         return fail(`option ${key} must be finite and > 0, got ${String(v)}`, ["options"]);
       }
     }
@@ -212,6 +385,9 @@ export const netlistSchema = netlistBase.superRefine((n, ctx) => {
 export type Netlist = z.infer<typeof netlistSchema>;
 export type NetlistElement = Netlist["elements"][number];
 export type Analysis = Netlist["analyses"][number];
+export type DcAnalysis = Extract<Analysis, { type: "dc" }>;
+export type NetlistModel = Netlist["models"][number];
+export type { ModelKind };
 export type SimOptions = NonNullable<Netlist["options"]>;
 
 export type ParseResult = { ok: true; value: Netlist } | { ok: false; issues: string[] };

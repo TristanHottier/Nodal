@@ -1,7 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { describe, expect, test } from "vitest";
 import { parseNetlist } from "./ir";
+import { PARAM_SPECS, encodeParamSpecs } from "./models";
 
 const fixtures = join(import.meta.dirname, "../fixtures/ir");
 const circuits = join(import.meta.dirname, "../../../validation/circuits");
@@ -30,7 +31,7 @@ describe("fixtures shared with the Rust engine", () => {
 
   test("fixture folders are populated", () => {
     expect(valid.length).toBeGreaterThan(0);
-    expect(invalid.length).toBeGreaterThanOrEqual(21);
+    expect(invalid.length).toBeGreaterThanOrEqual(34);
   });
 
   test.each(valid)("valid: %s", (path) => {
@@ -74,7 +75,86 @@ describe("messages name the culprit", () => {
   });
 });
 
+// Message fragments shared with NEEDLES in crates/nodal-engine/tests/ir_fixtures.rs.
+// Fixtures that serde rejects with its own wording (unknown variant, unknown
+// field, number out of range) are only checked for rejection above.
+const NEEDLES: [string, string][] = [
+  ["ir-version-2", "irVersion must be 1"],
+  ["empty-elements", "elements must not be empty"],
+  ["empty-analyses", "analyses must not be empty"],
+  ["name-kind-mismatch", "element name C1 must start with its kind letter R"],
+  ["bad-element-name", 'element name "R-1" must match'],
+  ["bad-node-name", 'node "n 1" must match'],
+  ["gnd-node", 'node "GND" is reserved: ngspice treats gnd as ground'],
+  ["duplicate-name-case", "must be unique ignoring case: R_A, R_a"],
+  ["node-case-collision", "must differ by more than case: OUT, out"],
+  ["unknown-control-source", "element F1: unknown controlling source V9"],
+  ["control-not-vsource", "element F1: controlling source R1 is not a voltage source"],
+  ["zero-resistor", "element R1: value must be finite and > 0"],
+  ["negative-capacitor", "element C1: value must be finite and > 0"],
+  ["same-node-terminals", "element R1: both terminals are node in"],
+  ["model-unknown", "element D1: unknown model NOPE"],
+  ["model-wrong-type", "element D1: model QMOD has type NPN, expected D"],
+  ["model-duplicate-case", "model names must be unique ignoring case: DMOD, dmod"],
+  ["model-lowercase-param", "unsupported parameter is for model DMOD (D)"],
+  ["model-bv-rejected", "unsupported parameter BV for model DMOD (D)"],
+  ["model-param-out-of-range", "parameter M of model DMOD must be in [0, 1), got 1"],
+  ["mos-zero-width", "element M1: w must be finite and > 0"],
+  ["switch-same-output-nodes", "element S1: both terminals are node a"],
+  ["dc-unknown-source", "analysis dc: unknown source V9"],
+  ["dc-source-not-independent", "analysis dc: source R1 is not an independent source"],
+  ["dc-zero-step", "analysis dc: step must not be zero"],
+  ["dc-step-misses-stop", "analysis dc: step 0.3 does not reach stop 1 from start 0"],
+  ["nodeset-unknown-node", "nodeset: unknown node zz"],
+  ["temp-not-27", "option temp must be 27 (temperature is fixed in v1)"],
+  ["bad-option", "option reltol must be finite and > 0"],
+];
+
+describe("message needles from the Rust tests", () => {
+  test.each(NEEDLES)("%s", (name, needle) => {
+    expect(issuesOf(name).join("\n")).toContain(needle);
+  });
+
+  test("every invalid fixture is rejected, with or without a needle", () => {
+    const listed = new Set(NEEDLES.map(([n]) => n));
+    const serdeOnly = [
+      "unknown-field",
+      "unknown-kind",
+      "unsupported-analysis",
+      "analysis-extra-field",
+      "infinite-value",
+    ];
+    const onDisk = jsonFiles(join(fixtures, "invalid")).map((p) => basename(p, ".json"));
+    expect(onDisk.filter((n) => !listed.has(n) && !serdeOnly.includes(n))).toEqual([]);
+  });
+});
+
+describe("model parameter table", () => {
+  test("matches fixtures/param-specs.json, which the Rust test also reads", () => {
+    const file = load(join(fixtures, "../param-specs.json"));
+    expect(encodeParamSpecs()).toEqual(file);
+    expect(Object.keys(PARAM_SPECS).sort()).toEqual(Object.keys(file as object).sort());
+  });
+});
+
 describe("parsed values", () => {
+  test("models default to [] and params to {}", () => {
+    const r = parseNetlist(load(join(fixtures, "valid", "divider.json")));
+    if (!r.ok) throw new Error(r.issues.join("; "));
+    expect(r.value.models).toEqual([]);
+    const n = parseNetlist(load(join(fixtures, "valid", "nodeset.json")));
+    if (!n.ok) throw new Error(n.issues.join("; "));
+    expect(n.value.models[0]?.params).toEqual({});
+    expect(n.value.nodeset).toEqual({ a: 0.6 });
+  });
+
+  test("M keeps optional w and l", () => {
+    const r = parseNetlist(load(join(fixtures, "valid", "nonlinear.json")));
+    if (!r.ok) throw new Error(r.issues.join("; "));
+    const m = r.value.elements.find((e) => e.kind === "M");
+    expect(m).toMatchObject({ w: 1e-5, l: 1e-6 });
+  });
+
   test("dc defaults to 0", () => {
     const r = parseNetlist(load(join(fixtures, "valid", "dc-default.json")));
     if (!r.ok) throw new Error(r.issues.join("; "));
