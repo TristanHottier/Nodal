@@ -1,0 +1,56 @@
+# AI coding assistants: local config, state and instructions
+
+# Claude Code
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+
+# OpenCode
+.opencode/
+opencode.json
+
+# Cursor
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexingignore
+
+# GitHub Copilot
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+
+# Gemini CLI
+.gemini/
+GEMINI.md
+
+# OpenAI Codex
+.codex/
+
+# Windsurf / Codeium
+.windsurf/
+.windsurfrules
+.codeium/
+
+# Cline, Roo Code, Kilo Code
+.clinerules
+.clinerules/
+.roo/
+.roomodes
+.kilocode/
+
+# Aider
+.aider*
+
+# Continue
+.continue/
+
+# Amazon Q
+.amazonq/
+
+# Junie (JetBrains AI)
+.junie/
+
+# Chat history exporters
+.specstory/
