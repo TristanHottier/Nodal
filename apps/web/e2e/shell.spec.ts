@@ -23,3 +23,17 @@ test("shell shows engine version from WASM worker", async ({ page }) => {
   expect(requestedPaths.some((path) => path.endsWith(".wasm"))).toBe(true);
   expect(requestedPaths.filter((path) => !path.startsWith("/Nodal/"))).toEqual([]);
 });
+
+test("shell reports an error when the WASM module fails to load", async ({ page }) => {
+  // The 5 s budget is below the client's 10 s worker timeout, so only the real
+  // error reply can satisfy it, not the timeout fallback.
+  // Pins the real chain: wasm fetch fails -> init() rejects -> worker posts
+  // {type:"error"} -> client rejects -> UI shows the error.
+  await page.route("**/*.wasm", (route) => route.abort());
+
+  await page.goto("./");
+
+  await expect(page.getByTestId("engine-status")).toHaveText(/^Engine failed to load: /, {
+    timeout: 5_000,
+  });
+});
