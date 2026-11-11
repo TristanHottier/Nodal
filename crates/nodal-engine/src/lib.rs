@@ -6,6 +6,7 @@
 pub mod circuit;
 pub mod error;
 pub mod ir;
+pub mod linalg;
 
 pub use error::Error;
 pub use ir::parse_netlist;
