@@ -11,16 +11,16 @@ Rules for anyone, human or AI agent, writing code in this repository.
 
 ## Commands
 
-Filled in at M0. Until then there is no code to build.
+Run these from the repository root.
 
 | Task | Command |
 |---|---|
-| Rust tests | _TBD_ |
-| Validation suite | _TBD_ |
-| WASM build | _TBD_ |
-| Web dev server | _TBD_ |
-| Web tests | _TBD_ |
-| Lint and format | _TBD_ |
+| Rust tests | `cargo test --workspace` |
+| Validation suite | n/a until M1 |
+| WASM build | `pnpm build:wasm` |
+| Web dev server | `pnpm --filter @nodal/web dev` |
+| Web tests | `pnpm test` and `pnpm --filter @nodal/web e2e` |
+| Lint and format | `cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm lint && pnpm format:check` |
 
 ## Engine rules (`crates/`)
 
@@ -56,4 +56,4 @@ Filled in at M0. Until then there is no code to build.
 
 - Work on `main` (single developer). Small commits, each leaving CI green.
 - Conventional Commits: `feat(engine): …`, `fix(web): …`, `docs: …`, `test(validation): …`.
-- No generated files in git except `validation/golden/`.
+- No generated files in git except `validation/golden/`. Lockfiles (`Cargo.lock`, `pnpm-lock.yaml`) are committed as source inputs.

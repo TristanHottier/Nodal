@@ -8,12 +8,13 @@ The engine comes first: the editor is only useful once the numbers it shows can 
 
 ## v1 milestones
 
-### M0 — Repository bootstrap · not started
+### M0 — Repository bootstrap · done
 - Cargo workspace with the three crates; pnpm workspace with `packages/schema` and `apps/web`.
 - CI (GitHub Actions): `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `wasm-pack build`, `pnpm lint`, `pnpm test`, `pnpm build`.
 - GitHub Pages deploy of the empty app shell from `main`, via GitHub Actions, served under `/Nodal/` ([ADR 0010](adr/0010-github-pages-hosting.md)).
 
 **Exit:** CI green on `main`; `https://tristanhottier.github.io/Nodal/` serves the shell, including a WASM module loaded from a worker; `AGENTS.md` command table filled in.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43087709851 (rust, web, deploy green); https://tristanhottier.github.io/Nodal/ returns 200 and shows `Engine 0.1.0`.
 
 ### M1 — Linear DC engine · not started
 - Netlist IR types (Rust serde + TS Zod) with schema tests in both languages.
