@@ -18,7 +18,20 @@ export default tseslint.config(
   {
     files: ["**/*.{ts,tsx,mts,cts}"],
     extends: [tseslint.configs.strictTypeChecked],
-    languageOptions: { parserOptions: { projectService: true } },
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          // Files covered by apps/web/tsconfig.node.json, not by the nearest tsconfig.json.
+          allowDefaultProject: [
+            "apps/web/vite.config.ts",
+            "apps/web/playwright.config.ts",
+            "apps/web/e2e/*.ts",
+          ],
+          defaultProject: "apps/web/tsconfig.node.json",
+        },
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     rules: { "@typescript-eslint/no-explicit-any": "error" },
   },
   {
