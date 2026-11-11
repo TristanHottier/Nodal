@@ -62,7 +62,7 @@ fn valid_fixtures_parse() -> TestResult {
 #[test]
 fn invalid_fixtures_are_rejected() -> TestResult {
     let files = json_files(&repo_root().join("packages/schema/fixtures/ir/invalid"))?;
-    assert!(files.len() >= 20);
+    assert!(files.len() >= 21);
     for path in files {
         let text = fs::read_to_string(&path)?;
         assert!(
@@ -90,6 +90,10 @@ fn each_invalid_fixture_breaks_its_own_rule() -> TestResult {
         ),
         ("bad-element-name", "element name \"R-1\" must match"),
         ("bad-node-name", "node \"n 1\" must match"),
+        (
+            "gnd-node",
+            "node \"GND\" is reserved: ngspice treats gnd as ground",
+        ),
         (
             "duplicate-name-case",
             "must be unique ignoring case: R_A, R_a",

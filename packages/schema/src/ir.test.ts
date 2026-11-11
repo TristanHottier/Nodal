@@ -30,7 +30,7 @@ describe("fixtures shared with the Rust engine", () => {
 
   test("fixture folders are populated", () => {
     expect(valid.length).toBeGreaterThan(0);
-    expect(invalid.length).toBeGreaterThanOrEqual(20);
+    expect(invalid.length).toBeGreaterThanOrEqual(21);
   });
 
   test.each(valid)("valid: %s", (path) => {
@@ -56,6 +56,10 @@ describe("messages name the culprit", () => {
     const text = issuesOf("node-case-collision").join("\n");
     expect(text).toContain("OUT");
     expect(text).toContain("out");
+  });
+  test("gnd-node", () => {
+    const text = issuesOf("gnd-node").join("\n");
+    expect(text).toContain('node "GND" is reserved: ngspice treats gnd as ground; use "0"');
   });
   test("unknown-control-source", () => {
     const text = issuesOf("unknown-control-source").join("\n");

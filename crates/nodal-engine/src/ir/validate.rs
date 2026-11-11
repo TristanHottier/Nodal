@@ -75,6 +75,11 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
                     "element {name}: node {node:?} must match ^[A-Za-z0-9_]+$"
                 ));
             }
+            if node.eq_ignore_ascii_case("gnd") {
+                return invalid(format!(
+                    "element {name}: node {node:?} is reserved: ngspice treats gnd as ground; use \"0\""
+                ));
+            }
         }
     }
     // V5

@@ -146,6 +146,12 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
           at,
         );
       }
+      if (node.toLowerCase() === "gnd") {
+        return fail(
+          `element ${e.name}: node ${JSON.stringify(node)} is reserved: ngspice treats gnd as ground; use "0"`,
+          at,
+        );
+      }
     }
   }
   // V5
