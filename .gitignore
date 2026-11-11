@@ -57,3 +57,7 @@ GEMINI.md
 target/
 .superpowers/
 crates/nodal-wasm/pkg/
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo

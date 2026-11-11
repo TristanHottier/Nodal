@@ -1,0 +1,10 @@
+target/
+node_modules/
+dist/
+crates/nodal-wasm/pkg/
+coverage/
+test-results/
+playwright-report/
+.superpowers/
+pnpm-lock.yaml
+*.md
