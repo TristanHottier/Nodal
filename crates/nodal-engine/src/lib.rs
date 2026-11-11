@@ -3,13 +3,31 @@
 //! This crate performs no I/O, reads no clock and has no browser dependency.
 //! File, process and browser access belong in `nodal-cli` and `nodal-wasm`.
 
+pub mod analysis;
 pub mod circuit;
+pub mod devices;
 pub mod error;
 pub mod ir;
 pub mod linalg;
+pub mod mna;
 
+pub use analysis::AnalysisResult;
 pub use error::Error;
 pub use ir::parse_netlist;
+
+use ir::{Analysis, Netlist};
+
+/// Runs every analysis in the netlist and returns one result per entry.
+pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
+    let circuit = circuit::Circuit::build(netlist)?;
+    netlist
+        .analyses
+        .iter()
+        .map(|analysis| match analysis {
+            Analysis::Op {} => analysis::solve_op(&circuit).map(AnalysisResult::Op),
+        })
+        .collect()
+}
 
 /// Crate version, taken from the manifest.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

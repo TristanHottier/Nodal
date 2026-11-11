@@ -36,7 +36,9 @@ impl fmt::Display for Error {
                 "loop of voltage sources and inductors: {}",
                 elements.join(", ")
             ),
-            Error::Singular { unknown } => write!(f, "singular matrix at unknown {unknown}"),
+            Error::Singular { unknown } => {
+                write!(f, "singular system: no unique solution for {unknown}")
+            }
         }
     }
 }

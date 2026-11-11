@@ -4,6 +4,7 @@ mod topology;
 
 use std::collections::HashMap;
 
+use crate::devices::{self, Device};
 use crate::error::Error;
 use crate::ir::{Element, Netlist};
 
@@ -14,13 +15,15 @@ pub const GROUND: &str = "0";
 ///
 /// Unknown `i < node_count` is `V(node_names[i])`. Unknown `node_count + j`
 /// is `I(branch_names[j])`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct Circuit {
     /// Non-ground nodes in order of first appearance, scanning elements in
     /// order and `nodes` before `controlNodes`.
     pub node_names: Vec<String>,
     /// Elements that carry a branch-current unknown (V, E, H, L), in element order.
     pub branch_names: Vec<String>,
+    /// Device instances, in element order.
+    pub devices: Vec<Box<dyn Device>>,
     node_index: HashMap<String, usize>,
     branch_index: HashMap<String, usize>,
 }
@@ -32,6 +35,7 @@ impl Circuit {
         let mut circuit = Circuit {
             node_names: Vec::new(),
             branch_names: Vec::new(),
+            devices: Vec::new(),
             node_index: HashMap::new(),
             branch_index: HashMap::new(),
         };
@@ -48,6 +52,11 @@ impl Circuit {
         }
         topology::check_floating(netlist, &circuit)?;
         topology::check_source_loops(netlist, &circuit)?;
+        let mut devices = Vec::with_capacity(netlist.elements.len());
+        for element in &netlist.elements {
+            devices.push(devices::instantiate(&circuit, element)?);
+        }
+        circuit.devices = devices;
         Ok(circuit)
     }
 
