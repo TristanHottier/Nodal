@@ -76,10 +76,10 @@ The netlist IR is the single contract between UI and engine. The CLI reads the s
 ```
 
 Rules:
-- Node `"0"` is ground. Other node names are free strings.
+- Node `"0"` is ground. Other node names match `^[A-Za-z0-9_]+$`. The name `gnd` in any case is reserved, because ngspice treats it as ground; use `"0"`.
 - Values are SI base units as JSON numbers. Suffix parsing (`4.7k`, `10u`) happens only in the UI ([ADR 0009](adr/0009-value-notation.md)).
 - Device models (`D`, `NPN`, `PNP`, `NMOS`, `PMOS`, `SW`) are named entries in `models`, with SPICE parameter names.
-- Element names start with their kind letter (`R1`, `V1`).
+- Element names match `^[RLCVIEGHF][A-Za-z0-9_]*$`, and the first letter is the element kind (`R1`, `V1`).
 - Element names are unique, and so are node names. Both are compared ignoring case, because ngspice folds case.
 - An element's two nodes must differ.
 - Current-controlled sources reference a voltage source by name, as in SPICE.

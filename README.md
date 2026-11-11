@@ -4,7 +4,7 @@ Browser-based schematic editor and analog circuit simulator. The simulation engi
 
 > **Status: pre-alpha: M1 done (linear DC operating point in the CLI); no simulation in the browser yet.**
 > Live shell: https://tristanhottier.github.io/Nodal/
-> The repository now holds the M0 bootstrap (workspaces, CI, and the empty app shell). Nothing else described below exists yet unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
+> The repository holds the workspaces, CI, an empty web app shell, and the M1 engine: linear DC operating point for R, L, C, V, I, E, G, H and F elements. `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`. The browser does not simulate yet. Nothing else described below exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
 
 ## What v1 will do
 
