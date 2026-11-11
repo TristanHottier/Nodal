@@ -210,4 +210,5 @@ Loading validates with Zod and runs migrations from older `formatVersion`s. Unkn
 | Device math | `cargo test` | Stamps on 1–3 element circuits; finite-difference Jacobian check for every nonlinear device. |
 | Analyses | `cargo test` + `validation/` | Analytic circuits; ngspice golden comparison ([VALIDATION.md](VALIDATION.md)). |
 | Netlister, schema | Vitest | Connectivity edge cases, file migrations. |
+| Deployed shell | Playwright (from M0) | The production build served under `/Nodal/` loads the worker and `.wasm` and shows the engine version. |
 | End to end | Playwright (from M6) | Draw an RC circuit, run transient, check a probed value. |
