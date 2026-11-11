@@ -9,7 +9,7 @@
     },
     {
       "kind": "R",
-      "name": "X1",
+      "name": "C1",
       "nodes": ["in", "out"],
       "value": 1000
     },

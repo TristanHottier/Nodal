@@ -20,8 +20,9 @@ fn valid_element_name(name: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-/// First group of two or more distinct-by-`==` or repeated entries that are
-/// equal ignoring case, sorted ascending and comma-separated.
+/// Finds the first group of names that are equal ignoring ASCII case (an
+/// exact repeat counts too). Returns that group's names sorted ascending and
+/// joined with ", ", or `None` when every name is distinct.
 fn case_collision<'a>(names: impl Iterator<Item = &'a str>) -> Option<String> {
     let mut groups: BTreeMap<String, Vec<&str>> = BTreeMap::new();
     for n in names {
@@ -173,4 +174,108 @@ fn validate_options(o: &Options) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ir::Analysis;
+
+    type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+    fn nodes(a: &str, b: &str) -> [String; 2] {
+        [a.to_string(), b.to_string()]
+    }
+
+    fn base(extra: Element) -> Netlist {
+        Netlist {
+            ir_version: 1,
+            title: None,
+            elements: vec![
+                Element::V {
+                    name: "V1".into(),
+                    nodes: nodes("in", "0"),
+                    dc: 1.0,
+                },
+                extra,
+            ],
+            models: vec![],
+            analyses: vec![Analysis::Op {}],
+            options: None,
+        }
+    }
+
+    fn message(n: &Netlist) -> Result<String, Box<dyn std::error::Error>> {
+        match validate(n) {
+            Ok(()) => Err("netlist was accepted".into()),
+            Err(e) => Ok(e.to_string()),
+        }
+    }
+
+    fn resistor(value: f64) -> Element {
+        Element::R {
+            name: "R1".into(),
+            nodes: nodes("in", "0"),
+            value,
+        }
+    }
+
+    #[test]
+    fn non_finite_values_are_rejected() -> TestResult {
+        for v in [f64::INFINITY, f64::NAN] {
+            let msg = message(&base(resistor(v)))?;
+            assert!(msg.contains("element R1: value must be finite"), "{msg}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_gain_is_rejected() -> TestResult {
+        for v in [f64::INFINITY, f64::NAN] {
+            let g = Element::G {
+                name: "G1".into(),
+                nodes: nodes("a", "0"),
+                control_nodes: nodes("in", "0"),
+                gain: v,
+            };
+            let msg = message(&base(g))?;
+            assert!(msg.contains("element G1: gain must be finite"), "{msg}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_dc_is_rejected() -> TestResult {
+        for v in [f64::INFINITY, f64::NAN] {
+            let i = Element::I {
+                name: "I1".into(),
+                nodes: nodes("in", "0"),
+                dc: v,
+            };
+            let msg = message(&base(i))?;
+            assert!(msg.contains("element I1: dc must be finite"), "{msg}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_options_are_rejected() -> TestResult {
+        for v in [f64::INFINITY, f64::NAN] {
+            let mut n = base(resistor(1.0));
+            n.options = Some(Options {
+                temp: Some(v),
+                ..Options::default()
+            });
+            let msg = message(&n)?;
+            assert!(msg.contains("option temp must be finite"), "{msg}");
+
+            n.options = Some(Options {
+                gmin: Some(v),
+                ..Options::default()
+            });
+            let msg = message(&n)?;
+            assert!(msg.contains("option gmin must be finite"), "{msg}");
+        }
+        Ok(())
+    }
 }

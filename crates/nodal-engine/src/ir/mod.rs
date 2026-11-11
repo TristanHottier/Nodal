@@ -127,10 +127,13 @@ impl Element {
 }
 
 /// An analysis to run. Only the operating point exists in M1.
+///
+/// `Op` is a struct variant (`Analysis::Op {}`) so that serde enforces
+/// `deny_unknown_fields` on it; a unit variant would ignore extra keys.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase", deny_unknown_fields)]
 pub enum Analysis {
-    Op,
+    Op {},
 }
 
 /// Simulator options. Unset fields take the defaults in the architecture doc.

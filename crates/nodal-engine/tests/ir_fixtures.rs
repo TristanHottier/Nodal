@@ -62,7 +62,7 @@ fn valid_fixtures_parse() -> TestResult {
 #[test]
 fn invalid_fixtures_are_rejected() -> TestResult {
     let files = json_files(&repo_root().join("packages/schema/fixtures/ir/invalid"))?;
-    assert!(files.len() >= 18);
+    assert!(files.len() >= 20);
     for path in files {
         let text = fs::read_to_string(&path)?;
         assert!(
@@ -77,24 +77,47 @@ fn invalid_fixtures_are_rejected() -> TestResult {
 #[test]
 fn each_invalid_fixture_breaks_its_own_rule() -> TestResult {
     let expected = [
-        ("ir-version-2", "irVersion"),
-        ("unknown-field", "bogus"),
-        ("unknown-kind", "unknown variant"),
-        ("unsupported-analysis", "unknown variant"),
-        ("empty-elements", "elements"),
-        ("empty-analyses", "analyses"),
-        ("name-kind-mismatch", "X1"),
-        ("bad-node-name", "n 1"),
-        ("duplicate-name-case", "R_a"),
-        ("node-case-collision", "out"),
-        ("zero-resistor", "R1"),
-        ("negative-capacitor", "C1"),
-        ("infinite-value", "out of range"),
-        ("same-node-terminals", "R1"),
-        ("unknown-control-source", "unknown controlling source"),
-        ("control-not-vsource", "is not a voltage source"),
-        ("models-nonempty", "models"),
-        ("bad-option", "reltol"),
+        ("ir-version-2", "irVersion must be 1"),
+        ("unknown-field", "unknown field `bogus`"),
+        ("unknown-kind", "unknown variant `D`"),
+        ("unsupported-analysis", "unknown variant `ac`"),
+        ("analysis-extra-field", "unknown field `x`"),
+        ("empty-elements", "elements must not be empty"),
+        ("empty-analyses", "analyses must not be empty"),
+        (
+            "name-kind-mismatch",
+            "element name C1 must start with its kind letter R",
+        ),
+        ("bad-element-name", "element name \"R-1\" must match"),
+        ("bad-node-name", "node \"n 1\" must match"),
+        (
+            "duplicate-name-case",
+            "must be unique ignoring case: R_A, R_a",
+        ),
+        (
+            "node-case-collision",
+            "must differ by more than case: OUT, out",
+        ),
+        ("zero-resistor", "element R1: value must be finite and > 0"),
+        (
+            "negative-capacitor",
+            "element C1: value must be finite and > 0",
+        ),
+        ("infinite-value", "number out of range"),
+        (
+            "same-node-terminals",
+            "element R1: both terminals are node in",
+        ),
+        (
+            "unknown-control-source",
+            "element F1: unknown controlling source V9",
+        ),
+        (
+            "control-not-vsource",
+            "element F1: controlling source R1 is not a voltage source",
+        ),
+        ("models-nonempty", "models must be empty"),
+        ("bad-option", "option reltol must be finite and > 0"),
     ];
     for (name, needle) in expected {
         let msg = rejection(name)?;
