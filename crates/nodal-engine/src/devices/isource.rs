@@ -1,6 +1,6 @@
 //! Independent current source, flowing from `n+` through the source to `n-`.
 
-use super::Device;
+use super::{Device, LoadContext};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -22,8 +22,21 @@ impl Device for CurrentSource {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], sys: &mut RealSystem) {
-        sys.add_b(self.p, -self.dc);
-        sys.add_b(self.n, self.dc);
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        ctx: &LoadContext,
+        sys: &mut RealSystem,
+    ) -> bool {
+        let value = self.dc * ctx.source_factor;
+        sys.add_b(self.p, -value);
+        sys.add_b(self.n, value);
+        false
+    }
+
+    fn set_dc(&mut self, value: f64) -> bool {
+        self.dc = value;
+        true
     }
 }

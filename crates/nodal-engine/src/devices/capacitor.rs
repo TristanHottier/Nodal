@@ -1,6 +1,6 @@
 //! Capacitor. Open circuit in DC, so it stamps nothing.
 
-use super::Device;
+use super::{Device, LoadContext};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -19,5 +19,13 @@ impl Device for Capacitor {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], _sys: &mut RealSystem) {}
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        _ctx: &LoadContext,
+        _sys: &mut RealSystem,
+    ) -> bool {
+        false
+    }
 }

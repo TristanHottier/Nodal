@@ -1,6 +1,6 @@
 //! Resistor.
 
-use super::Device;
+use super::{Device, LoadContext};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -27,10 +27,17 @@ impl Device for Resistor {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], sys: &mut RealSystem) {
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        _ctx: &LoadContext,
+        sys: &mut RealSystem,
+    ) -> bool {
         sys.add_a(self.p, self.p, self.g);
         sys.add_a(self.p, self.n, -self.g);
         sys.add_a(self.n, self.p, -self.g);
         sys.add_a(self.n, self.n, self.g);
+        false
     }
 }

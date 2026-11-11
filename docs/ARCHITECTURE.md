@@ -122,6 +122,8 @@ trait Device {
 }
 ```
 
+As built in M2, limiting happens inside `load`, as in SPICE, so there is no separate `limit` method. `load` receives the iterate `x`, the device's slice of the state vector (previous limited voltages, currents and conductances) and a `LoadContext` (mode, gmin, source factor), and returns true when it limited a junction voltage. `Device::converged` is the device's own convergence test.
+
 The stamps and equations each device must implement are in [`reference/mna.md`](reference/mna.md) and [`reference/devices.md`](reference/devices.md).
 
 ### 4.3 Analyses

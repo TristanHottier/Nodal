@@ -1,6 +1,6 @@
 //! Voltage-controlled current source (G).
 
-use super::Device;
+use super::{Device, LoadContext};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -38,10 +38,17 @@ impl Device for Vccs {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], sys: &mut RealSystem) {
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        _ctx: &LoadContext,
+        sys: &mut RealSystem,
+    ) -> bool {
         sys.add_a(self.p, self.cp, self.gm);
         sys.add_a(self.p, self.cn, -self.gm);
         sys.add_a(self.n, self.cp, -self.gm);
         sys.add_a(self.n, self.cn, self.gm);
+        false
     }
 }

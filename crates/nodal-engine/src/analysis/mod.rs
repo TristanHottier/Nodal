@@ -1,5 +1,6 @@
 //! Analyses and their results.
 
+mod newton;
 mod op;
 
 use serde::{Deserialize, Serialize};

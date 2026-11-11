@@ -1,6 +1,6 @@
 //! Current-controlled current source (F).
 
-use super::Device;
+use super::{Device, LoadContext};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -35,8 +35,15 @@ impl Device for Cccs {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], sys: &mut RealSystem) {
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        _ctx: &LoadContext,
+        sys: &mut RealSystem,
+    ) -> bool {
         sys.add_a(self.p, Some(self.control), self.beta);
         sys.add_a(self.n, Some(self.control), -self.beta);
+        false
     }
 }

@@ -1,6 +1,6 @@
 //! Inductor. Short circuit in DC: branch row `v(n+) - v(n-) = 0`.
 
-use super::{Device, stamp_branch_kcl};
+use super::{Device, LoadContext, stamp_branch_kcl};
 use crate::mna::RealSystem;
 
 #[derive(Debug)]
@@ -22,9 +22,16 @@ impl Device for Inductor {
         &self.name
     }
 
-    fn load(&self, _x: &[f64], sys: &mut RealSystem) {
+    fn load(
+        &self,
+        _x: &[f64],
+        _state: &mut [f64],
+        _ctx: &LoadContext,
+        sys: &mut RealSystem,
+    ) -> bool {
         stamp_branch_kcl(sys, self.p, self.n, self.k);
         sys.add_a(Some(self.k), self.p, 1.0);
         sys.add_a(Some(self.k), self.n, -1.0);
+        false
     }
 }

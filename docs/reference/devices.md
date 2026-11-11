@@ -2,14 +2,14 @@
 
 Equations for every nonlinear device in v1. Parameter names and defaults follow ngspice, so a model card gives the same result in both simulators, except for the deviations listed in §5. Only the listed parameters are supported; the engine rejects any other parameter rather than ignoring it.
 
-Constants. Nodal uses ngspice's values from `src/include/ngspice/const.h`, not the current CODATA ones. The difference in $V_t$ is 2.9e-5 relative, which shifts a forward-biased diode current by about 7e-4: enough to fail the golden tolerances. Each golden header records the ngspice version, and M2 re-checks these values against that version.
+Constants. Nodal uses the values ngspice has used since its `const.h` moved off the SPICE2 numbers: CODATA 2014. The SPICE2 values ($k$ = 1.3806226e-23, $q$ = 1.6021918e-19) give $V_t$ = 0.0258641864 V, which is 2.8e-5 relative below the CODATA 2014 value and shifts a forward-biased diode current by about 7e-4: enough to fail the golden tolerances. Each golden header records the ngspice version, and M2 re-checks these values against that version. The constants live in `crates/nodal-engine/src/devices/constants.rs`.
 
 | Symbol | Value |
 |---|---|
-| $k$ | 1.3806226e-23 J/K |
-| $q$ | 1.6021918e-19 C |
+| $k$ | 1.38064852e-23 J/K |
+| $q$ | 1.6021766208e-19 C |
 | $T$ | 300.15 K (27 °C, fixed in v1) |
-| $V_t = kT/q$ | 0.0258641864 V |
+| $V_t = kT/q$ | 0.025864917007 V |
 
 ## 1. Diode (`D`)
 
