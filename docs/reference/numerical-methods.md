@@ -130,7 +130,7 @@ Accepted points are returned as computed, with irregular spacing. The waveform v
 
 - `LinearSolver` trait: `factor(&A)`, then `solve(&mut b)`; refactor when values change. The sparsity pattern is fixed per circuit, so a sparse backend can reuse its symbolic analysis.
 - v1 backend: dense LU with partial pivoting (faer), for both real and complex systems ([ADR 0003](../adr/0003-linear-solver.md)).
-- A zero or tiny pivot during factorization becomes an error naming the node or branch of that row, not a silent NaN.
+- A zero or tiny pivot during factorization becomes an error naming the node or branch of that row, not a silent NaN. A pivot $u_{kk}$ counts as tiny if $|u_{kk}| \le n\,\varepsilon\,\max_i|a_{ik}|$, the largest entry in its own column of the original matrix, so a circuit mixing milliohm and teraohm elements is not rejected.
 
 ## 5. AC small-signal
 

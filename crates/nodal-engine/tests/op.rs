@@ -191,6 +191,19 @@ fn singular_vcvs_reports_unknown() -> TestResult {
 }
 
 #[test]
+fn wide_range_across_subcircuits_solves() -> TestResult {
+    let r = run(&[
+        two("I", "I1", "0", "a", "dc", 1e-13),
+        two("R", "R1", "a", "0", "value", 1e13),
+        two("V", "V1", "b", "0", "dc", 1.0),
+        two("R", "R2", "b", "0", "value", 1e-3),
+    ])?;
+    v(&r, "a", 1.0)?;
+    v(&r, "b", 1.0)?;
+    i(&r, "V1", -1e3)
+}
+
+#[test]
 fn one_result_per_analysis() -> TestResult {
     let json = r#"{"irVersion":1,"elements":[
         {"kind":"V","name":"V1","nodes":["a","0"],"dc":1},

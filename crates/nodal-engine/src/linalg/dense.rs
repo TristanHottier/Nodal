@@ -57,21 +57,32 @@ impl LinearSolver for DenseLu {
     fn factor(&mut self, a: &DenseMatrix) -> Result<(), SolveError> {
         self.lu = None;
         let n = a.n();
-        let max_abs = a.data.iter().fold(0.0_f64, |m, v| m.max(v.abs()));
         if n == 0 {
             return Ok(());
         }
-        if !max_abs.is_finite() {
-            return Err(SolveError::SingularPivot { index: 0 });
+        // Largest magnitude in each column of the original matrix. A
+        // non-finite entry rejects the system (f64::max would skip NaN).
+        let mut col_max = vec![0.0_f64; n];
+        for r in 0..n {
+            for (c, cm) in col_max.iter_mut().enumerate() {
+                let v = a.data[r * n + c];
+                if !v.is_finite() {
+                    return Err(SolveError::SingularPivot { index: c });
+                }
+                if v.abs() > *cm {
+                    *cm = v.abs();
+                }
+            }
         }
         let m = faer::Mat::<f64>::from_fn(n, n, |r, c| a.data[r * n + c]);
         let lu = faer::linalg::solvers::PartialPivLu::new(m.as_ref());
-        let threshold = n as f64 * f64::EPSILON * max_abs;
         let u = lu.U();
         // Row pivoting leaves U's column order unchanged, so U[k, k] is the
-        // pivot of column k of A.
+        // pivot of column k of A. Each pivot is compared with its own
+        // column of A, so unrelated scales elsewhere do not cause rejection.
         for k in 0..n {
             let pivot = u[(k, k)];
+            let threshold = n as f64 * f64::EPSILON * col_max[k];
             if pivot.is_nan() || pivot.abs() <= threshold {
                 return Err(SolveError::SingularPivot { index: k });
             }
@@ -177,6 +188,32 @@ mod tests {
             b[2]
         );
         Ok(())
+    }
+
+    #[test]
+    fn milliohm_and_teraohm_class_matrix_is_not_singular() -> Result<(), Box<dyn Error>> {
+        // I1 0 a 1e-13; R1 a 0 1e13; V1 b 0 1; R2 b 0 1e-3.
+        // Unknowns [V(a), V(b), I(V1)].
+        let mut m = DenseMatrix::zeros(3);
+        m.add(0, 0, 1.0 / 1e13);
+        m.add(1, 1, 1.0 / 1e-3);
+        m.add(1, 2, 1.0);
+        m.add(2, 1, 1.0);
+        let mut lu = DenseLu::new();
+        lu.factor(&m)?;
+        let mut b = [1e-13, 0.0, 1.0];
+        lu.solve(&mut b)?;
+        assert!((b[0] - 1.0).abs() <= 1e-5 + 1e-8, "V(a) = {}", b[0]);
+        assert!((b[1] - 1.0).abs() <= 1e-5 + 1e-8, "V(b) = {}", b[1]);
+        assert!((b[2] + 1e3).abs() <= 1e-5 * 1e3 + 1e-13, "I(V1) = {}", b[2]);
+        Ok(())
+    }
+
+    #[test]
+    fn nan_entry_is_rejected() {
+        let mut lu = DenseLu::new();
+        let r = lu.factor(&matrix(&[&[1.0, 0.0], &[0.0, f64::NAN]]));
+        assert_eq!(r, Err(SolveError::SingularPivot { index: 1 }));
     }
 
     #[test]
