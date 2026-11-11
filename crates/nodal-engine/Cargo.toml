@@ -1,0 +1,10 @@
+[package]
+name = "nodal-engine"
+description = "Analog circuit simulation engine. No I/O, no clock, no browser dependency."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true

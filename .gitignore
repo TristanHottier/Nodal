@@ -54,3 +54,5 @@ GEMINI.md
 
 # Chat history exporters
 .specstory/
+target/
+.superpowers/
