@@ -32,10 +32,15 @@ pub fn solve_op(circuit: &Circuit) -> Result<OpResult, Error> {
     for device in &circuit.devices {
         device.load(&x0, &mut sys);
     }
+    if let Some((row, col)) = sys.out_of_range {
+        return Err(Error::Internal(format!(
+            "stamp out of range at row {row}, column {col}"
+        )));
+    }
     let mut solver = DenseLu::new();
     let map_err = |e: SolveError| match e {
         SolveError::SingularPivot { index } => singular(circuit, index),
-        other => Error::Invalid(other.to_string()),
+        other => Error::Internal(other.to_string()),
     };
     solver.factor(&sys.a).map_err(map_err)?;
     let mut x = sys.b;

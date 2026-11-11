@@ -18,6 +18,8 @@ pub enum Error {
     SourceLoop { elements: Vec<String> },
     /// The MNA matrix is singular at this unknown.
     Singular { unknown: String },
+    /// A bug in the engine, not a problem with the netlist.
+    Internal(String),
 }
 
 impl fmt::Display for Error {
@@ -39,6 +41,7 @@ impl fmt::Display for Error {
             Error::Singular { unknown } => {
                 write!(f, "singular system: no unique solution for {unknown}")
             }
+            Error::Internal(msg) => write!(f, "internal error: {msg}"),
         }
     }
 }

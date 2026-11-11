@@ -33,10 +33,14 @@ impl DenseMatrix {
     }
 
     /// Adds `v` to the entry at row `r`, column `c` (the stamping operation).
-    /// Out-of-range indices are ignored.
-    pub fn add(&mut self, r: usize, c: usize, v: f64) {
+    /// Returns `false`, leaving the matrix unchanged, when an index is out of
+    /// range.
+    pub fn add(&mut self, r: usize, c: usize, v: f64) -> bool {
         if r < self.n && c < self.n {
             self.data[r * self.n + c] += v;
+            true
+        } else {
+            false
         }
     }
 }
@@ -230,5 +234,47 @@ mod tests {
         let mut b = [1.0];
         assert_eq!(lu.solve(&mut b), Err(SolveError::DimensionMismatch));
         Ok(())
+    }
+
+    #[test]
+    fn refactor_replaces_previous() -> Result<(), Box<dyn Error>> {
+        let mut lu = DenseLu::new();
+        lu.factor(&matrix(&[&[2.0, 0.0], &[0.0, 2.0]]))?;
+        lu.factor(&matrix(&[&[4.0, 0.0], &[0.0, 5.0]]))?;
+        let mut b = [8.0, 10.0];
+        lu.solve(&mut b)?;
+        assert_eq!(b, [2.0, 2.0]);
+        Ok(())
+    }
+
+    #[test]
+    fn failed_factor_then_solve_is_not_factored() -> Result<(), Box<dyn Error>> {
+        let mut lu = DenseLu::new();
+        lu.factor(&matrix(&[&[1.0, 0.0], &[0.0, 1.0]]))?;
+        assert!(lu.factor(&matrix(&[&[1.0, 2.0], &[2.0, 4.0]])).is_err());
+        let mut b = [1.0, 1.0];
+        assert_eq!(lu.solve(&mut b), Err(SolveError::NotFactored));
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_solve_is_singular() -> Result<(), Box<dyn Error>> {
+        let mut lu = DenseLu::new();
+        lu.factor(&matrix(&[&[1e-300]]))?;
+        let mut b = [1e300];
+        assert_eq!(
+            lu.solve(&mut b),
+            Err(SolveError::SingularPivot { index: 0 })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn out_of_range_add_returns_false() {
+        let mut m = DenseMatrix::zeros(2);
+        assert!(m.add(1, 1, 1.0));
+        assert!(!m.add(2, 0, 1.0));
+        assert!(!m.add(0, 2, 1.0));
+        assert_eq!(m.get(1, 1), 1.0);
     }
 }

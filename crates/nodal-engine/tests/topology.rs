@@ -106,6 +106,30 @@ fn floating_control_port_names_controlling_element() -> TestResult {
 }
 
 #[test]
+fn floating_reported_before_loop() -> TestResult {
+    let e = err_of(&[
+        el("V", "V1", ["a", "0"], 1.0),
+        el("V", "V2", ["a", "0"], 2.0),
+        el("R", "R1", ["b", "c"], 1e3),
+    ])?;
+    assert_eq!(e, floating(&["b", "c"], &["R1"]));
+    Ok(())
+}
+
+#[test]
+fn vccs_control_port_is_not_a_dc_edge() -> TestResult {
+    let g1 = r#"{"kind":"G","name":"G1","nodes":["0","x"],"controlNodes":["in","0"],"gain":0.001}"#;
+    let e = err_of(&[
+        el("V", "V1", ["in", "0"], 1.0),
+        el("R", "R1", ["in", "0"], 1e3),
+        g1.to_string(),
+        el("R", "R2", ["x", "y"], 1e3),
+    ])?;
+    assert_eq!(e, floating(&["x", "y"], &["G1", "R2"]));
+    Ok(())
+}
+
+#[test]
 fn vsource_loop() -> TestResult {
     let e = err_of(&[
         el("V", "V1", ["a", "0"], 1.0),
