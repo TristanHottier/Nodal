@@ -16,7 +16,7 @@ Run these from the repository root.
 | Task | Command |
 |---|---|
 | Rust tests | `cargo test --workspace` |
-| Validation suite | n/a until M1 |
+| Validation suite | `cargo run -p nodal-cli -- validate validation` |
 | WASM build | `pnpm build:wasm` |
 | Web dev server | `pnpm --filter @nodal/web dev` |
 | Web tests | `pnpm test` and `pnpm --filter @nodal/web e2e` |

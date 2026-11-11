@@ -79,7 +79,10 @@ Rules:
 - Node `"0"` is ground. Other node names are free strings.
 - Values are SI base units as JSON numbers. Suffix parsing (`4.7k`, `10u`) happens only in the UI ([ADR 0009](adr/0009-value-notation.md)).
 - Device models (`D`, `NPN`, `PNP`, `NMOS`, `PMOS`, `SW`) are named entries in `models`, with SPICE parameter names.
-- Names are unique per element. Current-controlled sources reference a voltage source by name, as in SPICE.
+- Element names start with their kind letter (`R1`, `V1`).
+- Element names are unique, and so are node names. Both are compared ignoring case, because ngspice folds case.
+- An element's two nodes must differ.
+- Current-controlled sources reference a voltage source by name, as in SPICE.
 - Capacitors and inductors take an optional `ic` (initial voltage or current), used when the transient analysis sets `"uic": true`.
 - An optional top-level `nodeset` maps node names to initial guesses for the DC operating point. It is a starting point for Newton, not a constraint.
 

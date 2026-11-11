@@ -2,7 +2,7 @@
 
 Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
 
-> **Status: pre-alpha: M0 done (empty app shell deployed); no simulation yet.**
+> **Status: pre-alpha: M1 done (linear DC operating point in the CLI); no simulation in the browser yet.**
 > Live shell: https://tristanhottier.github.io/Nodal/
 > The repository now holds the M0 bootstrap (workspaces, CI, and the empty app shell). Nothing else described below exists yet unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
 

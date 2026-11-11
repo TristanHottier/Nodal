@@ -2,7 +2,7 @@
 
 How Nodal proves its numbers are right. Policy: [ADR 0008](adr/0008-ngspice-golden-validation.md).
 
-**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. No suite exists yet, so Nodal currently claims none.
+**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355).
 
 ## 1. Three kinds of check
 

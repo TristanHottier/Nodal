@@ -16,7 +16,7 @@ The engine comes first: the editor is only useful once the numbers it shows can 
 **Exit:** CI green on `main`; `https://tristanhottier.github.io/Nodal/` serves the shell, including a WASM module loaded from a worker; `AGENTS.md` command table filled in.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43087709851 (rust, web, deploy green); https://tristanhottier.github.io/Nodal/ returns 200 and shows `Engine 0.1.0`.
 
-### M1 — Linear DC engine · not started
+### M1 — Linear DC engine · done
 - Netlist IR types (Rust serde + TS Zod) with schema tests in both languages.
 - Devices: R, L (short), C (open), V, I, VCVS, VCCS, CCVS, CCCS.
 - MNA assembly, dense LU behind the `LinearSolver` trait, DC operating point.
@@ -25,6 +25,7 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4308770985
 - Validation harness: golden regeneration script, comparator, first reference circuits.
 
 **Exit:** reference circuits L1–L4 ([VALIDATION.md](VALIDATION.md)) pass against analytic values, and L1–L3 also against ngspice goldens; topology errors name the offending elements.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43115456912 (all jobs green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355) runs the L1–L4 analytic tests, the topology-error CLI test `run_reports_topology_error` and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/artifacts/13898615913) shows L1–L3 passing against ngspice.
 
 ### M2 — Nonlinear DC · not started
 - Diode, BJT (NPN/PNP), MOSFET Level 1 (N/P), voltage-controlled switch (DC behaviour).
