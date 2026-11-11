@@ -1,6 +1,6 @@
 // Fails if any built .html/.js/.css file references a root-relative URL
 // (a single leading "/") that is not under the "/Nodal/" base path.
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import process from "node:process";
 
@@ -9,6 +9,11 @@ const distDir = process.argv[2];
 if (!distDir) {
   process.stderr.write("Usage: node scripts/check-base-path.mjs <distDir>\n");
   process.exit(2);
+}
+
+if (!existsSync(join(distDir, "index.html"))) {
+  process.stderr.write(`check-base-path: no index.html in ${distDir}\n`);
+  process.exit(1);
 }
 
 function* walk(dir) {

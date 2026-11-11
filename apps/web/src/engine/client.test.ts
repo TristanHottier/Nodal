@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getEngineVersion } from "./client";
 
 class FakeWorker extends EventTarget {
@@ -43,5 +43,18 @@ describe("getEngineVersion", () => {
     const p = getEngineVersion({ worker: w.asWorker() });
     w.fail("script load failed");
     await expect(p).rejects.toThrow("script load failed");
+  });
+
+  describe("without an injected worker", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("rejects when the Worker constructor throws synchronously", async () => {
+      vi.stubGlobal("Worker", function () {
+        throw new Error("worker construction failed");
+      });
+      await expect(getEngineVersion()).rejects.toThrow("worker construction failed");
+    });
   });
 });

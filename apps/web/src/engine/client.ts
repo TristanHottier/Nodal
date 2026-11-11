@@ -5,13 +5,20 @@ export function getEngineVersion(
 ): Promise<string> {
   const timeoutMs = opts.timeoutMs ?? 10_000;
   const ownsWorker = opts.worker === undefined;
-  const worker =
-    opts.worker ??
-    new Worker(new URL("./engine.worker.ts", import.meta.url), {
-      type: "module",
-    });
 
   return new Promise<string>((resolve, reject) => {
+    // Constructed inside the executor so a synchronous throw becomes a rejection.
+    let worker: Worker;
+    try {
+      worker =
+        opts.worker ??
+        new Worker(new URL("./engine.worker.ts", import.meta.url), {
+          type: "module",
+        });
+    } catch (e) {
+      reject(e instanceof Error ? e : new Error(String(e)));
+      return;
+    }
     const cleanup = (): void => {
       clearTimeout(timer);
       worker.removeEventListener("message", onMessage);
