@@ -31,7 +31,7 @@ Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on
 | Engine | Rust library crate, compiled to WASM, run in a Web Worker; native CLI for tests |
 | Frontend | Vite, React, TypeScript, Zustand, SVG editor, uPlot |
 | Storage | IndexedDB in the browser; JSON files for import/export |
-| Hosting | Static site on Cloudflare Pages |
+| Hosting | Static site on GitHub Pages |
 | Validation | ngspice golden files, analytic checks, Jacobian finite-difference tests |
 
 ## Documentation

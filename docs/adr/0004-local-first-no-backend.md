@@ -1,6 +1,6 @@
 # 0004. Local-first with no backend
 
-- Status: Accepted
+- Status: Accepted; hosting amended by [0010](0010-github-pages-hosting.md)
 - Date: 2026-11-11
 
 ## Context
@@ -10,7 +10,7 @@ Nodal is a personal project with no budget for a hosted service. Its intended us
 - The application has no server component.
 - Projects are stored in the browser's IndexedDB.
 - Projects are exported and imported as `.nodal.json` files. Each file carries a `formatVersion` field, and the importer applies forward migrations from older versions.
-- The site is a static build, deployed to Cloudflare Pages.
+- The site is a static build. Hosting: see ADR 0010 (GitHub Pages).
 
 ## Consequences
 Positive:

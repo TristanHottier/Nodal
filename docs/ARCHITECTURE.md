@@ -168,7 +168,7 @@ Detected while solving:
 - One exported entry point: `run(netlist_json: &str, analysis_index: u32) -> Result`.
 - Results cross the boundary as `Float64Array`s, transferred (not copied) to the main thread.
 - The engine reports progress (fraction of `tstop` or sweep done) through a callback every N accepted points.
-- Cancel = terminate and respawn the worker. No `SharedArrayBuffer`, so no cross-origin isolation headers are needed.
+- Cancel = terminate and respawn the worker. No `SharedArrayBuffer`, so no cross-origin isolation headers are needed. GitHub Pages can't set those headers anyway ([ADR 0010](adr/0010-github-pages-hosting.md)).
 
 ## 6. Frontend (`apps/web`)
 
