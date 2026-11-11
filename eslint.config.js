@@ -26,6 +26,7 @@ export default tseslint.config(
             "apps/web/vite.config.ts",
             "apps/web/playwright.config.ts",
             "apps/web/e2e/*.ts",
+            "packages/schema/src/ir.test.ts",
           ],
           defaultProject: "apps/web/tsconfig.node.json",
         },
