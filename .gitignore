@@ -56,3 +56,4 @@ GEMINI.md
 .specstory/
 target/
 .superpowers/
+crates/nodal-wasm/pkg/

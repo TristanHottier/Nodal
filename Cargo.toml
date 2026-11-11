@@ -15,3 +15,7 @@ panic = "deny"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+[profile.release]
+opt-level = "s"
+lto = true
