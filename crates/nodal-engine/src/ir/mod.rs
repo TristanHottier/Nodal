@@ -259,7 +259,12 @@ pub fn sweep_values(start: f64, stop: f64, step: f64) -> Vec<f64> {
     }
     // k is an integer in [0, 1e9), so the cast is exact.
     let n = k as usize + 1;
-    (0..n).map(|i| start + i as f64 * step).collect()
+    let mut values: Vec<f64> = (0..n).map(|i| start + i as f64 * step).collect();
+    // Accumulated rounding must not leave the last point beside `stop`.
+    if let Some(last) = values.last_mut() {
+        *last = stop;
+    }
+    values
 }
 
 /// Simulator options. Unset fields take the defaults in the architecture doc.
@@ -297,6 +302,14 @@ mod tests {
         assert_eq!(v.len(), 101);
         assert!((v[100] - 5.0).abs() < 1e-12);
         assert_eq!(v[0], -5.0);
+    }
+
+    #[test]
+    fn sweep_values_end_exactly_at_stop() {
+        let v = sweep_values(3.3, 0.0, -0.1);
+        assert_eq!(v.len(), 34);
+        assert_eq!(v.last().copied(), Some(0.0));
+        assert_eq!(v[0], 3.3);
     }
 
     #[test]
