@@ -365,3 +365,25 @@ fn nodeset_selects_latch_state_like_ngspice() -> TestResult {
     assert!(close(b.node_voltages["c2"], low, 1e-8), "{b:?}");
     Ok(())
 }
+
+/// A PNP held off through 1 GOhm resistors: only gmin matters. ngspice puts
+/// the PNP substrate junction (gmin) from the base to ground (lateral
+/// substrate, the PNP default), so V(b) sits below the supply by the drop
+/// across RB. Pinned ngspice-42 results for the exported deck: V(b) =
+/// 4.995015, V(c) = 4.999995 (a collector-to-ground gmin would give V(b)
+/// close to 5 and V(c) near 4.995).
+#[test]
+fn pnp_substrate_gmin_goes_base_to_ground() -> TestResult {
+    let r = run(r#"{"irVersion":1,"elements":[
+        {"kind":"V","name":"V1","nodes":["e","0"],"dc":5},
+        {"kind":"R","name":"RB","nodes":["e","b"],"value":1e9},
+        {"kind":"R","name":"RC","nodes":["e","c"],"value":1e9},
+        {"kind":"Q","name":"Q1","nodes":["c","b","e"],"model":"QP"}],
+        "models":[{"name":"QP","type":"PNP","params":{"IS":1e-16,"BF":100}}],
+        "analyses":[{"type":"op"}],
+        "options":{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}}"#)?;
+    let (vb, vc) = (r.node_voltages["b"], r.node_voltages["c"]);
+    assert!(close(vb, 4.995015, 1e-8), "V(b) = {vb}");
+    assert!(close(vc, 4.999995, 1e-8), "V(c) = {vc}");
+    Ok(())
+}

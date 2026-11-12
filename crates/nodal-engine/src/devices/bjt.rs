@@ -5,7 +5,8 @@
 //! `bjtconv.c`, with the deliberate difference noted on `Device::converged`.
 //! Only the terminal nodes exist: `RB = RC = RE = 0`, there is no
 //! quasi-saturation, and the substrate node is ground (the default vertical
-//! device), so the only substrate term is `gmin` from collector to ground.
+//! device for NPN, lateral for PNP), so the only substrate term is `gmin`
+//! from the collector (NPN) or the base (PNP) to ground.
 
 use std::f64::consts::E;
 
@@ -198,10 +199,11 @@ impl Device for Bjt {
     //   Ic_eq = Ic - a vbe0 - b vbc0,   Ib_eq = Ib - c vbe0 - d vbc0
     // which move to the right-hand side: b[C] -= Ic_eq, b[B] -= Ib_eq,
     // b[E] += Ic_eq + Ib_eq. This equals the ceqbe/ceqbc loading of bjtload.c.
-    // The substrate junction of the default vertical device is gmin from the
-    // collector to ground (gdsub = gmin, cdsub = gmin vsub with
-    // vsub = type (0 - Vc)); it is linear, so ceqsub = 0 and only the
-    // conductance is stamped.
+    // The substrate junction is gmin from the substrate connection node to
+    // ground (gdsub = gmin, cdsub = gmin vsub with vsub = type (0 - Vsc)); it
+    // is linear, so ceqsub = 0 and only the conductance is stamped. ngspice
+    // defaults an NPN to the vertical substrate (connection at the
+    // collector) and a PNP to the lateral one (connection at the base).
     fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool {
         let p = &self.params;
         let s = self.sign;
@@ -242,8 +244,10 @@ impl Device for Bjt {
         sys.add_b(c, -ic_eq);
         sys.add_b(b, -ib_eq);
         sys.add_b(em, ic_eq + ib_eq);
-        // Substrate gmin, collector to ground.
-        sys.add_a(c, c, ctx.gmin);
+        // Substrate gmin to ground, from the collector (NPN, vertical) or the
+        // base (PNP, lateral).
+        let sub = if s > 0.0 { c } else { b };
+        sys.add_a(sub, sub, ctx.gmin);
         limited
     }
 
