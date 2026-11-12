@@ -57,7 +57,7 @@ pub struct Circuit {
     pub state_offsets: Vec<usize>,
     /// Tolerances and gmin from the netlist options.
     pub options: SolverOptions,
-    /// Initial guesses from `nodeset`, as (unknown index, volts).
+    /// Nodeset entries (held during the first Newton solve), as (unknown index, volts).
     pub nodeset: Vec<(usize, f64)>,
     node_index: HashMap<String, usize>,
     branch_index: HashMap<String, usize>,

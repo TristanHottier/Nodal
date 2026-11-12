@@ -86,7 +86,7 @@ Rules:
 - An element's two nodes must differ.
 - Current-controlled sources reference a voltage source by name, as in SPICE.
 - Capacitors and inductors take an optional `ic` (initial voltage or current), used when the transient analysis sets `"uic": true`.
-- An optional top-level `nodeset` maps node names to initial guesses for the DC operating point. It is a starting point for Newton, not a constraint.
+- An optional top-level `nodeset` maps node names to initial guesses for the DC operating point. The engine holds each listed node near its value during the first Newton solve, then releases it, so it picks among valid solutions but does not constrain the final answer (numerical-methods §1.4).
 
 ## 4. Engine (`nodal-engine`)
 

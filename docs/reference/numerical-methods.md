@@ -39,7 +39,7 @@ In addition, no device may have applied limiting during this iteration.
 
 ### 1.4 DC fallbacks, tried in order
 
-1. **Plain Newton** from $x = 0$, or from the user's nodeset.
+1. **Plain Newton** from $x = 0$. If the netlist has a `nodeset`, it is held as in ngspice (`cktload.c`, `niiter.c`). The first iteration loads devices in their initial-junction state, and every iteration up to and including the first one that converges by the usual test also adds $10^{10}$ S from each nodeset node to ground and $10^{10}\,v\,\alpha$ to its right-hand side, where $v$ is the nodeset value and $\alpha$ the source factor. The hold then ends, and plain Newton continues until it converges again, at least one more iteration later. A nodeset therefore selects among several valid solutions (for example the state of a latch) but is not a constraint on the final answer. Without a nodeset none of this applies. The stepping stages below hold the nodeset in the same way during their first solve.
 2. **gmin stepping:** add a large conductance (start at $10^{-2}$ S) from every node to ground. Solve, then divide it by 10, reusing the previous solution as the starting point, until it reaches `gmin`. If a step fails, backtrack with a smaller factor.
 3. **Source stepping:** scale all independent sources by $\alpha$, ramping $\alpha$ from 0 to 1. Solve at each $\alpha$ from the previous solution; shrink the $\alpha$ increment on failure.
 

@@ -127,10 +127,7 @@ fn solve_point(
             }
         }
     }
-    let mut x0 = vec![0.0; circuit.unknown_count()];
-    for &(i, v) in &circuit.nodeset {
-        x0[i] = v;
-    }
+    let x0 = vec![0.0; circuit.unknown_count()];
     let mut state = vec![0.0; circuit.state_len()];
     let strategy = if plain_allowed {
         Strategy::All

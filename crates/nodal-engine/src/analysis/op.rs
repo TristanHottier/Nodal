@@ -17,8 +17,8 @@ pub struct OpResult {
     pub branch_currents: BTreeMap<String, f64>,
 }
 
-/// Solves the DC operating point of `circuit`: Newton from zero (or from
-/// the nodeset), then gmin stepping, then source stepping.
+/// Solves the DC operating point of `circuit`: Newton from zero with the
+/// nodeset held (numerical-methods.md section 1.4), then gmin stepping, then source stepping.
 pub fn solve_op(circuit: &Circuit) -> Result<OpResult, Error> {
     let (result, _) = solve_op_counted(circuit);
     result
@@ -26,10 +26,7 @@ pub fn solve_op(circuit: &Circuit) -> Result<OpResult, Error> {
 
 /// `solve_op` plus the Newton iteration count of the run.
 pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, usize) {
-    let mut x0 = vec![0.0; circuit.unknown_count()];
-    for &(i, v) in &circuit.nodeset {
-        x0[i] = v;
-    }
+    let x0 = vec![0.0; circuit.unknown_count()];
     let mut state = vec![0.0; circuit.state_len()];
     let (outcome, iterations) = solve_dc_counted(
         circuit,

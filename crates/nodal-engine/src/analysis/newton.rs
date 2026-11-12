@@ -17,10 +17,14 @@ pub(crate) struct NewtonConfig {
     pub diag_gmin: f64,
     /// Factor applied to independent sources.
     pub source_factor: f64,
-    /// Load the first iteration in `InitJunction` mode.
+    /// Load the first iteration in `InitJunction` mode. With a nodeset in the
+    /// circuit this also starts the nodeset hold (see `newton_counted`).
     pub init_junction: bool,
     pub max_iter: usize,
 }
+
+/// Conductance of the nodeset hold, cktload.c.
+const NODESET_CONDUCTANCE: f64 = 1.0e10;
 
 /// `itl1`: Newton iteration limit for DC.
 pub(crate) const ITL1: usize = 100;
@@ -85,6 +89,13 @@ pub(crate) fn newton_counted(
     }
     let mut solver = DenseLu::new();
     let mut last_update = vec![0.0; n];
+    // Nodeset hold, ported from cktload.c (nodesets are enforced during
+    // MODEINITJCT and MODEINITFIX) and niiter.c (MODEINITFIX lasts until an
+    // iteration converges, then MODEINITFLOAT starts with `ipass` set, which
+    // forces one more non-converged iteration). `holding` covers ngspice's
+    // INITJCT and INITFIX phases; `released` is the `ipass` flag.
+    let mut holding = cfg.init_junction && !circuit.nodeset.is_empty();
+    let mut released = false;
     for iter in 1..=cfg.max_iter {
         let mode = if iter == 1 && cfg.init_junction {
             LoadMode::InitJunction
@@ -103,6 +114,14 @@ pub(crate) fn newton_counted(
         for (device, &offset) in circuit.devices.iter().zip(&circuit.state_offsets) {
             let slice = &mut state[offset..offset + device.state_len()];
             limited |= device.load(&x, slice, &ctx, &mut sys);
+        }
+        if holding {
+            // cktload.c, "original CIDER fix" form: 1e10 S from the node to
+            // ground and 1e10 * value * srcFact on the right-hand side.
+            for &(i, value) in &circuit.nodeset {
+                sys.add_a(Some(i), Some(i), NODESET_CONDUCTANCE);
+                sys.add_b(Some(i), NODESET_CONDUCTANCE * value * cfg.source_factor);
+            }
         }
         if cfg.diag_gmin != 0.0 {
             for i in 0..voltages {
@@ -149,7 +168,18 @@ pub(crate) fn newton_counted(
                     device.converged(&x_new, slice, &ctx)
                 });
         x = x_new;
-        if converged {
+        if holding {
+            // niiter.c MODEINITJCT / MODEINITFIX: never accept while held.
+            // The first iteration that converges ends the hold.
+            if converged {
+                holding = false;
+                released = true;
+            }
+        } else if released {
+            // niiter.c: `if (ipass) CKTnoncon = ipass`, the first iteration
+            // after the hold is not accepted.
+            released = false;
+        } else if converged {
             return (Ok(x), iter);
         }
     }
@@ -242,7 +272,7 @@ fn gmin_stepping(
         let cfg = NewtonConfig {
             diag_gmin: g,
             source_factor: 1.0,
-            init_junction: !have_good && circuit.nodeset.is_empty(),
+            init_junction: !have_good,
             max_iter: ITL1,
         };
         let before = *iters;
@@ -434,10 +464,7 @@ pub(crate) fn solve_dc_counted(
     let mut iters = 0;
     let mut last: Option<Box<StageFailure>> = None;
     if strategy == Strategy::All {
-        let cfg = NewtonConfig {
-            init_junction: circuit.nodeset.is_empty(),
-            ..NewtonConfig::default()
-        };
+        let cfg = NewtonConfig::default();
         match attempt(circuit, x0, state, &cfg, &mut iters) {
             Ok(x) => return (Ok(x), iters),
             Err(f) => match f.failure.error {

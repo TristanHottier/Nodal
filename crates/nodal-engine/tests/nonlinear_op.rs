@@ -331,3 +331,37 @@ fn switch_roff_follows_gmin() -> TestResult {
     assert!(close(got, 10.0, 1e-8), "V(out) = {got}, want 10");
     Ok(())
 }
+
+/// Cross-coupled NPN latch. The nodeset picks the state, as in ngspice where
+/// the nodeset is held through the first converged iterations (cktload.c,
+/// niiter.c). Reference values are ngspice-42 results for the exported deck
+/// (`export-spice`, then `run; print v(c1) v(c2)`).
+fn latch(nodeset: &str) -> Result<OpResult, Box<dyn Error>> {
+    run(&format!(
+        r#"{{"irVersion":1,"elements":[
+        {{"kind":"V","name":"VCC","nodes":["vcc","0"],"dc":5}},
+        {{"kind":"R","name":"RC1","nodes":["vcc","c1"],"value":1000}},
+        {{"kind":"R","name":"RC2","nodes":["vcc","c2"],"value":1000}},
+        {{"kind":"R","name":"RB1","nodes":["c2","b1"],"value":10000}},
+        {{"kind":"R","name":"RB2","nodes":["c1","b2"],"value":10000}},
+        {{"kind":"Q","name":"Q1","nodes":["c1","b1","0"],"model":"QN"}},
+        {{"kind":"Q","name":"Q2","nodes":["c2","b2","0"],"model":"QN"}}],
+        "models":[{{"name":"QN","type":"NPN","params":{{"IS":1e-15,"BF":100}}}}],
+        "nodeset":{nodeset},
+        "analyses":[{{"type":"op"}}],
+        "options":{{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}}}}"#
+    ))
+}
+
+#[test]
+fn nodeset_selects_latch_state_like_ngspice() -> TestResult {
+    let low = 7.319658e-2;
+    let high = 4.614470;
+    let a = latch(r#"{"c1":0.1,"c2":5}"#)?;
+    assert!(close(a.node_voltages["c1"], low, 1e-8), "{a:?}");
+    assert!(close(a.node_voltages["c2"], high, 1e-8), "{a:?}");
+    let b = latch(r#"{"c1":5,"c2":0.1}"#)?;
+    assert!(close(b.node_voltages["c1"], high, 1e-8), "{b:?}");
+    assert!(close(b.node_voltages["c2"], low, 1e-8), "{b:?}");
+    Ok(())
+}
