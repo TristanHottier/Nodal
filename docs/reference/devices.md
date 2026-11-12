@@ -169,7 +169,7 @@ Conductances, with $V_{ov} = V_{gs} - V_{th}$:
 | Triode | $\beta\, V_{ds}\,(1+\lambda V_{ds})$ | $\beta\,(V_{ov} - V_{ds})(1+\lambda V_{ds}) + \beta\lambda\left(V_{ov} - \dfrac{V_{ds}}{2}\right)V_{ds}$ |
 | Saturation | $\beta\, V_{ov}\,(1+\lambda V_{ds})$ | $\dfrac{\beta}{2}\, V_{ov}^2\,\lambda$ |
 
-Body transconductance: $g_{mbs} = g_m \cdot \dfrac{\gamma}{2\,s(V_{bs})}$ when $\gamma > 0$ and $s > 0$; otherwise $0$. The Jacobian tests include a $V_{bs} > 0$ case.
+Body transconductance, when $\gamma > 0$ and $s > 0$: $g_{mbs} = g_m \cdot \dfrac{\gamma}{2\,s(V_{bs})}$ for $V_{bs} \le 0$, and $g_{mbs} = g_m \cdot \dfrac{\gamma}{2\sqrt{\phi}}$ for $V_{bs} > 0$; otherwise $0$. The $V_{bs} > 0$ value is the exact derivative of the clamped expression for $s$. It differs from `mos1load.c`, which uses $g_m\,\gamma / (2\,s)$ in every branch. This changes only the Newton matrix, not the converged solution. The Jacobian tests include a $V_{bs} > 0$ case.
 
 **PMOS:** evaluate with all terminal voltages negated, $V_{TO} \to -V_{TO}$, then negate $I_d$.
 

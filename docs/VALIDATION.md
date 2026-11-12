@@ -2,7 +2,7 @@
 
 How Nodal proves its numbers are right. Policy: [ADR 0008](adr/0008-ngspice-golden-validation.md).
 
-**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355).
+**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355). N1–N5 match ngspice within the §3 tolerances, and the Jacobian tests of §5 pass for the diode, BJT, MOSFET and switch; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43127904416/job/130884551641).
 
 ## 1. Three kinds of check
 
@@ -91,6 +91,8 @@ For each nonlinear device, in each operating region (diode: reverse, weak and st
 - Evaluate the analytic conductances at a bias point.
 - Compare them with central differences of the device current, step $h = 10^{-6}\,\text{V}$ (scaled by $V_t$ for junctions).
 - Pass if the relative error is ≤ 1e-5, or the absolute error is ≤ 1e-15 S when the conductance is near zero.
+
+The step is 1e-6 V (1e-6·Vt for junction voltages). A test may use a larger step, up to 1e-3·Vt, when a conductance near gmin would otherwise be lost in rounding; the 1e-5 and 1e-15 S pass criteria are unchanged.
 
 ## 6. What CI runs
 

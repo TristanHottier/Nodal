@@ -27,12 +27,13 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4308770985
 **Exit:** reference circuits L1–L4 ([VALIDATION.md](VALIDATION.md)) pass against analytic values, and L1–L3 also against ngspice goldens; topology errors name the offending elements.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43115456912 (all jobs green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355) runs the L1–L4 analytic tests, the topology-error CLI test `run_reports_topology_error` and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/artifacts/13898615913) shows L1–L3 passing against ngspice.
 
-### M2 — Nonlinear DC · not started
+### M2 — Nonlinear DC · done
 - Diode, BJT (NPN/PNP), MOSFET Level 1 (N/P), voltage-controlled switch (DC behaviour).
 - Newton–Raphson with junction limiting; gmin stepping and source stepping fallbacks.
 - DC sweep.
 
 **Exit:** finite-difference Jacobian tests pass for every nonlinear device in every operating region; circuits N1–N5 pass.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43127904416 at 787cf66 (rust, web, deploy green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/43127904416/job/130884551641) runs the Jacobian tests for the diode, BJT, MOSFET and switch, and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/43127904416/artifacts/13903985991) shows N1, N2, N3-vgs1..3, N4 and N5 passing against ngspice-42.
 
 ### M3 — AC analysis · not started
 - Complex MNA assembly; small-signal models of all devices, including junction and overlap capacitances.
