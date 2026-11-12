@@ -9,6 +9,7 @@ pub mod diode;
 mod inductor;
 mod isource;
 pub mod limit;
+pub mod mos1;
 mod resistor;
 mod vccs;
 mod vcvs;
@@ -16,7 +17,7 @@ mod vsource;
 
 use crate::circuit::Circuit;
 use crate::error::Error;
-use crate::ir::{Element, Model, ModelKind};
+use crate::ir::{Element, MOS_DEFAULT_SIZE, Model, ModelKind, param};
 use crate::mna::RealSystem;
 
 pub use bjt::{Bjt, BjtParams};
@@ -26,6 +27,7 @@ pub use ccvs::Ccvs;
 pub use diode::{Diode, DiodeParams};
 pub use inductor::Inductor;
 pub use isource::CurrentSource;
+pub use mos1::{Mos1, Mos1Params};
 pub use resistor::Resistor;
 pub use vccs::Vccs;
 pub use vcvs::Vcvs;
@@ -139,7 +141,7 @@ pub(crate) fn instantiate(
     element: &Element,
     models: &[Model],
 ) -> Result<Box<dyn Device>, Error> {
-    if let Element::M { .. } | Element::S { .. } = element {
+    if let Element::S { .. } = element {
         return Err(Error::Invalid(format!(
             "{} elements are not simulated yet",
             element.kind_letter()
@@ -160,6 +162,30 @@ pub(crate) fn instantiate(
             ],
             model.kind == ModelKind::PNP,
             BjtParams::from_model(model),
+        )));
+    }
+    if let Element::M {
+        nodes, model, w, l, ..
+    } = element
+    {
+        let name = element.name().to_string();
+        let model = models
+            .iter()
+            .find(|m| m.name == *model && matches!(m.kind, ModelKind::NMOS | ModelKind::PMOS))
+            .ok_or_else(|| Error::Invalid(format!("{name}: unknown MOSFET model {model}")))?;
+        let w = w.unwrap_or(MOS_DEFAULT_SIZE);
+        let l = l.unwrap_or(MOS_DEFAULT_SIZE);
+        return Ok(Box::new(Mos1::new(
+            name,
+            [
+                node(circuit, &nodes[0]),
+                node(circuit, &nodes[1]),
+                node(circuit, &nodes[2]),
+                node(circuit, &nodes[3]),
+            ],
+            model.kind == ModelKind::PMOS,
+            Mos1Params::from_model(model),
+            param(model, "KP") * w / l,
         )));
     }
     let (p, n) = match element.nodes() {

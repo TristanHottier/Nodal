@@ -182,3 +182,92 @@ fn pnp_circuit_mirrors_npn() -> TestResult {
     ));
     Ok(())
 }
+
+fn mos_netlist(elements: &str, kind: &str, lambda: f64) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[{elements}],"models":[{{"name":"MM","type":"{kind}","params":{{"VTO":{vto},"KP":1e-4,"GAMMA":0.4,"PHI":0.65,"LAMBDA":{lambda}}}}}],"analyses":[{{"type":"op"}}]}}"#,
+        vto = if kind == "PMOS" { -0.7 } else { 0.7 },
+    )
+}
+
+const MOS_W_L: &str = r#""w":100e-6,"l":10e-6"#;
+
+#[test]
+fn nmos_saturation_analytic() -> TestResult {
+    let els = format!(
+        r#"{},{},{{"kind":"M","name":"M1","nodes":["d","g","0","0"],"model":"MM",{MOS_W_L}}}"#,
+        r#"{"kind":"V","name":"V1","nodes":["g","0"],"dc":2}"#,
+        r#"{"kind":"V","name":"V2","nodes":["d","0"],"dc":3}"#,
+    );
+    let r = run(&mos_netlist(&els, "NMOS", 0.02))?;
+    let beta = 1e-3;
+    // gmin is stamped drain to source, so V2 also supplies gmin * 3.
+    let want = -(beta / 2.0 * 1.3 * 1.3 * (1.0 + 0.02 * 3.0) + 1e-12 * 3.0);
+    let got = r.branch_currents["V2"];
+    assert!(close(got, want, 1e-13), "I(V2) = {got}, want {want}");
+    assert!(close(r.branch_currents["V1"], 0.0, 1e-13));
+    Ok(())
+}
+
+#[test]
+fn diode_connected_nmos() -> TestResult {
+    let els = format!(
+        r#"{},{{"kind":"M","name":"M1","nodes":["a","a","0","0"],"model":"MM",{MOS_W_L}}}"#,
+        r#"{"kind":"I","name":"I1","nodes":["0","a"],"dc":1e-4}"#,
+    );
+    let r = run(&mos_netlist(&els, "NMOS", 0.0))?;
+    // 1e-4 = beta/2 (V - VTO)^2 + gmin V, solved by bisection above VTO.
+    let f = |v: f64| 1e-3 / 2.0 * (v - 0.7) * (v - 0.7) + 1e-12 * v - 1e-4;
+    let (mut lo, mut hi) = (0.7_f64, 3.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let got = r.node_voltages["a"];
+    assert!(close(got, lo, 1e-8), "V(a) = {got}, want {lo}");
+    assert!(
+        (lo - (0.7 + (2.0_f64 * 1e-4 / 1e-3).sqrt())).abs() < 1e-6,
+        "gmin only shifts the closed form slightly"
+    );
+    Ok(())
+}
+
+#[test]
+fn pmos_circuit_mirrors_nmos() -> TestResult {
+    let nmos = format!(
+        r#"{},{},{{"kind":"M","name":"M1","nodes":["d","g","0","0"],"model":"MM",{MOS_W_L}}}"#,
+        r#"{"kind":"V","name":"V1","nodes":["g","0"],"dc":2}"#,
+        r#"{"kind":"V","name":"V2","nodes":["d","0"],"dc":1}"#,
+    );
+    let pmos = nmos
+        .replace(r#""dc":2"#, r#""dc":-2"#)
+        .replace(r#""dc":1}"#, r#""dc":-1}"#);
+    let n = run(&mos_netlist(&nmos, "NMOS", 0.02))?;
+    let p = run(&mos_netlist(&pmos, "PMOS", 0.02))?;
+    assert!(close(
+        p.branch_currents["V2"],
+        -n.branch_currents["V2"],
+        1e-13
+    ));
+    Ok(())
+}
+
+#[test]
+fn nmos_reverse_conduction() -> TestResult {
+    // Drain below source: the device conducts from source to drain, and the
+    // body effect uses the (now source-side) drain voltage.
+    let els = format!(
+        r#"{},{},{{"kind":"M","name":"M1","nodes":["d","g","s","0"],"model":"MM",{MOS_W_L}}}"#,
+        r#"{"kind":"V","name":"V1","nodes":["g","0"],"dc":2}"#,
+        r#"{"kind":"V","name":"V2","nodes":["d","0"],"dc":0}"#,
+    ) + r#",{"kind":"V","name":"V3","nodes":["s","0"],"dc":0.5}"#;
+    let r = run(&mos_netlist(&els, "NMOS", 0.02))?;
+    let i = r.branch_currents["V2"];
+    // Current leaves the "source" node s and enters the "drain" d: V2 absorbs it.
+    assert!(i > 0.0, "I(V2) = {i}");
+    Ok(())
+}

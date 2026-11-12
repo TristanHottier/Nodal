@@ -139,3 +139,101 @@ fn pnp_mirrors_npn() {
     assert_eq!(q.dib_dvbe, n.dib_dvbe);
     assert_eq!(q.dib_dvbc, n.dib_dvbc);
 }
+
+use nodal_engine::devices::mos1::{Mos1Params, eval as mos_eval, terminal as mos_terminal};
+
+fn mos_params() -> Mos1Params {
+    Mos1Params {
+        vto: 0.7,
+        gamma: 0.4,
+        phi: 0.65,
+        lambda: 0.02,
+    }
+}
+
+/// beta = KP W / L = 1e-4 * 10.
+const MOS_BETA: f64 = 1e-3;
+const MOS_H: f64 = 1e-6;
+
+/// Checks gm, gds and gmbs of the NMOS evaluation against central differences
+/// of the drain current, h = 1e-6 V.
+fn mos_case(vgs: f64, vds: f64, vbs: f64) {
+    let p = mos_params();
+    let e = mos_eval(vgs, vds, vbs, &p, MOS_BETA);
+    let f = |g: f64, d: f64, b: f64| mos_eval(g, d, b, &p, MOS_BETA).id;
+    check(|x| f(x, vds, vbs), e.gm, vgs, MOS_H);
+    check(|x| f(vgs, x, vbs), e.gds, vds, MOS_H);
+    check(|x| f(vgs, vds, x), e.gmbs, vbs, MOS_H);
+}
+
+#[test]
+fn mos_cutoff() {
+    mos_case(0.3, 1.0, 0.0);
+}
+
+#[test]
+fn mos_triode() {
+    mos_case(2.0, 0.5, 0.0);
+}
+
+#[test]
+fn mos_saturation() {
+    mos_case(2.0, 3.0, 0.0);
+}
+
+#[test]
+fn mos_vbs_positive() {
+    mos_case(2.0, 3.0, 0.2);
+    mos_case(2.0, 0.5, 0.2);
+}
+
+#[test]
+fn mos_vbs_negative() {
+    mos_case(2.0, 3.0, -1.0);
+    mos_case(2.0, 0.5, -1.0);
+}
+
+/// Reverse mode (vds < 0), checked through the terminal drain current and
+/// its partials with respect to vgs, vds, vbs (the quantities `Mos1::load`
+/// stamps).
+#[test]
+fn mos_reverse_vds() {
+    let p = mos_params();
+    let (vgs, vds, vbs) = (2.0, -0.5, -0.3);
+    let e = mos_terminal(1.0, vgs, vds, vbs, &p, MOS_BETA);
+    assert!(e.id < 0.0, "current flows source to drain");
+    let f = |g: f64, d: f64, b: f64| mos_terminal(1.0, g, d, b, &p, MOS_BETA).id;
+    check(|x| f(x, vds, vbs), e.gm, vgs, MOS_H);
+    check(|x| f(vgs, x, vbs), e.gds, vds, MOS_H);
+    check(|x| f(vgs, vds, x), e.gmbs, vbs, MOS_H);
+}
+
+#[test]
+fn pmos_saturation() {
+    let p = Mos1Params {
+        vto: -0.7,
+        ..mos_params()
+    };
+    let (vgs, vds, vbs) = (-2.0, -3.0, 0.0);
+    let e = mos_terminal(-1.0, vgs, vds, vbs, &p, MOS_BETA);
+    let n = mos_eval(2.0, 3.0, 0.0, &mos_params(), MOS_BETA);
+    assert_eq!(e.id, -n.id);
+    let f = |g: f64, d: f64, b: f64| mos_terminal(-1.0, g, d, b, &p, MOS_BETA).id;
+    check(|x| f(x, vds, vbs), e.gm, vgs, MOS_H);
+    check(|x| f(vgs, x, vbs), e.gds, vds, MOS_H);
+    check(|x| f(vgs, vds, x), e.gmbs, vbs, MOS_H);
+}
+
+#[test]
+fn mos_current_continuous_at_vdsat() {
+    let p = mos_params();
+    // vbs = 0: Vth = VTO, so vdsat = 2 - 0.7. The slope gds (about 2e-5 S)
+    // times the 2e-12 V gap stays below the 1e-12 relative tolerance.
+    let vdsat = 1.3;
+    let below = mos_eval(2.0, vdsat - 1e-12, 0.0, &p, MOS_BETA).id;
+    let above = mos_eval(2.0, vdsat + 1e-12, 0.0, &p, MOS_BETA).id;
+    assert!(
+        (above - below).abs() <= 1e-12 * above.abs(),
+        "{below} {above}"
+    );
+}
