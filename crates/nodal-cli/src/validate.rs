@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use nodal_engine::analysis::OpResult;
+use nodal_engine::analysis::{DcResult, OpResult};
 use nodal_engine::{AnalysisResult, simulate};
 
 /// Absolute tolerance floor for voltages, in volts (VALIDATION.md section 3).
@@ -96,6 +96,111 @@ pub fn compare_op(golden: &[(String, f64)], result: &OpResult) -> Comparison {
     Comparison { checks }
 }
 
+/// A DC sweep golden: signal names and one row of values per sweep point.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DcGolden {
+    pub sweep: Vec<f64>,
+    /// `V(node)` or `I(element)`, in column order.
+    pub signals: Vec<String>,
+    /// `columns[k][p]` is the value of `signals[k]` at point `p`.
+    pub columns: Vec<Vec<f64>>,
+}
+
+/// Tolerance on a sweep value: `1e-9 * max(1, |x|)`.
+fn sweep_tolerance(reference: f64) -> f64 {
+    1e-9 * reference.abs().max(1.0)
+}
+
+/// Compares a sweep result with a golden. The returned checks hold `sweep`
+/// first, then one entry per signal with the worst ratio over all points.
+/// A different point count fails the `sweep` check outright.
+pub fn compare_dc(golden: &DcGolden, result: &DcResult) -> Comparison {
+    let mut checks = Vec::new();
+    let sweep_ratio = if golden.sweep.len() == result.sweep.len() {
+        golden
+            .sweep
+            .iter()
+            .zip(&result.sweep)
+            .map(|(r, x)| (x - r).abs() / sweep_tolerance(*r))
+            .fold(0.0, worst)
+    } else {
+        f64::INFINITY
+    };
+    checks.push(SignalCheck {
+        signal: "sweep".to_string(),
+        status: status_of_ratio(sweep_ratio),
+        ratio: sweep_ratio,
+    });
+    let same_length = golden.sweep.len() == result.sweep.len();
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for (signal, column) in golden.signals.iter().zip(&golden.columns) {
+        seen.insert(signal);
+        let (series, floor) = match signal_parts(signal) {
+            Some(('V', name)) => (result.node_voltages.get(name), V_ABS),
+            Some(('I', name)) => (result.branch_currents.get(name), I_ABS),
+            _ => (None, 0.0),
+        };
+        let check = match series {
+            Some(series) if same_length && series.len() == column.len() => {
+                let ratio = column
+                    .iter()
+                    .zip(series)
+                    .map(|(r, x)| (x - r).abs() / (REL * r.abs() + floor))
+                    .fold(0.0, worst);
+                SignalCheck {
+                    signal: signal.clone(),
+                    status: status_of_ratio(ratio),
+                    ratio: if ratio.is_nan() { f64::INFINITY } else { ratio },
+                }
+            }
+            Some(_) => SignalCheck {
+                signal: signal.clone(),
+                status: Status::Fail,
+                ratio: f64::INFINITY,
+            },
+            None => SignalCheck {
+                signal: signal.clone(),
+                status: Status::Missing,
+                ratio: f64::INFINITY,
+            },
+        };
+        checks.push(check);
+    }
+    let produced = result
+        .node_voltages
+        .keys()
+        .map(|n| format!("V({n})"))
+        .chain(result.branch_currents.keys().map(|n| format!("I({n})")));
+    for signal in produced {
+        if !seen.contains(signal.as_str()) {
+            checks.push(SignalCheck {
+                signal,
+                status: Status::Extra,
+                ratio: f64::INFINITY,
+            });
+        }
+    }
+    Comparison { checks }
+}
+
+/// Larger of two ratios, where NaN wins so that it cannot hide.
+fn worst(a: f64, b: f64) -> f64 {
+    if a.is_nan() || b.is_nan() {
+        f64::NAN
+    } else {
+        a.max(b)
+    }
+}
+
+fn status_of_ratio(ratio: f64) -> Status {
+    // A NaN ratio must not pass: `ratio <= 1.0` is false for NaN.
+    if ratio <= 1.0 {
+        Status::Pass
+    } else {
+        Status::Fail
+    }
+}
+
 /// Splits `V(out)` into `('V', "out")`.
 fn signal_parts(signal: &str) -> Option<(char, &str)> {
     let kind = signal.chars().next()?;
@@ -133,8 +238,71 @@ fn parse_golden(text: &str) -> Result<Vec<(String, f64)>, String> {
     Ok(rows)
 }
 
+/// Reads a `sweep,<signal>,...` golden: one row per point.
+fn parse_dc_golden(text: &str) -> Result<DcGolden, String> {
+    let mut header: Option<Vec<String>> = None;
+    let mut columns: Vec<Vec<f64>> = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let fields: Vec<&str> = line.split(',').collect();
+        let Some(names) = &header else {
+            if fields.first() != Some(&"sweep") || fields.len() < 2 {
+                return Err(format!(
+                    "line {}: expected `sweep,<signal>,...` header",
+                    index + 1
+                ));
+            }
+            columns = vec![Vec::new(); fields.len()];
+            header = Some(fields.iter().map(|f| (*f).to_string()).collect());
+            continue;
+        };
+        if fields.len() != names.len() {
+            return Err(format!(
+                "line {}: expected {} fields, found {}",
+                index + 1,
+                names.len(),
+                fields.len()
+            ));
+        }
+        for (column, field) in columns.iter_mut().zip(&fields) {
+            let value: f64 = field
+                .parse()
+                .map_err(|_| format!("line {}: bad number `{field}`", index + 1))?;
+            column.push(value);
+        }
+    }
+    let names = header.ok_or("missing `sweep,...` header")?;
+    let mut columns = columns.into_iter();
+    let sweep = columns.next().unwrap_or_default();
+    Ok(DcGolden {
+        sweep,
+        signals: names.into_iter().skip(1).collect(),
+        columns: columns.collect(),
+    })
+}
+
+/// Which analysis a golden file belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Kind {
+    Op,
+    Dc,
+}
+
+impl Kind {
+    fn name(self) -> &'static str {
+        match self {
+            Kind::Op => "op",
+            Kind::Dc => "dc",
+        }
+    }
+}
+
 struct Row {
     circuit: String,
+    kind: Kind,
     outcome: Outcome,
 }
 
@@ -154,22 +322,39 @@ impl Row {
     }
 }
 
-fn check_golden(dir: &Path, id: &str, golden_path: &Path) -> Result<Row, String> {
+fn check_golden(dir: &Path, id: &str, kind: Kind, golden_path: &Path) -> Result<Row, String> {
     let golden_text = std::fs::read_to_string(golden_path)
         .map_err(|e| format!("cannot read {}: {e}", golden_path.display()))?;
-    let golden =
-        parse_golden(&golden_text).map_err(|e| format!("{}: {e}", golden_path.display()))?;
+    let in_file = |e: String| format!("{}: {e}", golden_path.display());
     let circuit_path = dir.join("circuits").join(format!("{id}.json"));
-    let netlist = crate::load(&circuit_path)?;
-    let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
-    let op = results
-        .iter()
-        .map(|r| match r {
-            AnalysisResult::Op(op) => op,
-        })
-        .next()
-        .ok_or_else(|| format!("{id}: circuit has no op analysis"))?;
-    let comparison = compare_op(&golden, op);
+    let comparison = match kind {
+        Kind::Op => {
+            let golden = parse_golden(&golden_text).map_err(in_file)?;
+            let netlist = crate::load(&circuit_path)?;
+            let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
+            let op = results.iter().find_map(|r| match r {
+                AnalysisResult::Op(op) => Some(op),
+                AnalysisResult::Dc(_) => None,
+            });
+            compare_op(
+                &golden,
+                op.ok_or_else(|| format!("{id}: circuit has no op analysis"))?,
+            )
+        }
+        Kind::Dc => {
+            let golden = parse_dc_golden(&golden_text).map_err(in_file)?;
+            let netlist = crate::load(&circuit_path)?;
+            let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
+            let dc = results.iter().find_map(|r| match r {
+                AnalysisResult::Dc(dc) => Some(dc),
+                AnalysisResult::Op(_) => None,
+            });
+            compare_dc(
+                &golden,
+                dc.ok_or_else(|| format!("{id}: circuit has no dc analysis"))?,
+            )
+        }
+    };
     let worst = comparison
         .checks
         .iter()
@@ -177,6 +362,7 @@ fn check_golden(dir: &Path, id: &str, golden_path: &Path) -> Result<Row, String>
         .cloned();
     Ok(Row {
         circuit: id.to_string(),
+        kind,
         outcome: Outcome::Compared {
             signals: comparison.checks.len(),
             worst,
@@ -196,8 +382,9 @@ fn render(rows: &[Row]) -> String {
                 // `|` would split the Markdown cell; newlines would end the row.
                 let message = message.replace('|', "/").replace('\n', " ");
                 table.push_str(&format!(
-                    "| {} | op | - | - | {message} | ERROR |\n",
-                    row.circuit
+                    "| {} | {} | - | - | {message} | ERROR |\n",
+                    row.circuit,
+                    row.kind.name()
                 ));
             }
             Outcome::Compared {
@@ -218,8 +405,9 @@ fn render(rows: &[Row]) -> String {
                 };
                 let verdict = if *passed { "pass" } else { "FAIL" };
                 table.push_str(&format!(
-                    "| {} | op | {signals} | {signal} | {ratio} | {verdict} |\n",
-                    row.circuit
+                    "| {} | {} | {signals} | {signal} | {ratio} | {verdict} |\n",
+                    row.circuit,
+                    row.kind.name()
                 ));
             }
         }
@@ -227,22 +415,22 @@ fn render(rows: &[Row]) -> String {
     table
 }
 
-/// Compares every `golden/<id>.op.csv` under `dir` with a fresh run of `circuits/<id>.json`.
+/// Compares every `golden/<id>.op.csv` and `golden/<id>.dc.csv` under `dir` with a fresh run
+/// of `circuits/<id>.json`.
 /// Returns the table and whether every row passed. A circuit that fails to load or simulate
 /// becomes an `ERROR` row and fails the run; a missing or empty `golden/` is an `Err`.
 pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
     let golden_dir = dir.join("golden");
     let entries = std::fs::read_dir(&golden_dir)
         .map_err(|e| format!("cannot read {}: {e}", golden_dir.display()))?;
-    let mut ids: Vec<(String, PathBuf)> = Vec::new();
+    let mut ids: Vec<(String, Kind, PathBuf)> = Vec::new();
     for entry in entries {
         let path = entry.map_err(|e| e.to_string())?.path();
-        let id = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .and_then(|n| n.strip_suffix(".op.csv"));
-        if let Some(id) = id {
-            ids.push((id.to_string(), path.clone()));
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        if let Some(id) = name.strip_suffix(".op.csv") {
+            ids.push((id.to_string(), Kind::Op, path.clone()));
+        } else if let Some(id) = name.strip_suffix(".dc.csv") {
+            ids.push((id.to_string(), Kind::Dc, path.clone()));
         }
     }
     if ids.is_empty() {
@@ -250,11 +438,14 @@ pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
     }
     ids.sort();
     let mut rows = Vec::new();
-    for (id, path) in &ids {
-        rows.push(check_golden(dir, id, path).unwrap_or_else(|message| Row {
-            circuit: id.clone(),
-            outcome: Outcome::Error(message),
-        }));
+    for (id, kind, path) in &ids {
+        rows.push(
+            check_golden(dir, id, *kind, path).unwrap_or_else(|message| Row {
+                circuit: id.clone(),
+                kind: *kind,
+                outcome: Outcome::Error(message),
+            }),
+        );
     }
     let all_passed = rows.iter().all(Row::passed);
     Ok((render(&rows), all_passed))
@@ -415,6 +606,98 @@ mod tests {
         let tmp = TempDir::new("empty_golden")?;
         std::fs::create_dir_all(tmp.0.join("golden"))?;
         assert!(validate_dir(&tmp.0).is_err());
+        Ok(())
+    }
+
+    fn dc_result(sweep: &[f64], v: &[(&str, &[f64])]) -> DcResult {
+        DcResult {
+            source: "V1".to_string(),
+            sweep: sweep.to_vec(),
+            node_voltages: v
+                .iter()
+                .map(|(k, x)| ((*k).to_string(), x.to_vec()))
+                .collect(),
+            branch_currents: BTreeMap::new(),
+        }
+    }
+
+    fn dc_golden(sweep: &[f64], v: &[(&str, &[f64])]) -> DcGolden {
+        DcGolden {
+            sweep: sweep.to_vec(),
+            signals: v.iter().map(|(k, _)| format!("V({k})")).collect(),
+            columns: v.iter().map(|(_, x)| x.to_vec()).collect(),
+        }
+    }
+
+    #[test]
+    fn compare_dc_passes_and_reports_worst_point() -> Result<(), Box<dyn Error>> {
+        let g = dc_golden(&[0.0, 1.0], &[("a", &[0.0, 0.75])]);
+        let r = dc_result(&[0.0, 1.0], &[("a", &[0.0, 0.75 + 3.75e-6])]);
+        let c = compare_dc(&g, &r);
+        assert!(c.passed());
+        let a = c
+            .checks
+            .iter()
+            .find(|k| k.signal == "V(a)")
+            .ok_or("no V(a)")?;
+        assert!(a.ratio > 0.4 && a.ratio < 0.6, "ratio {}", a.ratio);
+        Ok(())
+    }
+
+    #[test]
+    fn compare_dc_point_count_mismatch_fails() {
+        let g = dc_golden(&[0.0, 1.0, 2.0], &[("a", &[0.0, 1.0, 2.0])]);
+        let r = dc_result(&[0.0, 1.0], &[("a", &[0.0, 1.0])]);
+        let c = compare_dc(&g, &r);
+        assert!(!c.passed());
+        assert_eq!(status_of(&c, "sweep"), Some(Status::Fail));
+    }
+
+    #[test]
+    fn compare_dc_sweep_value_mismatch_fails() {
+        let g = dc_golden(&[0.0, 1.0], &[("a", &[0.0, 1.0])]);
+        let r = dc_result(&[0.0, 1.0 + 1e-6], &[("a", &[0.0, 1.0])]);
+        let c = compare_dc(&g, &r);
+        assert_eq!(status_of(&c, "sweep"), Some(Status::Fail));
+        assert_eq!(status_of(&c, "V(a)"), Some(Status::Pass));
+    }
+
+    #[test]
+    fn compare_dc_signal_failure_at_one_point_fails() {
+        let g = dc_golden(&[0.0, 1.0], &[("a", &[0.0, 1.0])]);
+        let r = dc_result(&[0.0, 1.0], &[("a", &[0.0, 1.1])]);
+        assert_eq!(status_of(&compare_dc(&g, &r), "V(a)"), Some(Status::Fail));
+    }
+
+    #[test]
+    fn parse_dc_golden() -> Result<(), Box<dyn Error>> {
+        let g = super::parse_dc_golden(
+            "# circuit: X\n# analysis: dc\nsweep,V(a),I(V1)\n0e0,1.5,-2e-3\n1e0,2.5,-3e-3\n",
+        )?;
+        assert_eq!(g.sweep, [0.0, 1.0]);
+        assert_eq!(g.signals, ["V(a)", "I(V1)"]);
+        assert_eq!(g.columns, [vec![1.5, 2.5], vec![-2e-3, -3e-3]]);
+        assert!(super::parse_dc_golden("signal,value\n").is_err());
+        assert!(super::parse_dc_golden("sweep,V(a)\n0,1,2\n").is_err());
+        assert!(super::parse_dc_golden("# only comments\n").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn dc_error_row_says_dc() -> Result<(), Box<dyn Error>> {
+        let tmp = TempDir::new("dc_error_row")?;
+        std::fs::create_dir_all(tmp.0.join("golden"))?;
+        std::fs::write(tmp.0.join("golden/Z2.dc.csv"), "sweep,V(a)\n0,1\n")?;
+        let (table, passed) = validate_dir(&tmp.0)?;
+        assert!(!passed);
+        let row = table
+            .lines()
+            .find(|l| l.starts_with("| Z2 |"))
+            .ok_or("no Z2 row")?;
+        assert!(
+            row.contains("| dc | - | - |") && row.ends_with("| ERROR |"),
+            "{row}"
+        );
         Ok(())
     }
 

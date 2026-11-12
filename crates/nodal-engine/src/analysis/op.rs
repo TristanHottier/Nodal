@@ -42,7 +42,7 @@ pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, u
     (result, iterations)
 }
 
-fn report(circuit: &Circuit, x: &[f64]) -> OpResult {
+pub(super) fn report(circuit: &Circuit, x: &[f64]) -> OpResult {
     let node_voltages = circuit
         .node_names
         .iter()

@@ -106,6 +106,11 @@ pub trait Device: std::fmt::Debug {
     fn set_dc(&mut self, _value: f64) -> bool {
         false
     }
+
+    /// The DC value of an independent source, `None` for any other device.
+    fn dc_value(&self) -> Option<f64> {
+        None
+    }
 }
 
 /// Voltage of unknown `i` in `x`. Ground (`None`) is 0 V.

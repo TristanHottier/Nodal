@@ -20,7 +20,7 @@ fn run(text: &str) -> Result<OpResult, Box<dyn Error>> {
     let n = parse_netlist(text)?;
     match simulate(&n)?.pop() {
         Some(AnalysisResult::Op(r)) => Ok(r),
-        None => Err("no result".into()),
+        other => Err(format!("expected an op result, got {other:?}").into()),
     }
 }
 

@@ -23,7 +23,7 @@ fn op(n: &Netlist) -> Result<OpResult, Box<dyn Error>> {
     let mut out = simulate(n)?;
     match out.pop() {
         Some(AnalysisResult::Op(r)) => Ok(r),
-        None => Err("no result".into()),
+        other => Err(format!("expected an op result, got {other:?}").into()),
     }
 }
 

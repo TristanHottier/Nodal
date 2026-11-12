@@ -41,4 +41,8 @@ impl Device for VoltageSource {
         self.dc = value;
         true
     }
+
+    fn dc_value(&self) -> Option<f64> {
+        Some(self.dc)
+    }
 }

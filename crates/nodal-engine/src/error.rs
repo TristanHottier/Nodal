@@ -27,6 +27,12 @@ pub enum Error {
         /// Node name and its KCL residual at the last iterate.
         residuals: Vec<(String, f64)>,
     },
+    /// A DC sweep failed at one point. `cause` is the original error.
+    SweepPoint {
+        source: String,
+        value: f64,
+        cause: Box<Error>,
+    },
     /// A bug in the engine, not a problem with the netlist.
     Internal(String),
 }
@@ -66,6 +72,11 @@ impl fmt::Display for Error {
                     list(residuals)
                 )
             }
+            Error::SweepPoint {
+                source,
+                value,
+                cause,
+            } => write!(f, "dc sweep of {source} failed at {value:e}: {cause}"),
             Error::Internal(msg) => write!(f, "internal error: {msg}"),
         }
     }

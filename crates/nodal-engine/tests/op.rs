@@ -34,7 +34,7 @@ fn run(elements: &[String]) -> Result<nodal_engine::analysis::OpResult, Box<dyn 
     let mut out = simulate(&n)?;
     match out.pop() {
         Some(AnalysisResult::Op(r)) => Ok(r),
-        None => Err("no result".into()),
+        other => Err(format!("expected an op result, got {other:?}").into()),
     }
 }
 

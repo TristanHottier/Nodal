@@ -21,13 +21,21 @@ use ir::{Analysis, Netlist};
 
 /// Runs every analysis in the netlist and returns one result per entry.
 pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
-    let circuit = circuit::Circuit::build(netlist)?;
+    let mut circuit = circuit::Circuit::build(netlist)?;
     netlist
         .analyses
         .iter()
         .map(|analysis| match analysis {
             Analysis::Op {} => analysis::solve_op(&circuit).map(AnalysisResult::Op),
-            Analysis::Dc { .. } => Err(Error::Invalid("dc analysis is not simulated yet".into())),
+            Analysis::Dc {
+                source,
+                start,
+                stop,
+                step,
+            } => {
+                let values = ir::sweep_values(*start, *stop, *step);
+                analysis::solve_dc_sweep(&mut circuit, source, &values).map(AnalysisResult::Dc)
+            }
         })
         .collect()
 }

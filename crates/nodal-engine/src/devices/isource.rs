@@ -39,4 +39,8 @@ impl Device for CurrentSource {
         self.dc = value;
         true
     }
+
+    fn dc_value(&self) -> Option<f64> {
+        Some(self.dc)
+    }
 }

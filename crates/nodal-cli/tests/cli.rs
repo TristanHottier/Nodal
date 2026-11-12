@@ -161,3 +161,37 @@ fn tampered_run(dir: &Path) -> Result<(), Box<dyn Error>> {
     assert!(row.contains("V(out)") && row.contains("FAIL"), "{row}");
     Ok(())
 }
+
+#[test]
+fn run_dc_sweep_json() -> Result<(), Box<dyn Error>> {
+    let path = std::env::temp_dir().join(format!("nodal-cli-dc-{}.json", std::process::id()));
+    std::fs::write(
+        &path,
+        r#"{"irVersion":1,"elements":[
+            {"kind":"V","name":"V1","nodes":["in","0"],"dc":0},
+            {"kind":"R","name":"R1","nodes":["in","out"],"value":1000},
+            {"kind":"R","name":"R2","nodes":["out","0"],"value":3000}],
+            "analyses":[{"type":"dc","source":"V1","start":0,"stop":2,"step":1}]}"#,
+    )?;
+    let out = run(&["run", path.to_str().ok_or("path")?]);
+    std::fs::remove_file(&path)?;
+    let out = out?;
+    assert_eq!(out.status.code(), Some(0));
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+    let result = &json["results"][0];
+    assert_eq!(result["type"], "dc");
+    assert_eq!(result["source"], "V1");
+    assert_eq!(result["sweep"], serde_json::json!([0.0, 1.0, 2.0]));
+    let outs = result["nodeVoltages"]["out"].as_array().ok_or("no out")?;
+    assert_eq!(outs.len(), 3);
+    let last = outs[2].as_f64().ok_or("number")?;
+    assert!((last - 1.5).abs() < 1e-9, "{last}");
+    assert_eq!(
+        result["branchCurrents"]["V1"]
+            .as_array()
+            .ok_or("no V1")?
+            .len(),
+        3
+    );
+    Ok(())
+}
