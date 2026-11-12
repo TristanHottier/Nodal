@@ -135,9 +135,23 @@ fn parse_golden(text: &str) -> Result<Vec<(String, f64)>, String> {
 
 struct Row {
     circuit: String,
-    signals: usize,
-    worst: Option<SignalCheck>,
-    passed: bool,
+    outcome: Outcome,
+}
+
+enum Outcome {
+    Compared {
+        signals: usize,
+        worst: Option<SignalCheck>,
+        passed: bool,
+    },
+    /// The golden could not be read, or the circuit failed to load or simulate.
+    Error(String),
+}
+
+impl Row {
+    fn passed(&self) -> bool {
+        matches!(self.outcome, Outcome::Compared { passed: true, .. })
+    }
 }
 
 fn check_golden(dir: &Path, id: &str, golden_path: &Path) -> Result<Row, String> {
@@ -163,9 +177,11 @@ fn check_golden(dir: &Path, id: &str, golden_path: &Path) -> Result<Row, String>
         .cloned();
     Ok(Row {
         circuit: id.to_string(),
-        signals: comparison.checks.len(),
-        worst,
-        passed: comparison.passed(),
+        outcome: Outcome::Compared {
+            signals: comparison.checks.len(),
+            worst,
+            passed: comparison.passed(),
+        },
     })
 }
 
@@ -175,28 +191,45 @@ fn render(rows: &[Row]) -> String {
          |---|---|---|---|---|---|\n",
     );
     for row in rows {
-        let (signal, ratio) = match &row.worst {
-            Some(w) => (
-                w.signal.as_str(),
-                match w.status {
-                    Status::Missing => "missing".to_string(),
-                    Status::Extra => "extra".to_string(),
-                    Status::Pass | Status::Fail => format!("{:.3e}", w.ratio),
-                },
-            ),
-            None => ("-", "-".to_string()),
-        };
-        let verdict = if row.passed { "pass" } else { "FAIL" };
-        table.push_str(&format!(
-            "| {} | op | {} | {signal} | {ratio} | {verdict} |\n",
-            row.circuit, row.signals
-        ));
+        match &row.outcome {
+            Outcome::Error(message) => {
+                // `|` would split the Markdown cell; newlines would end the row.
+                let message = message.replace('|', "/").replace('\n', " ");
+                table.push_str(&format!(
+                    "| {} | op | - | - | {message} | ERROR |\n",
+                    row.circuit
+                ));
+            }
+            Outcome::Compared {
+                signals,
+                worst,
+                passed,
+            } => {
+                let (signal, ratio) = match worst {
+                    Some(w) => (
+                        w.signal.as_str(),
+                        match w.status {
+                            Status::Missing => "missing".to_string(),
+                            Status::Extra => "extra".to_string(),
+                            Status::Pass | Status::Fail => format!("{:.3e}", w.ratio),
+                        },
+                    ),
+                    None => ("-", "-".to_string()),
+                };
+                let verdict = if *passed { "pass" } else { "FAIL" };
+                table.push_str(&format!(
+                    "| {} | op | {signals} | {signal} | {ratio} | {verdict} |\n",
+                    row.circuit
+                ));
+            }
+        }
     }
     table
 }
 
 /// Compares every `golden/<id>.op.csv` under `dir` with a fresh run of `circuits/<id>.json`.
-/// Returns the table and whether every row passed.
+/// Returns the table and whether every row passed. A circuit that fails to load or simulate
+/// becomes an `ERROR` row and fails the run; a missing or empty `golden/` is an `Err`.
 pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
     let golden_dir = dir.join("golden");
     let entries = std::fs::read_dir(&golden_dir)
@@ -217,17 +250,13 @@ pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
     }
     ids.sort();
     let mut rows = Vec::new();
-    let mut failures = Vec::new();
     for (id, path) in &ids {
-        match check_golden(dir, id, path) {
-            Ok(row) => rows.push(row),
-            Err(message) => failures.push(message),
-        }
+        rows.push(check_golden(dir, id, path).unwrap_or_else(|message| Row {
+            circuit: id.clone(),
+            outcome: Outcome::Error(message),
+        }));
     }
-    if !failures.is_empty() {
-        return Err(failures.join("\n"));
-    }
-    let all_passed = rows.iter().all(|r| r.passed);
+    let all_passed = rows.iter().all(Row::passed);
     Ok((render(&rows), all_passed))
 }
 
@@ -316,5 +345,94 @@ mod tests {
         );
         assert!(!c.passed());
         assert_eq!(status_of(&c, "V(b)"), Some(Status::Extra));
+    }
+
+    /// Scratch directory removed on drop, unique per process and test.
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(test: &str) -> Result<Self, Box<dyn Error>> {
+            let path = std::env::temp_dir()
+                .join(format!("nodal-validate-unit-{}-{test}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&path);
+            std::fs::create_dir_all(&path)?;
+            Ok(Self(path))
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    const FLOATING: &str = r#"{"irVersion":1,"title":"floating","elements":[
+        {"kind":"V","name":"V1","nodes":["in","0"],"dc":5},
+        {"kind":"R","name":"R1","nodes":["in","0"],"value":1000},
+        {"kind":"C","name":"C1","nodes":["in","x"],"value":1e-6},
+        {"kind":"R","name":"R2","nodes":["x","y"],"value":1000}],
+        "analyses":[{"type":"op"}]}"#;
+
+    #[test]
+    fn missing_circuit_is_an_error_row() -> Result<(), Box<dyn Error>> {
+        let tmp = TempDir::new("missing_circuit")?;
+        std::fs::create_dir_all(tmp.0.join("golden"))?;
+        std::fs::write(tmp.0.join("golden/Z1.op.csv"), "signal,value\nV(a),1.0\n")?;
+        let (table, passed) = validate_dir(&tmp.0)?;
+        assert!(!passed);
+        let row = table
+            .lines()
+            .find(|l| l.starts_with("| Z1 |"))
+            .ok_or("no Z1 row")?;
+        assert!(
+            row.contains("| op | - | - |") && row.ends_with("| ERROR |"),
+            "{row}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn error_row_rendered() -> Result<(), Box<dyn Error>> {
+        let tmp = TempDir::new("error_row")?;
+        std::fs::create_dir_all(tmp.0.join("golden"))?;
+        std::fs::create_dir_all(tmp.0.join("circuits"))?;
+        std::fs::write(tmp.0.join("circuits/F1.json"), FLOATING)?;
+        std::fs::write(tmp.0.join("golden/F1.op.csv"), "signal,value\nV(in),5.0\n")?;
+        let (table, passed) = validate_dir(&tmp.0)?;
+        assert!(!passed);
+        let row = table
+            .lines()
+            .find(|l| l.starts_with("| F1 |"))
+            .ok_or("no F1 row")?;
+        assert!(row.contains("ERROR"), "{row}");
+        // The message must not break the Markdown table.
+        assert_eq!(row.matches('|').count(), 7, "{row}");
+        Ok(())
+    }
+
+    #[test]
+    fn empty_golden_dir_is_an_error() -> Result<(), Box<dyn Error>> {
+        let tmp = TempDir::new("empty_golden")?;
+        std::fs::create_dir_all(tmp.0.join("golden"))?;
+        assert!(validate_dir(&tmp.0).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn parse_golden_rejects_bad_header() {
+        assert!(parse_golden("name,val\nV(a),1\n").is_err());
+        assert!(parse_golden("# only a comment\n").is_err());
+    }
+
+    #[test]
+    fn parse_golden_rejects_bad_number() {
+        assert!(parse_golden("signal,value\nV(a),abc\n").is_err());
+    }
+
+    #[test]
+    fn parse_golden_skips_comments() -> Result<(), Box<dyn Error>> {
+        let rows = parse_golden("# c\nsignal,value\n# mid\n\nV(a),1.5\nI(V1),-2e-3\n")?;
+        assert_eq!(rows, golden(&[("V(a)", 1.5), ("I(V1)", -2e-3)]));
+        Ok(())
     }
 }

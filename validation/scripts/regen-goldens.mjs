@@ -12,8 +12,7 @@ const circuitsDir = join(root, "validation", "circuits");
 const goldenDir = join(root, "validation", "golden");
 
 function fail(message) {
-  process.stderr.write(`regen-goldens: ${message}\n`);
-  process.exit(1);
+  throw new Error(message);
 }
 
 function run(command, args, options = {}) {
@@ -110,7 +109,8 @@ export function mapSignals(raw, ir) {
   });
 }
 
-function regenerate(id, version) {
+/** Computes the golden for one circuit and returns `{ id, text, count }`; writes nothing. */
+function compute(id, version) {
   const irPath = join(circuitsDir, `${id}.json`);
   const ir = JSON.parse(readFileSync(irPath, "utf8"));
   const deck = run("cargo", ["run", "-q", "-p", "nodal-cli", "--", "export-spice", irPath]);
@@ -135,9 +135,7 @@ function regenerate(id, version) {
       "signal,value",
       ...signals.map(([name, value]) => `${name},${formatValue(value)}`),
     ];
-    mkdirSync(goldenDir, { recursive: true });
-    writeFileSync(join(goldenDir, `${id}.op.csv`), `${lines.join("\n")}\n`);
-    process.stdout.write(`${id}: ${signals.length} signals\n`);
+    return { id, text: `${lines.join("\n")}\n`, count: signals.length };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -156,7 +154,20 @@ function main() {
     if (ids.length === 0) fail("no ids given and no existing goldens to regenerate");
   }
   const version = ngspiceVersion();
-  for (const id of ids) regenerate(id, version);
+  // Compute everything first so a failure leaves the committed goldens untouched.
+  const results = ids.map((id) => compute(id, version));
+  mkdirSync(goldenDir, { recursive: true });
+  for (const { id, text, count } of results) {
+    writeFileSync(join(goldenDir, `${id}.op.csv`), text);
+    process.stdout.write(`${id}: ${count} signals\n`);
+  }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try {
+    main();
+  } catch (error) {
+    process.stderr.write(`regen-goldens: ${error instanceof Error ? error.message : error}\n`);
+    process.exit(1);
+  }
+}

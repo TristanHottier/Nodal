@@ -1,0 +1,53 @@
+{
+  "irVersion": 1,
+  "title": "L5 current source with inductor and capacitor",
+  "elements": [
+    {
+      "kind": "I",
+      "name": "I1",
+      "nodes": ["0", "a"],
+      "dc": 0.002
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["a", "b"],
+      "value": 1000
+    },
+    {
+      "kind": "L",
+      "name": "L1",
+      "nodes": ["b", "c"],
+      "value": 0.001
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["c", "0"],
+      "value": 2000
+    },
+    {
+      "kind": "C",
+      "name": "C1",
+      "nodes": ["c", "0"],
+      "value": 1e-6
+    },
+    {
+      "kind": "R",
+      "name": "R3",
+      "nodes": ["a", "0"],
+      "value": 3000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

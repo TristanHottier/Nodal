@@ -1,4 +1,4 @@
-//! Reference circuits L1-L4 (`validation/circuits/`) against closed-form values.
+//! Reference circuits L1-L5 (`validation/circuits/`) against closed-form values.
 //!
 //! Tolerance: |x - xref| <= 1e-5*|xref| + a, a = 1e-8 for V, 1e-13 for I.
 
@@ -94,4 +94,15 @@ fn l4_all_codes() -> TestResult {
         v(&r, "n7", f64::from(code) / 256.0).map_err(|e| format!("code {code}: {e}"))?;
     }
     Ok(())
+}
+
+#[test]
+fn l5_current_source_with_l_and_c() -> TestResult {
+    // At DC the inductor is a short and the capacitor is open:
+    // V(a) = 2 mA * (3k || 3k) = 3 V, V(b) = V(c) = 2 V, I(L1) = 1 mA.
+    let r = op(&load("L5")?)?;
+    v(&r, "a", 3.0)?;
+    v(&r, "b", 2.0)?;
+    v(&r, "c", 2.0)?;
+    i(&r, "L1", 1e-3)
 }

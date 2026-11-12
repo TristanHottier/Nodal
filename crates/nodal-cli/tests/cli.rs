@@ -102,7 +102,7 @@ fn validate_repo_passes() -> Result<(), Box<dyn Error>> {
     let stdout = String::from_utf8(out.stdout)?;
     assert_eq!(out.status.code(), Some(0), "{stdout}");
     assert!(stdout.starts_with("| circuit | analysis |"), "{stdout}");
-    for id in ["L1", "L2", "L3"] {
+    for id in ["L1", "L2", "L3", "L5"] {
         assert!(stdout.contains(&format!("| {id} | op |")), "{stdout}");
     }
     assert!(!stdout.contains("FAIL"), "{stdout}");
