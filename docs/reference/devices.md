@@ -110,7 +110,13 @@ I_B = \dfrac{I_F}{B_F} + \dfrac{I_R}{B_R},\qquad
 I_E = -(I_C + I_B)
 $$
 
-Here $I_C$ and $I_B$ flow into the collector and base terminals. Every junction also carries $g_{min}$.
+Here $I_C$ and $I_B$ flow into the collector and base terminals.
+
+**Reverse region.** Each junction current uses the diode's two regions (§1), with $V_t$ replaced by $N_F V_t$ or $N_R V_t$: the exponential above $-3 N V_t$, and below it the cubic form $-I_S(1 + \text{arg})$ with $\text{arg} = (3 N V_t / (V\,\mathrm{e}))^3$, as in `bjtload.c`.
+
+**Where gmin enters.** With $I_{SE} = I_{SC} = 0$ the leakage terms of `bjtload.c` reduce to $g_{min} V_{be}$ and $g_{min} V_{bc}$. They are added to the base current and, through the $-I_{CN}$ term, subtracted from the collector current, so $I_C = (I_F - I_R)/q_b - I_R/B_R - g_{min} V_{bc}$ and $I_B = I_F/B_F + I_R/B_R + g_{min}(V_{be} + V_{bc})$. The Jacobian carries $g_{min}$ in the same places.
+
+**Substrate.** As for the default vertical device in `bjtload.c`, the substrate node is ground and the substrate junction contributes only $g_{min}$ between the collector and ground. It is linear, so it adds $g_{min}$ to the collector diagonal and nothing to the right-hand side.
 
 **PNP:** evaluate the same equations with $V_{be} \to -V_{be}$ and $V_{bc} \to -V_{bc}$, then negate all terminal currents. Conductances keep their sign.
 

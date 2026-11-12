@@ -61,17 +61,12 @@ fn mosfet_gate_alone_is_floating() -> TestResult {
 }
 
 #[test]
-fn bjt_is_not_simulated_yet() -> TestResult {
+fn bjt_builds() -> TestResult {
     let text = netlist(&format!(
         "{},{}",
         v("V1", "a"),
         r#"{"kind":"Q","name":"Q1","nodes":["a","a","0"],"model":"QM"}"#
     ));
-    match Circuit::build(&parse_netlist(&text)?) {
-        Err(EngineError::Invalid(msg)) => {
-            assert_eq!(msg, "Q elements are not simulated yet");
-            Ok(())
-        }
-        other => Err(format!("expected Invalid, got {other:?}").into()),
-    }
+    Circuit::build(&parse_netlist(&text)?)?;
+    Ok(())
 }

@@ -94,3 +94,91 @@ fn nodeset_changes_start_not_answer() -> TestResult {
     assert!(close(b, a, 1e-8), "{a} vs {b}");
     Ok(())
 }
+
+fn bjt_netlist(elements: &str) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[{elements}],"models":[{{"name":"QM","type":"NPN","params":{{"IS":1e-16,"BF":100,"BR":1}}}}],"analyses":[{{"type":"op"}}]}}"#
+    )
+}
+
+/// NPN currents with VAF infinite, gmin on both junctions (bjtload.c).
+fn npn_currents(vbe: f64, vbc: f64) -> (f64, f64) {
+    let (is, bf, br, gmin) = (1e-16, 100.0, 1.0, 1e-12);
+    let cbe = is * ((vbe / VT).exp() - 1.0);
+    let cbc = is * ((vbc / VT).exp() - 1.0);
+    let ic = cbe - cbc - cbc / br - gmin * vbc;
+    let ib = cbe / bf + gmin * vbe + cbc / br + gmin * vbc;
+    (ic, ib)
+}
+
+fn bisect(f: impl Fn(f64) -> f64) -> f64 {
+    let (mut lo, mut hi) = (0.0_f64, 1.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    lo
+}
+
+#[test]
+fn npn_forced_ib() -> TestResult {
+    let i1 = r#"{"kind":"I","name":"I1","nodes":["0","b"],"dc":10e-6}"#;
+    let v1 = r#"{"kind":"V","name":"V1","nodes":["c","0"],"dc":5}"#;
+    let q1 = r#"{"kind":"Q","name":"Q1","nodes":["c","b","0"],"model":"QM"}"#;
+    let r = run(&bjt_netlist(&format!("{i1},{v1},{q1}")))?;
+    let vbe = bisect(|v| npn_currents(v, v - 5.0).1 - 10e-6);
+    let (ic, _) = npn_currents(vbe, vbe - 5.0);
+    // The substrate gmin (collector to ground) also loads V1.
+    let want = -(ic + 1e-12 * 5.0);
+    let got = r.branch_currents["V1"];
+    assert!(close(got, want, 1e-13), "I(V1) = {got}, want {want}");
+    let vb = r.node_voltages["b"];
+    assert!(close(vb, vbe, 1e-8), "V(b) = {vb}, want {vbe}");
+    Ok(())
+}
+
+#[test]
+fn diode_connected_npn() -> TestResult {
+    let i1 = r#"{"kind":"I","name":"I1","nodes":["0","a"],"dc":1e-4}"#;
+    let q1 = r#"{"kind":"Q","name":"Q1","nodes":["a","a","0"],"model":"QM"}"#;
+    let r = run(&bjt_netlist(&format!("{i1},{q1}")))?;
+    // Base and collector tie to a, so vbc = 0 and
+    // 1e-4 = IF (1 + 1/BF) + 2 gmin V (base gmin plus substrate gmin).
+    let f = |v: f64| {
+        let (ic, ib) = npn_currents(v, 0.0);
+        ic + ib + 1e-12 * v - 1e-4
+    };
+    let want = bisect(f);
+    let got = r.node_voltages["a"];
+    assert!(close(got, want, 1e-8), "V(a) = {got}, want {want}");
+    Ok(())
+}
+
+#[test]
+fn pnp_circuit_mirrors_npn() -> TestResult {
+    let npn = run(&bjt_netlist(&format!(
+        "{},{},{}",
+        r#"{"kind":"I","name":"I1","nodes":["0","b"],"dc":10e-6}"#,
+        r#"{"kind":"V","name":"V1","nodes":["c","0"],"dc":5}"#,
+        r#"{"kind":"Q","name":"Q1","nodes":["c","b","0"],"model":"QM"}"#
+    )))?;
+    let pnp_text = bjt_netlist(&format!(
+        "{},{},{}",
+        r#"{"kind":"I","name":"I1","nodes":["b","0"],"dc":10e-6}"#,
+        r#"{"kind":"V","name":"V1","nodes":["c","0"],"dc":-5}"#,
+        r#"{"kind":"Q","name":"Q1","nodes":["c","b","0"],"model":"QM"}"#
+    ))
+    .replace(r#""type":"NPN""#, r#""type":"PNP""#);
+    let pnp = run(&pnp_text)?;
+    assert!(close(pnp.node_voltages["b"], -npn.node_voltages["b"], 1e-8));
+    assert!(close(
+        pnp.branch_currents["V1"],
+        -npn.branch_currents["V1"],
+        1e-13
+    ));
+    Ok(())
+}

@@ -1,5 +1,6 @@
 //! Circuit devices. Each device stamps itself into the MNA system.
 
+pub mod bjt;
 mod capacitor;
 mod cccs;
 mod ccvs;
@@ -18,6 +19,7 @@ use crate::error::Error;
 use crate::ir::{Element, Model, ModelKind};
 use crate::mna::RealSystem;
 
+pub use bjt::{Bjt, BjtParams};
 pub use capacitor::Capacitor;
 pub use cccs::Cccs;
 pub use ccvs::Ccvs;
@@ -137,10 +139,27 @@ pub(crate) fn instantiate(
     element: &Element,
     models: &[Model],
 ) -> Result<Box<dyn Device>, Error> {
-    if let Element::Q { .. } | Element::M { .. } | Element::S { .. } = element {
+    if let Element::M { .. } | Element::S { .. } = element {
         return Err(Error::Invalid(format!(
             "{} elements are not simulated yet",
             element.kind_letter()
+        )));
+    }
+    if let Element::Q { nodes, model, .. } = element {
+        let name = element.name().to_string();
+        let model = models
+            .iter()
+            .find(|m| m.name == *model && matches!(m.kind, ModelKind::NPN | ModelKind::PNP))
+            .ok_or_else(|| Error::Invalid(format!("{name}: unknown BJT model {model}")))?;
+        return Ok(Box::new(Bjt::new(
+            name,
+            [
+                node(circuit, &nodes[0]),
+                node(circuit, &nodes[1]),
+                node(circuit, &nodes[2]),
+            ],
+            model.kind == ModelKind::PNP,
+            BjtParams::from_model(model),
         )));
     }
     let (p, n) = match element.nodes() {
