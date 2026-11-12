@@ -224,6 +224,27 @@ pub(crate) fn instantiate(
     })
 }
 
+/// Test device that stamps a conductance and a changing current, and always
+/// reports that it limited, so Newton never converges.
+#[cfg(test)]
+#[derive(Debug)]
+pub(crate) struct NeverConverges {
+    pub node: Option<usize>,
+}
+
+#[cfg(test)]
+impl Device for NeverConverges {
+    fn name(&self) -> &str {
+        "XNEVER"
+    }
+
+    fn load(&self, x: &[f64], _: &mut [f64], _: &LoadContext, sys: &mut RealSystem) -> bool {
+        sys.add_a(self.node, self.node, 1.0);
+        sys.add_b(self.node, 1.0 + volt(x, self.node));
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -18,6 +18,15 @@ pub enum Error {
     SourceLoop { elements: Vec<String> },
     /// The MNA matrix is singular at this unknown.
     Singular { unknown: String },
+    /// Newton failed at every DC stage. Both lists hold at most five entries,
+    /// sorted by magnitude descending: an exception to the ascending-name rule,
+    /// because the worst offender comes first.
+    NoConvergence {
+        /// Unknown label (`V(a)`, `I(V1)`) and its last Newton update.
+        updates: Vec<(String, f64)>,
+        /// Node name and its KCL residual at the last iterate.
+        residuals: Vec<(String, f64)>,
+    },
     /// A bug in the engine, not a problem with the netlist.
     Internal(String),
 }
@@ -40,6 +49,22 @@ impl fmt::Display for Error {
             ),
             Error::Singular { unknown } => {
                 write!(f, "singular system: no unique solution for {unknown}")
+            }
+            Error::NoConvergence { updates, residuals } => {
+                let list = |items: &[(String, f64)]| {
+                    items
+                        .iter()
+                        .map(|(name, v)| format!("{name}={v:.3e}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                };
+                write!(
+                    f,
+                    "DC operating point did not converge after gmin and source stepping; \
+                     largest updates: {}; largest KCL residuals: {}",
+                    list(updates),
+                    list(residuals)
+                )
             }
             Error::Internal(msg) => write!(f, "internal error: {msg}"),
         }

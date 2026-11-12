@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::newton::{NewtonConfig, newton_counted};
+use super::newton::{Strategy, Trace, solve_dc_counted};
 use crate::circuit::Circuit;
 use crate::error::Error;
 
@@ -18,7 +18,7 @@ pub struct OpResult {
 }
 
 /// Solves the DC operating point of `circuit`: Newton from zero (or from
-/// the nodeset). Fallbacks arrive with gmin and source stepping.
+/// the nodeset), then gmin stepping, then source stepping.
 pub fn solve_op(circuit: &Circuit) -> Result<OpResult, Error> {
     let (result, _) = solve_op_counted(circuit);
     result
@@ -30,21 +30,15 @@ pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, u
     for &(i, v) in &circuit.nodeset {
         x0[i] = v;
     }
-    let cfg = NewtonConfig {
-        init_junction: circuit.nodeset.is_empty(),
-        ..NewtonConfig::default()
-    };
     let mut state = vec![0.0; circuit.state_len()];
-    let (outcome, iterations) = newton_counted(circuit, &x0, &mut state, &cfg);
-    let result = match outcome {
-        Ok(x) => Ok(report(circuit, &x)),
-        Err(failure) => Err(failure.error.unwrap_or_else(|| {
-            Error::Internal(format!(
-                "Newton did not converge in {} iterations",
-                cfg.max_iter
-            ))
-        })),
-    };
+    let (outcome, iterations) = solve_dc_counted(
+        circuit,
+        &x0,
+        &mut state,
+        Strategy::All,
+        &mut Trace::default(),
+    );
+    let result = outcome.map(|x| report(circuit, &x));
     (result, iterations)
 }
 
