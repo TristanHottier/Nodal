@@ -187,6 +187,14 @@ fn mos_vbs_positive() {
     mos_case(2.0, 0.5, 0.2);
 }
 
+/// vbs above 2 phi (1.3 V here): the clamped branch where sarg is 0, so
+/// gmbs is 0 and the threshold no longer moves with vbs.
+#[test]
+fn mos_vbs_above_phi() {
+    mos_case(2.0, 3.0, 1.5);
+    mos_case(2.0, 0.5, 1.5);
+}
+
 #[test]
 fn mos_vbs_negative() {
     mos_case(2.0, 3.0, -1.0);
