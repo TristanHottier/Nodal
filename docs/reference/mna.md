@@ -138,8 +138,8 @@ A conductance `gmin` (default $10^{-12}$ S) is placed in parallel with every pn 
 | Node with no DC path to ground | Singular $A$ in DC | Union–find over DC edges (below); every node must reach ground |
 | Loop of V sources / VCVS / CCVS outputs / inductors | Branch rows linearly dependent | Cycle detection in the graph of those elements |
 
-**DC edges:** R, L, independent V sources, VCVS and CCVS output pairs, diode anode–cathode, BJT B–E and B–C, MOSFET drain–source.
-**Not DC edges:** C, independent I sources, VCCS and CCCS outputs, every controlling port, MOSFET gate and bulk.
+**DC edges:** R, L, independent V sources, VCVS and CCVS output pairs, diode anode–cathode, BJT B–E and B–C, MOSFET drain–source, switch output pair.
+**Not DC edges:** C, independent I sources, VCCS and CCCS outputs, every controlling port (including the switch control pair), MOSFET gate and bulk.
 
 A node reached only through capacitors and current sources fails the first check, so it needs no separate rule.
 

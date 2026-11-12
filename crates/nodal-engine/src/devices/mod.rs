@@ -11,6 +11,7 @@ mod isource;
 pub mod limit;
 pub mod mos1;
 mod resistor;
+pub mod switch;
 mod vccs;
 mod vcvs;
 mod vsource;
@@ -29,6 +30,7 @@ pub use inductor::Inductor;
 pub use isource::CurrentSource;
 pub use mos1::{Mos1, Mos1Params};
 pub use resistor::Resistor;
+pub use switch::{Switch, SwitchParams};
 pub use vccs::Vccs;
 pub use vcvs::Vcvs;
 pub use vsource::VoltageSource;
@@ -141,10 +143,26 @@ pub(crate) fn instantiate(
     element: &Element,
     models: &[Model],
 ) -> Result<Box<dyn Device>, Error> {
-    if let Element::S { .. } = element {
-        return Err(Error::Invalid(format!(
-            "{} elements are not simulated yet",
-            element.kind_letter()
+    if let Element::S {
+        nodes,
+        control_nodes,
+        model,
+        ..
+    } = element
+    {
+        let name = element.name().to_string();
+        let model = models
+            .iter()
+            .find(|m| m.name == *model && m.kind == ModelKind::SW)
+            .ok_or_else(|| Error::Invalid(format!("{name}: unknown switch model {model}")))?;
+        return Ok(Box::new(Switch::new(
+            name,
+            [node(circuit, &nodes[0]), node(circuit, &nodes[1])],
+            [
+                node(circuit, &control_nodes[0]),
+                node(circuit, &control_nodes[1]),
+            ],
+            SwitchParams::from_model(model, circuit.options.gmin),
         )));
     }
     if let Element::Q { nodes, model, .. } = element {

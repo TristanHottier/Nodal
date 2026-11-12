@@ -271,3 +271,59 @@ fn nmos_reverse_conduction() -> TestResult {
     assert!(i > 0.0, "I(V2) = {i}");
     Ok(())
 }
+
+fn switch_netlist(vc: f64, model: &str, options: &str) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"V","name":"VC","nodes":["c","0"],"dc":{vc}}},
+{{"kind":"V","name":"V1","nodes":["in","0"],"dc":10}},
+{{"kind":"R","name":"R1","nodes":["in","out"],"value":1000}},
+{{"kind":"S","name":"S1","nodes":["out","0"],"controlNodes":["c","0"],"model":"SM"}}],
+"models":[{{"name":"SM","type":"SW","params":{{{model}}}}}],{options}"analyses":[{{"type":"op"}}]}}"#
+    )
+}
+
+#[test]
+fn switch_on() -> TestResult {
+    let r = run(&switch_netlist(2.0, r#""VT":1,"RON":10,"ROFF":1e9"#, ""))?;
+    // Divider: 1000 ohm over RON = 10 ohm.
+    let want = 10.0 * 10.0 / 1010.0;
+    let got = r.node_voltages["out"];
+    assert!(close(got, want, 1e-8), "V(out) = {got}, want {want}");
+    Ok(())
+}
+
+#[test]
+fn switch_off() -> TestResult {
+    let r = run(&switch_netlist(0.5, r#""VT":1,"RON":10,"ROFF":1e9"#, ""))?;
+    let want = 10.0 * 1e9 / (1e9 + 1000.0);
+    let got = r.node_voltages["out"];
+    assert!(close(got, want, 1e-8), "V(out) = {got}, want {want}");
+    Ok(())
+}
+
+#[test]
+fn switch_in_band_starts_off() -> TestResult {
+    let r = run(&switch_netlist(
+        1.2,
+        r#""VT":1,"VH":0.5,"RON":10,"ROFF":1e9"#,
+        "",
+    ))?;
+    let want = 10.0 * 1e9 / (1e9 + 1000.0);
+    let got = r.node_voltages["out"];
+    assert!(close(got, want, 1e-8), "V(out) = {got}, want {want}");
+    Ok(())
+}
+
+#[test]
+fn switch_roff_follows_gmin() -> TestResult {
+    let r = run(&switch_netlist(
+        0.0,
+        r#""VT":1,"RON":10"#,
+        r#""options":{"gmin":1e-9},"#,
+    ))?;
+    let want = 10.0 * 1e9 / (1e9 + 1000.0);
+    let got = r.node_voltages["out"];
+    assert!(close(got, want, 1e-8), "V(out) = {got}, want {want}");
+    Ok(())
+}
