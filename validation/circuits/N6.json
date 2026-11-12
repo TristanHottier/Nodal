@@ -1,0 +1,73 @@
+{
+  "irVersion": 1,
+  "title": "N6 NMOS cascode, gate sweep",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VDD",
+      "nodes": ["vdd", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "R",
+      "name": "RD",
+      "nodes": ["vdd", "d"],
+      "value": 10000
+    },
+    {
+      "kind": "V",
+      "name": "VB2",
+      "nodes": ["g2", "0"],
+      "dc": 2.5
+    },
+    {
+      "kind": "V",
+      "name": "VIN",
+      "nodes": ["g1", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "M",
+      "name": "M2",
+      "nodes": ["d", "g2", "x", "0"],
+      "model": "NM",
+      "w": 1e-5,
+      "l": 1e-6
+    },
+    {
+      "kind": "M",
+      "name": "M1",
+      "nodes": ["x", "g1", "0", "0"],
+      "model": "NM",
+      "w": 1e-5,
+      "l": 1e-6
+    }
+  ],
+  "models": [
+    {
+      "name": "NM",
+      "type": "NMOS",
+      "params": {
+        "VTO": 0.7,
+        "KP": 0.0001,
+        "GAMMA": 0.4,
+        "LAMBDA": 0.02
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "dc",
+      "source": "VIN",
+      "start": 0,
+      "stop": 3,
+      "step": 0.05
+    }
+  ],
+  "options": {
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

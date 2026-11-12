@@ -3,8 +3,9 @@
 //! Loading follows ngspice `mos1load.c`; the convergence test follows
 //! `mos1conv.c`, with the deliberate difference noted on `Device::converged`.
 //! There are no bulk junction diodes (docs/reference/devices.md section 5), so
-//! `gmin` is a plain conductance from drain to source and there is no
-//! `pnjlim` on the bulk voltages. There is no series resistance, so the
+//! only the `gmin` part of the bulk junctions is kept: a conductance from
+//! drain to bulk and from source to bulk. There is no `pnjlim` on the bulk
+//! voltages. There is no series resistance, so the
 //! drain and source nodes are the terminals.
 
 use super::limit::{fetlim, limvds};
@@ -227,7 +228,7 @@ impl Device for Mos1 {
     // and the constant Id_eq = Id - A vgs - B vds - C vbs moves to the right
     // side: b[D] -= Id_eq, b[S] += Id_eq. The current leaves the source node
     // through the same branch, so the source row is the negated drain row.
-    // gmin is a linear conductance from drain to source (devices.md section 5).
+    // gmin is stamped drain-bulk and source-bulk (devices.md section 5).
     fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool {
         let p = &self.params;
         let (raw_gs, raw_ds, raw_bs) = self.oriented(x);
@@ -301,10 +302,14 @@ impl Device for Mos1 {
         }
         sys.add_b(d, -id_eq);
         sys.add_b(src, id_eq);
-        sys.add_a(d, d, ctx.gmin);
-        sys.add_a(src, src, ctx.gmin);
-        sys.add_a(d, src, -ctx.gmin);
-        sys.add_a(src, d, -ctx.gmin);
+        // mos1load.c adds gmin to each bulk junction conductance (gbd, gbs):
+        // gmin goes drain-bulk and source-bulk, not drain-source.
+        for t in [d, src] {
+            sys.add_a(t, t, ctx.gmin);
+            sys.add_a(b, b, ctx.gmin);
+            sys.add_a(t, b, -ctx.gmin);
+            sys.add_a(b, t, -ctx.gmin);
+        }
         limited
     }
 
@@ -369,6 +374,32 @@ mod tests {
             let ieq = e.id - e.gm * vgs - e.gds * vds - e.gmbs * vbs;
             assert!((sys.b[0] + ieq).abs() < 1e-18 && (sys.b[2] - ieq).abs() < 1e-18);
         }
+    }
+
+    /// gmin goes drain-bulk and source-bulk, never drain-source.
+    #[test]
+    fn gmin_is_stamped_on_bulk_junctions() {
+        let m = Mos1::new(
+            "M1".into(),
+            [Some(0), Some(1), Some(2), Some(3)],
+            false,
+            params(),
+            1e-3,
+        );
+        let mut ctx = LoadContext::new(LoadMode::Exact);
+        let mut with = RealSystem::new(4);
+        let mut without = RealSystem::new(4);
+        let x = [0.0, 0.0, 0.0, 0.0];
+        let mut state = [0.0; STATE_LEN];
+        assert!(!m.load(&x, &mut state, &ctx, &mut with));
+        ctx.gmin = 0.0;
+        assert!(!m.load(&x, &mut state, &ctx, &mut without));
+        let g = LoadContext::new(LoadMode::Exact).gmin;
+        let diff = |r: usize, c: usize| with.a.get(r, c) - without.a.get(r, c);
+        assert!((diff(0, 0) - g).abs() < 1e-20 && (diff(0, 3) + g).abs() < 1e-20);
+        assert!((diff(2, 2) - g).abs() < 1e-20 && (diff(2, 3) + g).abs() < 1e-20);
+        assert!((diff(3, 3) - 2.0 * g).abs() < 1e-20);
+        assert!(diff(0, 2).abs() < 1e-20 && diff(2, 0).abs() < 1e-20);
     }
 
     #[test]

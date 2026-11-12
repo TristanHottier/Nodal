@@ -61,6 +61,7 @@ Circuit IDs are referenced by the roadmap's exit criteria. "A" in the Check colu
 | N3 | NMOS output characteristic: Vds sweep at Vgs = 1, 2, 3 V, crossing triode/saturation. Three files: `N3-vgs1`, `N3-vgs2`, `N3-vgs3`. | G |
 | N4 | CMOS inverter voltage transfer curve | G |
 | N5 | Convergence stress: 10 series diodes driven from 100 V through 1 Ω | G |
+| N6 | NMOS cascode with a 10 kΩ load; gate of the lower transistor swept 0 V to 3 V, so the middle node is reached only through an off transistor at first | G |
 
 ### AC (M3)
 
