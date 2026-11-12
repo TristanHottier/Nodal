@@ -1,0 +1,54 @@
+{
+  "irVersion": 1,
+  "title": "N3 NMOS output characteristic, VGS=3",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VGS",
+      "nodes": ["g", "0"],
+      "dc": 3
+    },
+    {
+      "kind": "V",
+      "name": "VDS",
+      "nodes": ["d", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "M",
+      "name": "M1",
+      "nodes": ["d", "g", "0", "0"],
+      "model": "NMOD",
+      "w": 0.00001,
+      "l": 0.000001
+    }
+  ],
+  "models": [
+    {
+      "name": "NMOD",
+      "type": "NMOS",
+      "params": {
+        "VTO": 0.7,
+        "KP": 0.0001,
+        "GAMMA": 0.4,
+        "PHI": 0.65,
+        "LAMBDA": 0.02
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "dc",
+      "source": "VDS",
+      "start": 0,
+      "stop": 5,
+      "step": 0.05
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

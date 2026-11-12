@@ -1,0 +1,96 @@
+{
+  "irVersion": 1,
+  "title": "N5 ten series diodes, 100 V",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 100
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "a1"],
+      "value": 1
+    },
+    {
+      "kind": "D",
+      "name": "D1",
+      "nodes": ["a1", "a2"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D2",
+      "nodes": ["a2", "a3"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D3",
+      "nodes": ["a3", "a4"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D4",
+      "nodes": ["a4", "a5"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D5",
+      "nodes": ["a5", "a6"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D6",
+      "nodes": ["a6", "a7"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D7",
+      "nodes": ["a7", "a8"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D8",
+      "nodes": ["a8", "a9"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D9",
+      "nodes": ["a9", "a10"],
+      "model": "DDEF"
+    },
+    {
+      "kind": "D",
+      "name": "D10",
+      "nodes": ["a10", "0"],
+      "model": "DDEF"
+    }
+  ],
+  "models": [
+    {
+      "name": "DDEF",
+      "type": "D",
+      "params": {}
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

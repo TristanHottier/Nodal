@@ -1,0 +1,71 @@
+{
+  "irVersion": 1,
+  "title": "N4 CMOS inverter transfer curve",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VDD",
+      "nodes": ["vdd", "0"],
+      "dc": 3.3
+    },
+    {
+      "kind": "V",
+      "name": "VIN",
+      "nodes": ["in", "0"],
+      "dc": 0
+    },
+    {
+      "kind": "M",
+      "name": "MN",
+      "nodes": ["out", "in", "0", "0"],
+      "model": "NMOD",
+      "w": 0.00001,
+      "l": 0.000001
+    },
+    {
+      "kind": "M",
+      "name": "MP",
+      "nodes": ["out", "in", "vdd", "vdd"],
+      "model": "PMOD",
+      "w": 0.00002,
+      "l": 0.000001
+    }
+  ],
+  "models": [
+    {
+      "name": "NMOD",
+      "type": "NMOS",
+      "params": {
+        "VTO": 0.7,
+        "KP": 0.0001,
+        "GAMMA": 0.4,
+        "PHI": 0.65,
+        "LAMBDA": 0.02
+      }
+    },
+    {
+      "name": "PMOD",
+      "type": "PMOS",
+      "params": {
+        "VTO": -0.7,
+        "KP": 0.00005,
+        "LAMBDA": 0.02
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "dc",
+      "source": "VIN",
+      "start": 0,
+      "stop": 3.3,
+      "step": 0.033
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

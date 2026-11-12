@@ -1,0 +1,64 @@
+{
+  "irVersion": 1,
+  "title": "N2 BJT common-emitter bias point",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VCC",
+      "nodes": ["vcc", "0"],
+      "dc": 12
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["vcc", "b"],
+      "value": 47000
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["b", "0"],
+      "value": 10000
+    },
+    {
+      "kind": "R",
+      "name": "RC",
+      "nodes": ["vcc", "c"],
+      "value": 4700
+    },
+    {
+      "kind": "R",
+      "name": "RE",
+      "nodes": ["e", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "Q",
+      "name": "Q1",
+      "nodes": ["c", "b", "e"],
+      "model": "QMOD"
+    }
+  ],
+  "models": [
+    {
+      "name": "QMOD",
+      "type": "NPN",
+      "params": {
+        "IS": 1e-15,
+        "BF": 200,
+        "VAF": 100
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "op"
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}
