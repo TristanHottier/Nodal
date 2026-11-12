@@ -193,7 +193,7 @@ The state turns on when $v_c > V_T + V_H$ and off when $v_c < V_T - V_H$. In bet
 
 | Device | ngspice | Nodal v1 | Effect |
 |---|---|---|---|
-| MOSFET | Bulk–drain and bulk–source diodes always present (`IS` defaults to 1e-14 A), each with `gmin` in parallel | Only the `gmin` part of the two bulk junctions: `gmin` from drain to bulk and from source to bulk. The diode current of the junctions (saturation current 1e-14 A and the forward branch) is not modelled, and neither is `pnjlim` on the bulk voltages | The omitted junction current is about 1e-14 A per junction while reverse biased, which is below every DC tolerance in VALIDATION §3 except possibly the 1e-13 A one on source currents. A forward-biased bulk junction (`Vbs` or `Vbd` positive) is not covered by any test. The cascode N6, whose lower transistor is off for part of its sweep, matches ngspice within the §3 tolerance. |
+| MOSFET | Bulk–drain and bulk–source diodes always present (`IS` defaults to 1e-14 A), each with `gmin` in parallel | Only the `gmin` part of the two bulk junctions: `gmin` from drain to bulk and from source to bulk. The diode current of the junctions (saturation current 1e-14 A and the forward branch) is not modelled, and neither is `pnjlim` on the bulk voltages | No test bounds the effect of the omitted junction current on the DC results. A forward-biased bulk junction (`Vbs` or `Vbd` positive) is not covered by any test. The cascode N6, whose lower transistor is off for part of its sweep, matches ngspice within the §3 tolerance in CI. |
 | Diode, BJT | Reverse breakdown, high injection, recombination currents, parasitic resistances (BJT) | Not modelled | Model cards that set these parameters are rejected. |
 
 ## References

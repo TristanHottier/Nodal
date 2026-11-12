@@ -2,7 +2,7 @@
 
 How Nodal proves its numbers are right. Policy: [ADR 0008](adr/0008-ngspice-golden-validation.md).
 
-**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355). N1–N5 match ngspice within the §3 tolerances, and the Jacobian tests of §5 pass for the diode, BJT, MOSFET and switch; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43127904416/job/130884551641).
+**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 and L5 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355). N1–N6 match ngspice within the §3 tolerances, and the Jacobian tests of §5 pass for the diode, BJT, MOSFET and switch; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43156593522/job/130977856325).
 
 ## 1. Three kinds of check
 
@@ -51,6 +51,7 @@ Circuit IDs are referenced by the roadmap's exit criteria. "A" in the Check colu
 | L2 | Unbalanced Wheatstone bridge | A, G |
 | L3 | One instance of each controlled source (VCVS, VCCS, CCVS, CCCS) in a resistive network | A, G |
 | L4 | 8-bit R-2R ladder DAC, all 256 codes | A |
+| L5 | Current source into a resistor network with an inductor (DC short) and a capacitor (DC open) | A, G |
 
 ### Nonlinear DC (M2)
 
