@@ -317,13 +317,17 @@ fn switch_in_band_starts_off() -> TestResult {
 
 #[test]
 fn switch_roff_follows_gmin() -> TestResult {
+    // gmin = 1e-3 S makes ROFF = 1000 ohm, equal to the series resistor.
     let r = run(&switch_netlist(
         0.0,
         r#""VT":1,"RON":10"#,
-        r#""options":{"gmin":1e-9},"#,
+        r#""options":{"gmin":1e-3},"#,
     ))?;
-    let want = 10.0 * 1e9 / (1e9 + 1000.0);
     let got = r.node_voltages["out"];
-    assert!(close(got, want, 1e-8), "V(out) = {got}, want {want}");
+    assert!(close(got, 5.0, 1e-8), "V(out) = {got}, want 5");
+    // Default gmin gives ROFF = 1e12: the switch is effectively open.
+    let r = run(&switch_netlist(0.0, r#""VT":1,"RON":10"#, ""))?;
+    let got = r.node_voltages["out"];
+    assert!(close(got, 10.0, 1e-8), "V(out) = {got}, want 10");
     Ok(())
 }
