@@ -1,4 +1,4 @@
-//! Validation rules V1 to V17 (see the Task 2 briefs; the model rules V10
+//! Validation rules V1 to V21 (see the Task 2 briefs; the model rules V10
 //! and V12 live in `models.rs`). The TypeScript
 //! validator in `@nodal/schema` implements the same rules.
 
@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use super::{
     AcSweep, Analysis, DEFAULT_RELTOL, Element, MAX_AC_POINTS, ModelKind, Netlist, Options,
-    ac_frequencies, models,
+    Waveform, ac_frequencies, models,
 };
 use crate::error::Error;
 
@@ -123,6 +123,19 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             {
                 return invalid(format!("element {name}: ac mag and phase must be finite"));
             }
+            // V18
+            Element::V {
+                tran: Some(wave), ..
+            }
+            | Element::I {
+                tran: Some(wave), ..
+            } => validate_waveform(name, wave)?,
+            // V19
+            Element::L { ic: Some(ic), .. } | Element::C { ic: Some(ic), .. }
+                if !ic.is_finite() =>
+            {
+                return invalid(format!("element {name}: ic must be finite"));
+            }
             Element::E { gain, .. }
             | Element::G { gain, .. }
             | Element::H { gain, .. }
@@ -218,6 +231,114 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
         {
             validate_ac(*sweep, *points, *fstart, *fstop, reltol)?;
         }
+    }
+    // V20
+    for a in &n.analyses {
+        if let Analysis::Tran {
+            tstep,
+            tstop,
+            tstart,
+            tmax,
+            ..
+        } = a
+        {
+            validate_tran(*tstep, *tstop, *tstart, *tmax)?;
+        }
+    }
+    Ok(())
+}
+
+/// V18.
+fn validate_waveform(name: &str, wave: &Waveform) -> Result<(), Error> {
+    let check = |kind: &str, key: &str, v: f64, ok: bool, rel: &str| -> Result<(), Error> {
+        if v.is_finite() && ok {
+            Ok(())
+        } else {
+            invalid(format!(
+                "element {name}: {kind} {key} must be finite and {rel}, got {v}"
+            ))
+        }
+    };
+    match wave {
+        Waveform::Pulse {
+            v1,
+            v2,
+            td,
+            tr,
+            tf,
+            pw,
+            per,
+        } => {
+            check("pulse", "v1", *v1, true, "any")?;
+            check("pulse", "v2", *v2, true, "any")?;
+            check("pulse", "td", *td, *td >= 0.0, ">= 0")?;
+            check("pulse", "tr", *tr, *tr > 0.0, "> 0")?;
+            check("pulse", "tf", *tf, *tf > 0.0, "> 0")?;
+            check("pulse", "pw", *pw, *pw >= 0.0, ">= 0")?;
+            check("pulse", "per", *per, *per > 0.0, "> 0")
+        }
+        Waveform::Sin {
+            vo,
+            va,
+            freq,
+            td,
+            theta,
+            phase,
+        } => {
+            check("sin", "vo", *vo, true, "any")?;
+            check("sin", "va", *va, true, "any")?;
+            check("sin", "freq", *freq, *freq > 0.0, "> 0")?;
+            check("sin", "td", *td, *td >= 0.0, ">= 0")?;
+            check("sin", "theta", *theta, *theta >= 0.0, ">= 0")?;
+            check("sin", "phase", *phase, true, "any")
+        }
+        Waveform::Pwl { points } => {
+            if points.is_empty() {
+                return invalid(format!("element {name}: pwl needs at least one point"));
+            }
+            let mut last = f64::NEG_INFINITY;
+            for [t, v] in points {
+                if !(t.is_finite() && v.is_finite()) {
+                    return invalid(format!("element {name}: pwl points must be finite"));
+                }
+                if *t < 0.0 {
+                    return invalid(format!("element {name}: pwl times must be >= 0, got {t}"));
+                }
+                if *t <= last {
+                    return invalid(format!(
+                        "element {name}: pwl times must be strictly increasing"
+                    ));
+                }
+                last = *t;
+            }
+            Ok(())
+        }
+    }
+}
+
+/// V20.
+fn validate_tran(tstep: f64, tstop: f64, tstart: f64, tmax: Option<f64>) -> Result<(), Error> {
+    if !(tstep.is_finite() && tstep > 0.0) {
+        return invalid(format!(
+            "analysis tran: tstep must be finite and > 0, got {tstep}"
+        ));
+    }
+    if !(tstart.is_finite() && tstart >= 0.0) {
+        return invalid(format!(
+            "analysis tran: tstart must be finite and >= 0, got {tstart}"
+        ));
+    }
+    if !(tstop.is_finite() && tstop > tstart) {
+        return invalid(format!(
+            "analysis tran: tstop {tstop} must be above tstart {tstart}"
+        ));
+    }
+    if let Some(m) = tmax
+        && !(m.is_finite() && m > 0.0)
+    {
+        return invalid(format!(
+            "analysis tran: tmax must be finite and > 0, got {m}"
+        ));
     }
     Ok(())
 }
@@ -341,6 +462,12 @@ fn validate_options(o: &Options) -> Result<(), Error> {
             return invalid(format!("option {key} must be finite and > 0, got {v}"));
         }
     }
+    // V21
+    if let Some(v) = o.trtol
+        && !(v.is_finite() && v > 0.0)
+    {
+        return invalid(format!("option trtol must be finite and > 0, got {v}"));
+    }
     Ok(())
 }
 
@@ -365,6 +492,7 @@ mod tests {
                     nodes: nodes("in", "0"),
                     dc: 1.0,
                     ac: None,
+                    tran: None,
                 },
                 extra,
             ],
@@ -421,6 +549,7 @@ mod tests {
                 name: "I1".into(),
                 nodes: nodes("in", "0"),
                 dc: v,
+                tran: None,
                 ac: None,
             };
             let msg = message(&base(i))?;
@@ -437,6 +566,7 @@ mod tests {
                 nodes: nodes("in", "0"),
                 dc: 0.0,
                 ac: Some(crate::ir::AcSpec { mag, phase }),
+                tran: None,
             };
             let msg = message(&base(i))?;
             assert!(
@@ -444,6 +574,132 @@ mod tests {
                 "{msg}"
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_ic_is_rejected() -> TestResult {
+        for ic in [f64::INFINITY, f64::NAN] {
+            let c = Element::C {
+                name: "C1".into(),
+                nodes: nodes("in", "0"),
+                value: 1e-6,
+                ic: Some(ic),
+            };
+            let msg = message(&base(c))?;
+            assert!(msg.contains("element C1: ic must be finite"), "{msg}");
+            let l = Element::L {
+                name: "L1".into(),
+                nodes: nodes("in", "0"),
+                value: 1e-3,
+                ic: Some(ic),
+            };
+            let msg = message(&base(l))?;
+            assert!(msg.contains("element L1: ic must be finite"), "{msg}");
+        }
+        Ok(())
+    }
+
+    fn source(wave: Waveform) -> Element {
+        Element::I {
+            name: "I1".into(),
+            nodes: nodes("in", "0"),
+            dc: 0.0,
+            ac: None,
+            tran: Some(wave),
+        }
+    }
+
+    #[test]
+    fn waveform_rules() -> TestResult {
+        let pulse = |td, tr, tf, pw, per| Waveform::Pulse {
+            v1: 0.0,
+            v2: 1.0,
+            td,
+            tr,
+            tf,
+            pw,
+            per,
+        };
+        validate(&base(source(pulse(0.0, 1e-9, 1e-9, 0.0, 1e-3))))?;
+        for (wave, needle) in [
+            (pulse(-1.0, 1e-9, 1e-9, 1e-3, 1e-3), "pulse td must be"),
+            (pulse(0.0, 1e-9, 0.0, 1e-3, 1e-3), "pulse tf must be"),
+            (pulse(0.0, 1e-9, 1e-9, -1.0, 1e-3), "pulse pw must be"),
+            (pulse(0.0, 1e-9, 1e-9, 1e-3, 0.0), "pulse per must be"),
+            (pulse(f64::NAN, 1e-9, 1e-9, 1e-3, 1e-3), "pulse td must be"),
+            (
+                Waveform::Sin {
+                    vo: 0.0,
+                    va: 1.0,
+                    freq: 1.0,
+                    td: 0.0,
+                    theta: -1.0,
+                    phase: 0.0,
+                },
+                "sin theta must be",
+            ),
+            (
+                Waveform::Pwl {
+                    points: vec![[-1.0, 0.0]],
+                },
+                "pwl times must be >= 0",
+            ),
+            (
+                Waveform::Pwl {
+                    points: vec![[0.0, 0.0], [0.0, 1.0]],
+                },
+                "strictly increasing",
+            ),
+            (
+                Waveform::Pwl {
+                    points: vec![[0.0, f64::INFINITY]],
+                },
+                "pwl points must be finite",
+            ),
+        ] {
+            let msg = message(&base(source(wave)))?;
+            assert!(msg.contains(needle), "{needle}: {msg}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn tran_rules() -> TestResult {
+        let tran = |tstep, tstop, tstart, tmax| {
+            let mut n = base(resistor(1.0));
+            n.analyses = vec![Analysis::Tran {
+                tstep,
+                tstop,
+                tstart,
+                tmax,
+                uic: false,
+            }];
+            n
+        };
+        validate(&tran(1e-6, 1e-3, 0.0, Some(1e-6)))?;
+        for (n, needle) in [
+            (tran(f64::NAN, 1e-3, 0.0, None), "tstep must be"),
+            (tran(1e-6, 1e-3, -1.0, None), "tstart must be"),
+            (tran(1e-6, 1e-3, 1e-3, None), "tstop 0.001 must be above"),
+            (tran(1e-6, f64::INFINITY, 0.0, None), "must be above"),
+            (tran(1e-6, 1e-3, 0.0, Some(0.0)), "tmax must be"),
+        ] {
+            let msg = message(&n)?;
+            assert!(msg.contains(needle), "{needle}: {msg}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_trtol_is_rejected() -> TestResult {
+        let mut n = base(resistor(1.0));
+        n.options = Some(Options {
+            trtol: Some(f64::NAN),
+            ..Options::default()
+        });
+        let msg = message(&n)?;
+        assert!(msg.contains("option trtol must be finite and > 0"), "{msg}");
         Ok(())
     }
 

@@ -1,0 +1,9 @@
+{
+  "irVersion": 1,
+  "elements": [
+    { "kind": "V", "name": "V1", "nodes": ["in", "0"], "dc": 0, "tran": { "type": "pwl", "points": [] } },
+    { "kind": "R", "name": "R1", "nodes": ["in", "0"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["in", "0"], "value": 1e-6 }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 1e-6, "tstop": 1e-3 }]
+}

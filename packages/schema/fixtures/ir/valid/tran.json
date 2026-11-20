@@ -1,0 +1,42 @@
+{
+  "irVersion": 1,
+  "title": "Transient sources and initial conditions",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "tran": { "type": "pulse", "v1": 0, "v2": 5, "td": 1e-6, "tr": 1e-7, "tf": 1e-7, "pw": 4e-4, "per": 1e-3 }
+    },
+    {
+      "kind": "V",
+      "name": "V2",
+      "nodes": ["s", "0"],
+      "dc": 0,
+      "tran": { "type": "sin", "vo": 1, "va": 2, "freq": 1000, "td": 0, "theta": 10, "phase": 90 }
+    },
+    {
+      "kind": "V",
+      "name": "V3",
+      "nodes": ["w", "0"],
+      "dc": 0,
+      "tran": { "type": "pwl", "points": [[0, 0], [1e-4, 1], [5e-4, -1]] }
+    },
+    {
+      "kind": "I",
+      "name": "I1",
+      "nodes": ["0", "out"],
+      "dc": 0,
+      "tran": { "type": "pulse", "v1": 0, "v2": 1e-3, "tr": 1e-6, "tf": 1e-6, "pw": 1e-4, "per": 5e-4 }
+    },
+    { "kind": "R", "name": "R1", "nodes": ["in", "out"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["out", "0"], "value": 1e-6, "ic": 1 },
+    { "kind": "L", "name": "L1", "nodes": ["out", "x"], "value": 1e-3, "ic": 0.5 },
+    { "kind": "R", "name": "R2", "nodes": ["x", "0"], "value": 10 },
+    { "kind": "R", "name": "R3", "nodes": ["s", "0"], "value": 1000 },
+    { "kind": "R", "name": "R4", "nodes": ["w", "0"], "value": 1000 }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 1e-6, "tstop": 1e-3, "uic": true }],
+  "options": { "method": "gear" }
+}

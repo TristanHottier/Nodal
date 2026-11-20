@@ -2,7 +2,7 @@
 
 use std::fmt::Write;
 
-use crate::ir::{Analysis, DEFAULT_GMIN, Element, MOS_DEFAULT_SIZE, ModelKind, Netlist};
+use crate::ir::{Analysis, DEFAULT_GMIN, Element, MOS_DEFAULT_SIZE, ModelKind, Netlist, Waveform};
 
 /// Renders the netlist as an ngspice deck: title, elements in IR order,
 /// `.model` cards, `.options` for the options that are set, `.nodeset`, one
@@ -21,26 +21,47 @@ pub fn to_spice_deck(netlist: &Netlist) -> String {
     // Writing to a String cannot fail, so the fmt results are ignored.
     for element in &netlist.elements {
         let _ = match element {
-            Element::R { name, nodes, value }
-            | Element::L { name, nodes, value }
-            | Element::C { name, nodes, value } => {
+            Element::R { name, nodes, value } => {
                 writeln!(deck, "{name} {} {} {value:e}", nodes[0], nodes[1])
+            }
+            Element::L {
+                name,
+                nodes,
+                value,
+                ic,
+            }
+            | Element::C {
+                name,
+                nodes,
+                value,
+                ic,
+            } => {
+                let _ = write!(deck, "{name} {} {} {value:e}", nodes[0], nodes[1]);
+                if let Some(ic) = ic {
+                    let _ = write!(deck, " IC={ic:e}");
+                }
+                writeln!(deck)
             }
             Element::V {
                 name,
                 nodes,
                 dc,
                 ac,
+                tran,
             }
             | Element::I {
                 name,
                 nodes,
                 dc,
                 ac,
+                tran,
             } => {
                 let _ = write!(deck, "{name} {} {} DC {dc:e}", nodes[0], nodes[1]);
                 if let Some(ac) = ac {
                     let _ = write!(deck, " AC {:e} {:e}", ac.mag, ac.phase);
+                }
+                if let Some(wave) = tran {
+                    let _ = write!(deck, " {}", waveform_card(wave));
                 }
                 writeln!(deck)
             }
@@ -148,6 +169,8 @@ pub fn to_spice_deck(netlist: &Netlist) -> String {
         ]
         .into_iter()
         .filter_map(|(k, v)| v.map(|v| format!("{k}={v:e}")))
+        .chain(o.method.map(|m| format!("method={}", m.as_str())))
+        .chain(o.trtol.map(|v| format!("trtol={v:e}")))
         .collect();
         if !set.is_empty() {
             let _ = writeln!(deck, ".options {}", set.join(" "));
@@ -174,10 +197,54 @@ pub fn to_spice_deck(netlist: &Netlist) -> String {
                 fstart,
                 fstop,
             } => writeln!(deck, ".ac {} {points} {fstart:e} {fstop:e}", sweep.as_str()),
+            Analysis::Tran {
+                tstep,
+                tstop,
+                tstart,
+                tmax,
+                uic,
+            } => {
+                let _ = write!(deck, ".tran {tstep:e} {tstop:e}");
+                if let Some(tmax) = tmax {
+                    let _ = write!(deck, " {tstart:e} {tmax:e}");
+                } else if *tstart != 0.0 {
+                    let _ = write!(deck, " {tstart:e}");
+                }
+                if *uic {
+                    let _ = write!(deck, " uic");
+                }
+                writeln!(deck)
+            }
         };
     }
     deck.push_str(".end\n");
     deck
+}
+
+/// The ngspice source function of a waveform, for example `PULSE(...)`.
+fn waveform_card(wave: &Waveform) -> String {
+    let (keyword, values): (&str, Vec<f64>) = match wave {
+        Waveform::Pulse {
+            v1,
+            v2,
+            td,
+            tr,
+            tf,
+            pw,
+            per,
+        } => ("PULSE", vec![*v1, *v2, *td, *tr, *tf, *pw, *per]),
+        Waveform::Sin {
+            vo,
+            va,
+            freq,
+            td,
+            theta,
+            phase,
+        } => ("SIN", vec![*vo, *va, *freq, *td, *theta, *phase]),
+        Waveform::Pwl { points } => ("PWL", points.iter().flatten().copied().collect()),
+    };
+    let items: Vec<String> = values.iter().map(|v| format!("{v:e}")).collect();
+    format!("{keyword}({})", items.join(" "))
 }
 
 #[cfg(test)]
@@ -229,6 +296,40 @@ I1 0 out DC 0e0 AC 1e-3 9e1
 .end
 ";
         assert_eq!(to_spice_deck(&netlist), expected);
+        Ok(())
+    }
+
+    #[test]
+    fn deck_for_tran() -> Result<(), Box<dyn Error>> {
+        let netlist = parse_netlist(include_str!(
+            "../../../../packages/schema/fixtures/ir/valid/tran.json"
+        ))?;
+        let expected = "\
+Transient sources and initial conditions
+V1 in 0 DC 0e0 PULSE(0e0 5e0 1e-6 1e-7 1e-7 4e-4 1e-3)
+V2 s 0 DC 0e0 SIN(1e0 2e0 1e3 0e0 1e1 9e1)
+V3 w 0 DC 0e0 PWL(0e0 0e0 1e-4 1e0 5e-4 -1e0)
+I1 0 out DC 0e0 PULSE(0e0 1e-3 0e0 1e-6 1e-6 1e-4 5e-4)
+R1 in out 1e3
+C1 out 0 1e-6 IC=1e0
+L1 out x 1e-3 IC=5e-1
+R2 x 0 1e1
+R3 s 0 1e3
+R4 w 0 1e3
+.options method=gear
+.tran 1e-6 1e-3 uic
+.end
+";
+        assert_eq!(to_spice_deck(&netlist), expected);
+        Ok(())
+    }
+
+    #[test]
+    fn tran_card_prints_tstart_with_tmax() -> Result<(), Box<dyn Error>> {
+        let json = r#"{"irVersion":1,"elements":[{"kind":"V","name":"V1","nodes":["a","0"]},{"kind":"R","name":"R1","nodes":["a","0"],"value":1}],"analyses":[{"type":"tran","tstep":1e-6,"tstop":1e-3,"tstart":1e-4,"tmax":2e-6}],"options":{"trtol":5}}"#;
+        let deck = to_spice_deck(&parse_netlist(json)?);
+        assert!(deck.contains(".options trtol=5e0\n"), "{deck}");
+        assert!(deck.contains(".tran 1e-6 1e-3 1e-4 2e-6\n"), "{deck}");
         Ok(())
     }
 

@@ -44,11 +44,17 @@ pub enum Element {
         name: String,
         nodes: [String; 2],
         value: f64,
+        /// Initial current for `tran` with `uic`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        ic: Option<f64>,
     },
     C {
         name: String,
         nodes: [String; 2],
         value: f64,
+        /// Initial voltage for `tran` with `uic`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        ic: Option<f64>,
     },
     V {
         name: String,
@@ -58,6 +64,10 @@ pub enum Element {
         /// Small-signal value for the `ac` analysis.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         ac: Option<AcSpec>,
+        /// Time-domain waveform for the `tran` analysis; `dc` applies
+        /// otherwise.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tran: Option<Waveform>,
     },
     I {
         name: String,
@@ -67,6 +77,10 @@ pub enum Element {
         /// Small-signal value for the `ac` analysis.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         ac: Option<AcSpec>,
+        /// Time-domain waveform for the `tran` analysis; `dc` applies
+        /// otherwise.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tran: Option<Waveform>,
     },
     E {
         name: String,
@@ -252,6 +266,59 @@ pub struct AcSpec {
     pub phase: f64,
 }
 
+/// Time-domain waveform of an independent source, used by `tran`. Times in
+/// seconds, `phase` in degrees, values in volts or amperes.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(
+    tag = "type",
+    rename_all = "lowercase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum Waveform {
+    Pulse {
+        v1: f64,
+        v2: f64,
+        #[serde(default)]
+        td: f64,
+        tr: f64,
+        tf: f64,
+        pw: f64,
+        per: f64,
+    },
+    Sin {
+        vo: f64,
+        va: f64,
+        freq: f64,
+        #[serde(default)]
+        td: f64,
+        #[serde(default)]
+        theta: f64,
+        #[serde(default)]
+        phase: f64,
+    },
+    /// `[time, value]` pairs.
+    Pwl { points: Vec<[f64; 2]> },
+}
+
+/// Integration method of the `tran` analysis.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Method {
+    Trap,
+    Gear,
+}
+
+impl Method {
+    /// The SPICE keyword, for example `gear`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Method::Trap => "trap",
+            Method::Gear => "gear",
+        }
+    }
+}
+
 /// Frequency spacing of an `ac` analysis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -294,6 +361,19 @@ pub enum Analysis {
         points: u32,
         fstart: f64,
         fstop: f64,
+    },
+    /// Time-domain simulation from 0 to `tstop`, reporting from `tstart`.
+    /// `tstep` is the print step, `tmax` caps the internal step, and `uic`
+    /// starts from the element `ic` values instead of an operating point.
+    Tran {
+        tstep: f64,
+        tstop: f64,
+        #[serde(default)]
+        tstart: f64,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tmax: Option<f64>,
+        #[serde(default)]
+        uic: bool,
     },
 }
 
@@ -412,6 +492,12 @@ pub struct Options {
     pub chgtol: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gmin: Option<f64>,
+    /// Integration method for `tran`; the default is `trap`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<Method>,
+    /// Truncation error factor for `tran`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trtol: Option<f64>,
 }
 
 /// Parse a JSON netlist and validate it.

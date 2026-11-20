@@ -22,7 +22,7 @@
   ],
   "analyses": [
     {
-      "type": "tran"
+      "type": "noise"
     }
   ]
 }

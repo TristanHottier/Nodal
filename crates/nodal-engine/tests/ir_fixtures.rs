@@ -80,7 +80,7 @@ const NEEDLES: &[(&str, &str)] = &[
     ("ir-version-2", "irVersion must be 1"),
     ("unknown-field", "unknown field `bogus`"),
     ("unknown-kind", "unknown variant `X`"),
-    ("unsupported-analysis", "unknown variant `tran`"),
+    ("unsupported-analysis", "unknown variant `noise`"),
     ("analysis-extra-field", "unknown field `x`"),
     ("empty-elements", "elements must not be empty"),
     ("empty-analyses", "analyses must not be empty"),
@@ -185,6 +185,31 @@ const NEEDLES: &[(&str, &str)] = &[
         "option temp must be 27 (temperature is fixed in v1)",
     ),
     ("bad-option", "option reltol must be finite and > 0"),
+    (
+        "tran-pulse-zero-rise",
+        "element V1: pulse tr must be finite and > 0",
+    ),
+    (
+        "tran-sin-zero-freq",
+        "element V1: sin freq must be finite and > 0",
+    ),
+    (
+        "tran-pwl-decreasing",
+        "element V1: pwl times must be strictly increasing",
+    ),
+    ("tran-pwl-empty", "element V1: pwl needs at least one point"),
+    ("tran-ic-infinite", "number out of range"),
+    (
+        "tran-tstop-before-tstart",
+        "analysis tran: tstop 0.001 must be above tstart 0.002",
+    ),
+    (
+        "tran-zero-tstep",
+        "analysis tran: tstep must be finite and > 0",
+    ),
+    ("tran-trtol-zero", "option trtol must be finite and > 0"),
+    ("tran-unknown-method", "unknown variant `euler`"),
+    ("tran-unknown-waveform", "unknown variant `exp`"),
 ];
 
 #[test]

@@ -53,6 +53,9 @@ pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
                 .ok_or_else(|| Error::Invalid("ac analysis: invalid frequency sweep".into()))?;
                 analysis::solve_ac(&circuit, &frequencies).map(AnalysisResult::Ac)
             }
+            Analysis::Tran { .. } => {
+                Err(Error::Invalid("tran analysis is not simulated yet".into()))
+            }
         })
         .collect()
 }
@@ -65,5 +68,17 @@ mod tests {
     #[test]
     fn version_matches_manifest() {
         assert_eq!(super::VERSION, "0.1.0");
+    }
+
+    #[test]
+    fn tran_is_not_simulated_yet() -> Result<(), Box<dyn std::error::Error>> {
+        let json = include_str!("../../../packages/schema/fixtures/ir/valid/tran.json");
+        let netlist = super::parse_netlist(json)?;
+        let err = super::simulate(&netlist).err().ok_or("simulated")?;
+        assert!(
+            err.to_string()
+                .contains("tran analysis is not simulated yet")
+        );
+        Ok(())
     }
 }
