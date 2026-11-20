@@ -157,14 +157,19 @@ pub fn param_spec(kind: ModelKind) -> &'static [ParamSpec] {
 }
 
 /// The value of parameter `key`: the model's own, else the default. A key
-/// that the model type does not support gives NaN.
-pub fn param(model: &Model, key: &str) -> f64 {
-    model.params.get(key).copied().unwrap_or_else(|| {
-        param_spec(model.kind)
-            .iter()
-            .find(|s| s.key == key)
-            .map_or(f64::NAN, |s| s.default)
-    })
+/// that the model type does not support is an engine bug, not a netlist
+/// error, so it gives `Error::Internal`.
+pub fn param(model: &Model, key: &str) -> Result<f64, Error> {
+    let spec = param_spec(model.kind)
+        .iter()
+        .find(|s| s.key == key)
+        .ok_or_else(|| {
+            Error::Internal(format!(
+                "unknown parameter {key} for model type {}",
+                model.kind.as_str()
+            ))
+        })?;
+    Ok(model.params.get(key).copied().unwrap_or(spec.default))
 }
 
 /// V10 and V12: model names and parameters.
@@ -221,6 +226,23 @@ mod tests {
     use super::*;
 
     type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+    #[test]
+    fn unknown_param_is_internal_error() -> TestResult {
+        let model = Model {
+            name: "DM".into(),
+            kind: ModelKind::D,
+            params: BTreeMap::new(),
+        };
+        assert_eq!(param(&model, "IS")?, 1e-14);
+        match param(&model, "BF") {
+            Err(Error::Internal(msg)) => {
+                assert_eq!(msg, "unknown parameter BF for model type D");
+                Ok(())
+            }
+            other => Err(format!("expected Internal, got {other:?}").into()),
+        }
+    }
 
     /// One entry of packages/schema/fixtures/param-specs.json. A default
     /// that is not a finite number is `null` plus `defaultKind`: "inf" for

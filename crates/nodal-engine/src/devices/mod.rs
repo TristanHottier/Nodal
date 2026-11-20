@@ -167,7 +167,7 @@ pub(crate) fn instantiate(
                 node(circuit, &control_nodes[0]),
                 node(circuit, &control_nodes[1]),
             ],
-            SwitchParams::from_model(model, circuit.options.gmin),
+            SwitchParams::from_model(model, circuit.options.gmin)?,
         )));
     }
     if let Element::Q { nodes, model, .. } = element {
@@ -184,7 +184,7 @@ pub(crate) fn instantiate(
                 node(circuit, &nodes[2]),
             ],
             model.kind == ModelKind::PNP,
-            BjtParams::from_model(model),
+            BjtParams::from_model(model)?,
         )));
     }
     if let Element::M {
@@ -207,8 +207,8 @@ pub(crate) fn instantiate(
                 node(circuit, &nodes[3]),
             ],
             model.kind == ModelKind::PMOS,
-            Mos1Params::from_model(model),
-            param(model, "KP") * w / l,
+            Mos1Params::from_model(model)?,
+            param(model, "KP")? * w / l,
         )));
     }
     let (p, n) = match element.nodes() {
@@ -227,7 +227,7 @@ pub(crate) fn instantiate(
                 p,
                 circuit.internal(&name),
                 n,
-                DiodeParams::from_model(model),
+                DiodeParams::from_model(model)?,
             ))
         }
         Element::R { value, .. } => Box::new(Resistor::new(name, p, n, *value)),
@@ -309,6 +309,27 @@ impl Device for NeverConverges {
     fn load(&self, x: &[f64], _: &mut [f64], _: &LoadContext, sys: &mut RealSystem) -> bool {
         sys.add_a(self.node, self.node, 1.0);
         sys.add_b(self.node, 1.0 + volt(x, self.node));
+        true
+    }
+}
+
+/// Test device that draws a fixed current out of a node and always reports
+/// that it limited, so Newton never converges.
+#[cfg(test)]
+#[derive(Debug)]
+pub(crate) struct FixedCurrent {
+    pub node: Option<usize>,
+    pub amps: f64,
+}
+
+#[cfg(test)]
+impl Device for FixedCurrent {
+    fn name(&self) -> &str {
+        "XFIXED"
+    }
+
+    fn load(&self, _: &[f64], _: &mut [f64], _: &LoadContext, sys: &mut RealSystem) -> bool {
+        sys.add_b(self.node, -self.amps);
         true
     }
 }

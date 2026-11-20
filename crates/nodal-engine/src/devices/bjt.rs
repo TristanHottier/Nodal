@@ -8,11 +8,11 @@
 //! device for NPN, lateral for PNP), so the only substrate term is `gmin`
 //! from the collector (NPN) or the base (PNP) to ground.
 
-use std::f64::consts::E;
-
 use super::constants::VT;
+use super::diode::junction;
 use super::limit::pnjlim;
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
 
@@ -35,15 +35,15 @@ pub struct BjtParams {
 
 impl BjtParams {
     /// Reads the DC parameters from a model, with the table defaults.
-    pub fn from_model(model: &Model) -> Self {
-        Self {
-            is: param(model, "IS"),
-            bf: param(model, "BF"),
-            br: param(model, "BR"),
-            nf: param(model, "NF"),
-            nr: param(model, "NR"),
-            vaf: param(model, "VAF"),
-        }
+    pub fn from_model(model: &Model) -> Result<Self, Error> {
+        Ok(Self {
+            is: param(model, "IS")?,
+            bf: param(model, "BF")?,
+            br: param(model, "BR")?,
+            nf: param(model, "NF")?,
+            nr: param(model, "NR")?,
+            vaf: param(model, "VAF")?,
+        })
     }
 
     /// `NF * VT`.
@@ -82,19 +82,6 @@ pub struct BjtEval {
     pub dic_dvbc: f64,
     pub dib_dvbe: f64,
     pub dib_dvbc: f64,
-}
-
-/// One junction current and conductance, both regions (`bjtload.c`): the
-/// exponential for `v >= -3 vt`, the cubic `-IS (1 + arg)` form below.
-fn junction(v: f64, is: f64, vt: f64) -> (f64, f64) {
-    if v >= -3.0 * vt {
-        let ev = (v / vt).exp();
-        (is * (ev - 1.0), is * ev / vt)
-    } else {
-        let arg = 3.0 * vt / (v * E);
-        let arg = arg * arg * arg;
-        (-is * (1.0 + arg), is * 3.0 * arg / v)
-    }
 }
 
 /// NPN currents and Jacobian at `(vbe, vbc)`, `gmin` included.

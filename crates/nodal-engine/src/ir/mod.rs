@@ -189,22 +189,27 @@ impl Element {
     /// Node pairs that conduct at DC, used by the floating-node check.
     /// Control ports, MOSFET gate and bulk, and current sources add none.
     pub fn dc_edges(&self) -> Vec<(&str, &str)> {
-        let n = self.nodes();
         match self {
-            Element::R { .. }
-            | Element::L { .. }
-            | Element::V { .. }
-            | Element::E { .. }
-            | Element::H { .. }
-            | Element::D { .. }
-            | Element::S { .. } => vec![(n[0].as_str(), n[1].as_str())],
+            Element::R { nodes, .. }
+            | Element::L { nodes, .. }
+            | Element::V { nodes, .. }
+            | Element::E { nodes, .. }
+            | Element::H { nodes, .. }
+            | Element::D { nodes, .. }
+            | Element::S { nodes, .. } => {
+                let [a, b] = nodes;
+                vec![(a.as_str(), b.as_str())]
+            }
             // base-emitter and base-collector junctions
-            Element::Q { .. } => vec![
-                (n[1].as_str(), n[2].as_str()),
-                (n[1].as_str(), n[0].as_str()),
-            ],
+            Element::Q { nodes, .. } => {
+                let [c, b, e] = nodes;
+                vec![(b.as_str(), e.as_str()), (b.as_str(), c.as_str())]
+            }
             // drain-source channel
-            Element::M { .. } => vec![(n[0].as_str(), n[2].as_str())],
+            Element::M { nodes, .. } => {
+                let [d, _, s, _] = nodes;
+                vec![(d.as_str(), s.as_str())]
+            }
             Element::C { .. } | Element::I { .. } | Element::G { .. } | Element::F { .. } => {
                 Vec::new()
             }

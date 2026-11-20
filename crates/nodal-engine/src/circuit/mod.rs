@@ -97,7 +97,7 @@ impl Circuit {
         // unknowns, which follow them, do not move.
         for element in &netlist.elements {
             if let Element::D { name, model, .. } = element
-                && diode_rs(netlist, model) > 0.0
+                && diode_rs(netlist, model)? > 0.0
             {
                 circuit
                     .internal_index
@@ -212,10 +212,10 @@ fn solver_options(netlist: &Netlist) -> SolverOptions {
 
 /// `RS` of the diode model `model`; 0 if the model is missing (instantiation
 /// reports that).
-fn diode_rs(netlist: &Netlist, model: &str) -> f64 {
+fn diode_rs(netlist: &Netlist, model: &str) -> Result<f64, Error> {
     netlist
         .models
         .iter()
         .find(|m| m.name == model && m.kind == ModelKind::D)
-        .map_or(0.0, |m| param(m, "RS"))
+        .map_or(Ok(0.0), |m| param(m, "RS"))
 }

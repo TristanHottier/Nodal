@@ -317,6 +317,17 @@ fn source_stepping(
     trace: &mut Trace,
     iters: &mut usize,
 ) -> Stage {
+    source_stepping_capped(circuit, state, trace, iters, MAX_SOURCE_STEPS)
+}
+
+/// `source_stepping` with the increment limit as a parameter, for tests.
+fn source_stepping_capped(
+    circuit: &Circuit,
+    state: &mut [f64],
+    trace: &mut Trace,
+    iters: &mut usize,
+    max_steps: usize,
+) -> Stage {
     let mut alpha = 0.0;
     trace.alpha.push(alpha);
     let cfg = NewtonConfig {
@@ -327,7 +338,10 @@ fn source_stepping(
     let zeros = vec![0.0; circuit.unknown_count()];
     let mut x = attempt(circuit, &zeros, state, &cfg, iters)?;
     let mut raise = 0.001;
-    for _ in 0..MAX_SOURCE_STEPS {
+    // The update of the most recent attempt: the failed run's own, or the
+    // change between successive solutions when the run converged.
+    let mut last_update = vec![0.0; circuit.unknown_count()];
+    for _ in 0..max_steps {
         let next = (alpha + raise).min(1.0);
         trace.alpha.push(next);
         let cfg = NewtonConfig {
@@ -338,6 +352,9 @@ fn source_stepping(
         let before = *iters;
         match attempt(circuit, &x, state, &cfg, iters) {
             Ok(new_x) => {
+                for ((u, new), old) in last_update.iter_mut().zip(&new_x).zip(&x) {
+                    *u = new - old;
+                }
                 x = new_x;
                 alpha = next;
                 if alpha >= 1.0 {
@@ -351,6 +368,7 @@ fn source_stepping(
                 if f.failure.error.is_some() {
                     return Err(f);
                 }
+                last_update.clone_from(&f.failure.last_update);
                 raise /= 10.0;
                 if raise < 1e-7 {
                     return Err(f);
@@ -361,7 +379,7 @@ fn source_stepping(
     Err(Box::new(StageFailure {
         failure: NewtonFailure {
             last_x: x,
-            last_update: vec![0.0; circuit.unknown_count()],
+            last_update,
             error: None,
         },
         diag_gmin: 0.0,
@@ -501,6 +519,7 @@ pub(crate) fn solve_dc_counted(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::devices::Device;
     use crate::ir::parse_netlist;
 
     type TestResult = Result<(), Box<dyn std::error::Error>>;
@@ -653,6 +672,96 @@ mod tests {
             }
             other => Err(format!("expected NoConvergence, got {other:?}").into()),
         }
+    }
+
+    /// V1 a 0 1; R1 a b 1k; `device` on node b.
+    fn with_device_on_b(device: Box<dyn Device>) -> Result<Circuit, Box<dyn std::error::Error>> {
+        let text = r#"{"irVersion":1,"elements":[
+            {"kind":"V","name":"V1","nodes":["a","0"],"dc":1},
+            {"kind":"R","name":"R1","nodes":["a","b"],"value":1000}],
+            "analyses":[{"type":"op"}]}"#;
+        let mut circuit = Circuit::build(&parse_netlist(text)?)?;
+        assert_eq!(circuit.node_names, ["a", "b"]);
+        circuit.state_offsets.push(circuit.state_len());
+        circuit.devices.push(device);
+        Ok(circuit)
+    }
+
+    /// The reported residual of node `b` and the stage failure that produced it.
+    fn reported_b(
+        circuit: &Circuit,
+    ) -> Result<(f64, Box<StageFailure>), Box<dyn std::error::Error>> {
+        let Err(Error::NoConvergence { residuals, .. }) = run(circuit, Strategy::All) else {
+            return Err("expected NoConvergence".into());
+        };
+        let b = residuals
+            .iter()
+            .find(|(name, _)| name == "b")
+            .ok_or("no residual for b")?
+            .1;
+        // The last stage of `All` is source stepping, which is deterministic
+        // for these stateless test devices.
+        let mut state = vec![0.0; circuit.state_len()];
+        let f = source_stepping(circuit, &mut state, &mut Trace::default(), &mut 0)
+            .err()
+            .ok_or("source stepping converged")?;
+        Ok((b, f))
+    }
+
+    #[test]
+    fn kcl_residuals_are_numeric() -> TestResult {
+        // Hand value of |A(x) x - b(x)| at node b: the 1k resistor row plus
+        // the fixed 1 mA leaving b.
+        let circuit = with_device_on_b(Box::new(crate::devices::FixedCurrent {
+            node: Some(1),
+            amps: 1e-3,
+        }))?;
+        let (got, f) = reported_b(&circuit)?;
+        let (xa, xb) = (f.failure.last_x[0], f.failure.last_x[1]);
+        let terms = [1e-3 * xb, -1e-3 * xa, 1e-3];
+        let want = terms.iter().sum::<f64>();
+        let scale = terms.iter().fold(0.0_f64, |m, t| m.max(t.abs()));
+        assert!((got - want).abs() <= 1e-12 * scale, "{got} vs {want}");
+        Ok(())
+    }
+
+    #[test]
+    fn kcl_residual_matches_hand_value_when_nonzero() -> TestResult {
+        // NeverConverges stamps G = 1 and I = 1 + V(b): at the last iterate
+        // the row b residual is (1 + 1e-3) xb - 1e-3 xa - (1 + xb).
+        let circuit = with_device_on_b(Box::new(crate::devices::NeverConverges { node: Some(1) }))?;
+        let (got, f) = reported_b(&circuit)?;
+        let (xa, xb) = (f.failure.last_x[0], f.failure.last_x[1]);
+        let want = 1e-3 * (xb - xa) - 1.0;
+        assert!(want.abs() > 0.5, "residual should be large, got {want}");
+        assert!(((got - want) / want).abs() <= 1e-12, "{got} vs {want}");
+        Ok(())
+    }
+
+    #[test]
+    fn source_stepping_exhaustion_reports_updates() -> TestResult {
+        // NeverConverges under source stepping: the reported updates are the
+        // failed run's, not placeholders (V(a) is pinned at alpha = 0).
+        let circuit = with_device_on_b(Box::new(crate::devices::NeverConverges { node: Some(1) }))?;
+        let Err(Error::NoConvergence { updates, .. }) = run(&circuit, Strategy::SourceOnly) else {
+            return Err("expected NoConvergence".into());
+        };
+        assert!(updates.iter().any(|(_, v)| *v != 0.0), "{updates:?}");
+        // The increment limit is reached while every run still converges:
+        // the diode circuit with room for two increments only.
+        let diode = Circuit::build(&parse_netlist(DIODE)?)?;
+        let mut state = vec![0.0; diode.state_len()];
+        let f = source_stepping_capped(&diode, &mut state, &mut Trace::default(), &mut 0, 2)
+            .err()
+            .ok_or("source stepping reached alpha = 1 in two steps")?;
+        assert!(f.failure.error.is_none());
+        assert!(f.source_factor > 0.0 && f.source_factor < 1.0);
+        let Error::NoConvergence { updates, .. } = no_convergence(&diode, &state, &f) else {
+            return Err("expected NoConvergence".into());
+        };
+        assert!(!updates.is_empty());
+        assert!(updates.iter().all(|(_, v)| *v != 0.0), "{updates:?}");
+        Ok(())
     }
 
     #[test]

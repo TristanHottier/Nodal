@@ -261,14 +261,27 @@ fn nmos_reverse_conduction() -> TestResult {
     // Drain below source: the device conducts from source to drain, and the
     // body effect uses the (now source-side) drain voltage.
     let els = format!(
-        r#"{},{},{{"kind":"M","name":"M1","nodes":["d","g","s","0"],"model":"MM",{MOS_W_L}}}"#,
-        r#"{"kind":"V","name":"V1","nodes":["g","0"],"dc":2}"#,
-        r#"{"kind":"V","name":"V2","nodes":["d","0"],"dc":0}"#,
-    ) + r#",{"kind":"V","name":"V3","nodes":["s","0"],"dc":0.5}"#;
+        r#"{},{},{{"kind":"M","name":"M1","nodes":["d","g","0","0"],"model":"MM",{MOS_W_L}}}"#,
+        r#"{"kind":"V","name":"VG","nodes":["g","0"],"dc":3}"#,
+        r#"{"kind":"V","name":"VD","nodes":["d","0"],"dc":-0.5}"#,
+    );
     let r = run(&mos_netlist(&els, "NMOS", 0.02))?;
-    let i = r.branch_currents["V2"];
-    // Current leaves the "source" node s and enters the "drain" d: V2 absorbs it.
-    assert!(i > 0.0, "I(V2) = {i}");
+    // devices.md section 3 with drain and source swapped: the swapped source
+    // is the d node (-0.5 V), so vgs = 3.5, vds = 0.5, vbs = 0 - (-0.5) = 0.5.
+    let (vto, gamma, phi, lambda, beta) = (0.7, 0.4, 0.65_f64, 0.02, 1e-4 * 100e-6 / 10e-6);
+    let (vgs, vds, vbs) = (3.5, 0.5, 0.5);
+    // vbs > 0 branch of s(Vbs).
+    let s = (phi.sqrt() - vbs / (2.0 * phi.sqrt())).max(0.0);
+    let vth = vto + gamma * (s - phi.sqrt());
+    let vov = vgs - vth;
+    assert!(vov > vds, "triode expected, vov = {vov}");
+    let id = beta * (vov - vds / 2.0) * vds * (1.0 + lambda * vds);
+    // Current into the physical drain is -id; gmin joins the drain to the
+    // bulk, so it carries gmin * (-0.5) into the drain as well. VD supplies
+    // the negative of the current that the device takes from node d.
+    let want = id + 1e-12 * 0.5;
+    let got = r.branch_currents["VD"];
+    assert!(close(got, want, 1e-13), "I(VD) = {got}, want {want}");
     Ok(())
 }
 

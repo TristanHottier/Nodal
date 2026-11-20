@@ -4,6 +4,7 @@
 //! non-negative `VH`. State slot 0 holds the on/off state (1.0 on, 0.0 off).
 
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
 
@@ -22,14 +23,14 @@ pub struct SwitchParams {
 
 impl SwitchParams {
     /// Reads a model. An unset `ROFF` (NaN) means `1/gmin`.
-    pub fn from_model(model: &Model, gmin: f64) -> Self {
-        let roff = param(model, "ROFF");
-        Self {
-            vt: param(model, "VT"),
-            vh: param(model, "VH"),
-            g_on: 1.0 / param(model, "RON"),
+    pub fn from_model(model: &Model, gmin: f64) -> Result<Self, Error> {
+        let roff = param(model, "ROFF")?;
+        Ok(Self {
+            vt: param(model, "VT")?,
+            vh: param(model, "VH")?,
+            g_on: 1.0 / param(model, "RON")?,
             g_off: if roff.is_nan() { gmin } else { 1.0 / roff },
-        }
+        })
     }
 }
 

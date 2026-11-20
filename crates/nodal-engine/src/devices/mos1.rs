@@ -10,6 +10,7 @@
 
 use super::limit::{fetlim, limvds};
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
 
@@ -29,13 +30,13 @@ pub struct Mos1Params {
 
 impl Mos1Params {
     /// Reads the DC parameters from a model, with the table defaults.
-    pub fn from_model(model: &Model) -> Self {
-        Self {
-            vto: param(model, "VTO"),
-            gamma: param(model, "GAMMA"),
-            phi: param(model, "PHI"),
-            lambda: param(model, "LAMBDA"),
-        }
+    pub fn from_model(model: &Model) -> Result<Self, Error> {
+        Ok(Self {
+            vto: param(model, "VTO")?,
+            gamma: param(model, "GAMMA")?,
+            phi: param(model, "PHI")?,
+            lambda: param(model, "LAMBDA")?,
+        })
     }
 }
 

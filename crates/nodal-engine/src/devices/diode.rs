@@ -9,6 +9,7 @@ use std::f64::consts::E;
 use super::constants::VT;
 use super::limit::pnjlim;
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
 
@@ -25,12 +26,12 @@ pub struct DiodeParams {
 
 impl DiodeParams {
     /// Reads `IS`, `N` and `RS` from a model, with the table defaults.
-    pub fn from_model(model: &Model) -> Self {
-        Self {
-            is: param(model, "IS"),
-            n: param(model, "N"),
-            rs: param(model, "RS"),
-        }
+    pub fn from_model(model: &Model) -> Result<Self, Error> {
+        Ok(Self {
+            is: param(model, "IS")?,
+            n: param(model, "N")?,
+            rs: param(model, "RS")?,
+        })
     }
 
     /// `N * VT`, the junction thermal voltage.
@@ -45,18 +46,24 @@ impl DiodeParams {
     }
 }
 
-/// Junction current and conductance at `vd`, both regions of devices.md
-/// section 1, `gmin` included (`dioload.c`).
-pub fn eval(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
-    let vte = p.vte();
-    let (cdb, gdb) = if vd >= -3.0 * vte {
-        let evd = (vd / vte).exp();
-        (p.is * (evd - 1.0), p.is * evd / vte)
+/// Current and conductance of one junction with saturation current `is` and
+/// `nvt = N * VT`, both regions of devices.md section 1, without `gmin`
+/// (`dioload.c`, `bjtload.c`): the exponential for `v >= -3 nvt`, the cubic
+/// `-IS (1 + arg)` form below.
+pub(crate) fn junction(v: f64, is: f64, nvt: f64) -> (f64, f64) {
+    if v >= -3.0 * nvt {
+        let ev = (v / nvt).exp();
+        (is * (ev - 1.0), is * ev / nvt)
     } else {
-        let arg = 3.0 * vte / (vd * E);
+        let arg = 3.0 * nvt / (v * E);
         let arg = arg * arg * arg;
-        (-p.is * (1.0 + arg), p.is * 3.0 * arg / vd)
-    };
+        (-is * (1.0 + arg), is * 3.0 * arg / v)
+    }
+}
+
+/// Junction current and conductance at `vd`, `gmin` included (`dioload.c`).
+pub fn eval(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
+    let (cdb, gdb) = junction(vd, p.is, p.vte());
     (cdb + gmin * vd, gdb + gmin)
 }
 
