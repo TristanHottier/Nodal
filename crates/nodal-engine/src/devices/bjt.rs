@@ -9,7 +9,7 @@
 //! from the collector (NPN) or the base (PNP) to ground.
 
 use super::constants::VT;
-use super::diode::junction;
+use super::diode::{depletion, junction};
 use super::limit::pnjlim;
 use super::{Device, LoadContext, LoadMode, volt};
 use crate::error::Error;
@@ -31,6 +31,24 @@ pub struct BjtParams {
     pub nr: f64,
     /// Forward Early voltage `VAF` in volts (infinite when absent).
     pub vaf: f64,
+    /// Zero-bias base-emitter depletion capacitance `CJE` in farads.
+    pub cje: f64,
+    /// Base-emitter junction potential `VJE` in volts.
+    pub vje: f64,
+    /// Base-emitter grading coefficient `MJE`.
+    pub mje: f64,
+    /// Zero-bias base-collector depletion capacitance `CJC` in farads.
+    pub cjc: f64,
+    /// Base-collector junction potential `VJC` in volts.
+    pub vjc: f64,
+    /// Base-collector grading coefficient `MJC`.
+    pub mjc: f64,
+    /// Forward transit time `TF` in seconds.
+    pub tf: f64,
+    /// Reverse transit time `TR` in seconds.
+    pub tr: f64,
+    /// Forward-bias depletion capacitance coefficient `FC`.
+    pub fc: f64,
 }
 
 impl BjtParams {
@@ -43,6 +61,15 @@ impl BjtParams {
             nf: param(model, "NF")?,
             nr: param(model, "NR")?,
             vaf: param(model, "VAF")?,
+            cje: param(model, "CJE")?,
+            vje: param(model, "VJE")?,
+            mje: param(model, "MJE")?,
+            cjc: param(model, "CJC")?,
+            vjc: param(model, "VJC")?,
+            mjc: param(model, "MJC")?,
+            tf: param(model, "TF")?,
+            tr: param(model, "TR")?,
+            fc: param(model, "FC")?,
         })
     }
 
@@ -115,6 +142,52 @@ pub fn eval(vbe: f64, vbc: f64, p: &BjtParams, gmin: f64) -> BjtEval {
         dic_dvbc: -go - gmu,
         dib_dvbe: gbe / p.bf + gmin,
         dib_dvbc: gmu,
+    }
+}
+
+/// Junction charges and their partials, NPN orientation.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct BjtCharges {
+    /// Base-emitter charge.
+    pub qbe: f64,
+    /// Base-collector charge.
+    pub qbc: f64,
+    /// `dQbe/dvbe` (`capbe`).
+    pub cbe: f64,
+    /// `dQbe/dvbc`, the transcapacitance (`geqcb`).
+    pub cbe_vbc: f64,
+    /// `dQbc/dvbc` (`capbc`).
+    pub cbc: f64,
+}
+
+/// NPN charges and capacitances at `(vbe, vbc)` (`bjtload.c`, charge block,
+/// with `XTF = 0`, `XCJC = 1` so `czbx = 0`, `CJS = 0`, `PTF = 0`).
+///
+/// The junction currents and conductances exclude `gmin`, as `cbe`, `gbe`,
+/// `cbc`, `gbc` do there. When `TF != 0` and `vbe > 0` the diffusion charge
+/// is `TF cbe / qb`, with `gbe / qb` for the capacitance (`dqb/dvbe = 0`
+/// because `VAR` is infinite) and the transcapacitance
+/// `geqcb = -TF cbe (dqb/dvbc) / qb^2`. Otherwise the diffusion charge is
+/// `TF cbe` and `geqcb = 0`. The base-collector diffusion charge is `TR cbc`.
+pub fn charges(vbe: f64, vbc: f64, p: &BjtParams) -> BjtCharges {
+    let (cbe, gbe) = junction(vbe, p.is, p.vtf());
+    let (cbc, gbc) = junction(vbc, p.is, p.vtr());
+    let qb = 1.0 / (1.0 - vbc / p.vaf);
+    let dqbdvc = qb * qb / p.vaf;
+    let (cbe, gbe, geqcb) = if p.tf != 0.0 && vbe > 0.0 {
+        let cbe = cbe / qb;
+        (cbe, gbe / qb, p.tf * (-cbe * dqbdvc) / qb)
+    } else {
+        (cbe, gbe, 0.0)
+    };
+    let (dq_be, dc_be) = depletion(vbe, p.cje, p.vje, p.mje, p.fc);
+    let (dq_bc, dc_bc) = depletion(vbc, p.cjc, p.vjc, p.mjc, p.fc);
+    BjtCharges {
+        qbe: p.tf * cbe + dq_be,
+        qbc: p.tr * cbc + dq_bc,
+        cbe: p.tf * gbe + dc_be,
+        cbe_vbc: geqcb,
+        cbc: p.tr * gbc + dc_bc,
     }
 }
 
@@ -244,6 +317,27 @@ impl Device for Bjt {
         let sub = if s > 0.0 { c } else { b };
         sys.add_a(sub, sub, ctx.gmin);
         limited
+    }
+
+    /// Stamps the junction capacitances and the transcapacitance in the
+    /// pattern of `bjtacld.c` (`xcpi`, `xcmu`, `xcmcb`), at the junction
+    /// voltages stored by the last Newton load. A PNP is evaluated at the
+    /// negated voltages; the capacitances keep their sign.
+    fn load_reactive(&self, _x: &[f64], state: &[f64], _ctx: &LoadContext, c: &mut RealSystem) {
+        let s = self.sign;
+        let vbe = state.get(S_VBE).copied().unwrap_or(0.0);
+        let vbc = state.get(S_VBC).copied().unwrap_or(0.0);
+        let q = charges(s * vbe, s * vbc, &self.params);
+        let (cpi, cmu, cmcb) = (q.cbe, q.cbc, q.cbe_vbc);
+        let (col, b, e) = (self.collector, self.base, self.emitter);
+        c.add_a(b, b, cpi + cmu + cmcb);
+        c.add_a(b, col, -cmu - cmcb);
+        c.add_a(b, e, -cpi);
+        c.add_a(col, col, cmu);
+        c.add_a(col, b, -cmu);
+        c.add_a(e, e, cpi);
+        c.add_a(e, col, cmcb);
+        c.add_a(e, b, -cpi - cmcb);
     }
 
     /// Deliberately differs from `bjtconv.c`, which compares the linear

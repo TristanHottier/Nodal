@@ -88,29 +88,33 @@ pub fn eval(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
 /// `TT * gd`, with `cd` and `gd` including the `gmin` term as in `dioload.c`.
 /// Returns `(Q, C)`.
 pub fn charge(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
-    let xfc = (1.0 - p.fc).ln();
-    let f1 = p.vj * (1.0 - ((1.0 - p.m) * xfc).exp()) / (1.0 - p.m);
-    let f2 = ((1.0 + p.m) * xfc).exp();
-    let f3 = 1.0 - p.fc * (1.0 + p.m);
-    let dep_cap = p.fc * p.vj;
-    let (depl_charge, depl_cap) = if vd < dep_cap {
-        let arg = 1.0 - vd / p.vj;
-        let sarg = (-p.m * arg.ln()).exp();
-        (
-            p.vj * p.cjo * (1.0 - arg * sarg) / (1.0 - p.m),
-            p.cjo * sarg,
-        )
-    } else {
-        let czof2 = p.cjo / f2;
-        (
-            p.cjo * f1
-                + czof2
-                    * (f3 * (vd - dep_cap) + (p.m / (p.vj + p.vj)) * (vd * vd - dep_cap * dep_cap)),
-            czof2 * (f3 + p.m * vd / p.vj),
-        )
-    };
+    let (depl_charge, depl_cap) = depletion(vd, p.cjo, p.vj, p.m, p.fc);
     let (cd, gd) = eval(vd, p, gmin);
     (p.tt * cd + depl_charge, p.tt * gd + depl_cap)
+}
+
+/// Depletion charge and capacitance of one junction with zero-bias
+/// capacitance `cj`, potential `vj`, grading `m` and coefficient `fc`:
+/// the power law below `fc vj` and its linear continuation above
+/// (`dioload.c`, `bjtload.c`; `f1`, `f2`, `f3` and the `fc vj` breakpoint from
+/// `diotemp.c`, `bjttemp.c`). Returns `(Q, C)`.
+pub(crate) fn depletion(v: f64, cj: f64, vj: f64, m: f64, fc: f64) -> (f64, f64) {
+    let xfc = (1.0 - fc).ln();
+    let f1 = vj * (1.0 - ((1.0 - m) * xfc).exp()) / (1.0 - m);
+    let f2 = ((1.0 + m) * xfc).exp();
+    let f3 = 1.0 - fc * (1.0 + m);
+    let dep_cap = fc * vj;
+    if v < dep_cap {
+        let arg = 1.0 - v / vj;
+        let sarg = (-m * arg.ln()).exp();
+        (vj * cj * (1.0 - arg * sarg) / (1.0 - m), cj * sarg)
+    } else {
+        let czof2 = cj / f2;
+        (
+            cj * f1 + czof2 * (f3 * (v - dep_cap) + (m / (vj + vj)) * (v * v - dep_cap * dep_cap)),
+            czof2 * (f3 + m * v / vj),
+        )
+    }
 }
 
 /// State layout: junction voltage, current, conductance.

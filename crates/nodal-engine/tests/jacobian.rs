@@ -133,7 +133,7 @@ fn diode_current_is_continuous_at_boundary() {
 
 // BJT: all four partials of (ic, ib) against central differences.
 
-use nodal_engine::devices::bjt::{BjtParams, eval as bjt_eval, eval_signed};
+use nodal_engine::devices::bjt::{BjtParams, charges, eval as bjt_eval, eval_signed};
 
 fn bjt_params(vaf: f64) -> BjtParams {
     BjtParams {
@@ -143,6 +143,15 @@ fn bjt_params(vaf: f64) -> BjtParams {
         nf: 1.0,
         nr: 1.0,
         vaf,
+        cje: 1e-12,
+        vje: 0.75,
+        mje: 0.33,
+        cjc: 5e-13,
+        vjc: 0.75,
+        mjc: 0.33,
+        tf: 3e-10,
+        tr: 1e-8,
+        fc: 0.5,
     }
 }
 
@@ -198,6 +207,80 @@ fn pnp_mirrors_npn() {
     assert_eq!(q.dic_dvbc, n.dic_dvbc);
     assert_eq!(q.dib_dvbe, n.dib_dvbe);
     assert_eq!(q.dib_dvbc, n.dib_dvbc);
+}
+
+// BJT charges: cbe, cbe_vbc and cbc against central differences of qbe, qbc.
+
+fn charge_case_bjt(vbe: f64, vbc: f64, vaf: f64) {
+    let p = bjt_params(vaf);
+    let c = charges(vbe, vbc, &p);
+    let h = 1e-6 * VT;
+    check(|x| charges(x, vbc, &p).qbe, c.cbe, vbe, h);
+    check(|x| charges(vbe, x, &p).qbe, c.cbe_vbc, vbc, h);
+    check(|x| charges(vbe, x, &p).qbc, c.cbc, vbc, h);
+    // Qbc does not depend on vbe, and Qbe's vbc dependence is cbe_vbc only.
+    assert_eq!(charges(vbe + h, vbc, &p).qbc, c.qbc);
+}
+
+#[test]
+fn bjt_charge_active() {
+    charge_case_bjt(0.7, -3.0, 50.0);
+}
+
+#[test]
+fn bjt_charge_saturation() {
+    charge_case_bjt(0.75, 0.6, 50.0);
+}
+
+#[test]
+fn bjt_charge_cutoff() {
+    charge_case_bjt(-0.5, -5.0, 50.0);
+}
+
+#[test]
+fn bjt_charge_no_early() {
+    charge_case_bjt(0.7, -3.0, f64::INFINITY);
+    assert_eq!(charges(0.7, -3.0, &bjt_params(f64::INFINITY)).cbe_vbc, 0.0);
+}
+
+/// No transcapacitance without forward bias, even with an Early voltage
+/// (`bjtload.c` computes `geqcb` only for `TF != 0 && vbe > 0`).
+#[test]
+fn bjt_charge_no_transcap_below_zero_vbe() {
+    let p = bjt_params(50.0);
+    assert_eq!(charges(-0.5, -3.0, &p).cbe_vbc, 0.0);
+    let q = BjtParams { tf: 0.0, ..p };
+    assert_eq!(charges(0.7, -3.0, &q).cbe_vbc, 0.0);
+}
+
+/// Depletion charge and capacitance are continuous across FC * VJ on both
+/// junctions. Offsets are a few ulp of FC * VJ.
+#[test]
+fn bjt_charge_continuous_at_fc() {
+    let p = bjt_params(f64::INFINITY);
+    let q = BjtParams {
+        tf: 0.0,
+        tr: 0.0,
+        ..p
+    };
+    let b = q.fc * q.vje;
+    let (lo, hi) = (charges(b - 2e-16, -3.0, &q), charges(b + 2e-16, -3.0, &q));
+    assert!((lo.qbe - hi.qbe).abs() <= 1e-20);
+    assert!((lo.cbe - hi.cbe).abs() <= 1e-15 * lo.cbe);
+    let b = q.fc * q.vjc;
+    let (lo, hi) = (charges(0.0, b - 2e-16, &q), charges(0.0, b + 2e-16, &q));
+    assert!((lo.qbc - hi.qbc).abs() <= 1e-20);
+    assert!((lo.cbc - hi.cbc).abs() <= 1e-15 * lo.cbc);
+}
+
+#[test]
+fn pnp_small_signal_mirrors_npn() {
+    let p = bjt_params(50.0);
+    let n = charges(0.7, -3.0, &p);
+    // A PNP is evaluated at the negated physical voltages.
+    let (vbe, vbc) = (-0.7_f64, 3.0_f64);
+    let q = charges(-vbe, -vbc, &p);
+    assert_eq!(q, n);
 }
 
 use nodal_engine::devices::mos1::{Mos1Params, eval as mos_eval, terminal as mos_terminal};

@@ -124,7 +124,19 @@ Here $I_C$ and $I_B$ flow into the collector and base terminals.
 
 **Conductances for the companion model:** the Jacobian is $\partial(I_C, I_B)/\partial(V_{be}, V_{bc})$, and terminal stamps follow from $I_E = -(I_C + I_B)$. Derive it symbolically in code comments. If this document and the Jacobian tests disagree, the tests win.
 
-**Charges:** $Q_{be} = T_F\, I_F + Q_{j,be}$ and $Q_{bc} = T_R\, I_R + Q_{j,bc}$. $Q_j$ uses the diode depletion formula with the junction's own $C_J$, $V_J$, $M_J$.
+**Charges** (`bjtload.c`, charge block, with $X_{TF} = 0$, $X_{CJC} = 1$, $C_{JS} = 0$, $P_{TF} = 0$). $I_F$, $g_{be}$, $I_R$ and $g_{bc}$ here are the junction current and conductance without $g_{min}$, the `cbe`, `gbe`, `cbc`, `gbc` of the source. Let $Q_{j,be}$ and $Q_{j,bc}$ be the diode depletion formula (§1) with the junction's own $C_J$, $V_J$, $M_J$ and $F_C$.
+
+When $T_F \ne 0$ and $V_{be} > 0$, the forward diffusion charge is divided by $q_b$:
+
+$$
+Q_{be} = \dfrac{T_F I_F}{q_b} + Q_{j,be},\quad
+C_{be} = \dfrac{\partial Q_{be}}{\partial V_{be}} = \dfrac{T_F\, g_{be}}{q_b} + C_{j,be},\quad
+\dfrac{\partial Q_{be}}{\partial V_{bc}} = -\dfrac{T_F\, I_F}{q_b^2}\,\dfrac{\partial q_b}{\partial V_{bc}}
+$$
+
+with $\partial q_b/\partial V_{bc} = q_b^2/V_{AF}$, so the last term is $-T_F I_F/V_{AF}$ and is exactly 0 for $V_{AF} = \infty$. Otherwise ($T_F = 0$ or $V_{be} \le 0$) $Q_{be} = T_F I_F + Q_{j,be}$, $C_{be} = T_F\, g_{be} + C_{j,be}$ and $\partial Q_{be}/\partial V_{bc} = 0$. The base-collector charge is $Q_{bc} = T_R I_R + Q_{j,bc}$ with $C_{bc} = T_R\, g_{bc} + C_{j,bc}$.
+
+**AC stamp** (`bjtacld.c`). At the junction voltages stored by the last Newton load, with $\omega = 2\pi f$, $C_{be}$ is stamped between base and emitter, $C_{bc}$ between base and collector, and the transcapacitance $C_x = \partial Q_{be}/\partial V_{bc}$ as $j\omega C_x$ at base-base ($+$), base-collector ($-$), emitter-collector ($+$) and emitter-base ($-$). A PNP is evaluated at the negated junction voltages and the capacitances keep their sign. The tests compare the stamped circuit with the closed-form hybrid-pi response and a PNP with its mirrored NPN, and compare $C_{be}$, $C_x$ and $C_{bc}$ with central differences of $Q$ at active, saturation and cutoff points.
 
 **Limiting:** pnjlim on $V_{be}$ and $V_{bc}$ separately.
 

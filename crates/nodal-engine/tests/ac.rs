@@ -8,6 +8,7 @@ use std::error::Error;
 use std::f64::consts::PI;
 
 use nodal_engine::analysis::{AcResult, AnalysisResult, ComplexSeries};
+use nodal_engine::devices::bjt::{BjtParams, charges, eval as bjt_eval};
 use nodal_engine::devices::constants::VT;
 use nodal_engine::devices::diode::{DiodeParams, charge, eval};
 use nodal_engine::linalg::C64;
@@ -339,6 +340,100 @@ fn diode_rs_ac_matches_explicit_resistor() -> TestResult {
             diff <= 1e-12 * b.re.hypot(b.im),
             "point {k}: {a:?} vs {b:?}"
         );
+    }
+    Ok(())
+}
+
+/// Golden-run tolerances again, for the same stored-voltage reason as the
+/// diode tests. `i_dc` is the base bias current, `pnp` mirrors the circuit.
+fn bjt_ac_netlist(model_type: &str, pnp: bool) -> String {
+    let (bias, vc) = if pnp {
+        (r#"["b","0"]"#, -5.0)
+    } else {
+        (r#"["0","b"]"#, 5.0)
+    };
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"I","name":"I1","nodes":{bias},"dc":1e-5}},
+{{"kind":"I","name":"I2","nodes":["0","b"],"ac":{{"mag":1e-9}}}},
+{{"kind":"V","name":"VC","nodes":["c","0"],"dc":{vc}}},
+{{"kind":"Q","name":"Q1","nodes":["c","b","0"],"model":"QM"}}],
+"models":[{{"name":"QM","type":"{model_type}","params":{{"IS":1e-16,"BF":100,"TF":3e-10,"CJE":1e-12}}}}],
+"options":{{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}},
+"analyses":[{{"type":"ac","sweep":"dec","points":5,"fstart":1e3,"fstop":1e9}}]}}"#
+    )
+}
+
+fn bjt_ac_params() -> BjtParams {
+    BjtParams {
+        is: 1e-16,
+        bf: 100.0,
+        br: 1.0,
+        nf: 1.0,
+        nr: 1.0,
+        vaf: f64::INFINITY,
+        cje: 1e-12,
+        vje: 0.75,
+        mje: 0.33,
+        cjc: 0.0,
+        vjc: 0.75,
+        mjc: 0.33,
+        tf: 3e-10,
+        tr: 0.0,
+        fc: 0.5,
+    }
+}
+
+#[test]
+fn bjt_hybrid_pi_analytic() -> TestResult {
+    let r = run_ac(&bjt_ac_netlist("NPN", false))?;
+    let p = bjt_ac_params();
+    let gmin = 1e-12;
+    // Operating point: Ib(vbe, vbe - 5) = 1e-5 by bisection (vc = 5, ve = 0).
+    let f = |v: f64| bjt_eval(v, v - 5.0, &p, gmin).ib - 1e-5;
+    let (mut lo, mut hi) = (0.0_f64, 1.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let e = bjt_eval(lo, lo - 5.0, &p, gmin);
+    let c = charges(lo, lo - 5.0, &p);
+    // The collector is an AC ground, so vbc = vbe = vb. The source branch
+    // current I(VC) flows from the + terminal through the source, so it is
+    // -ic. Closed form: ic / ib = gm / (g_pi + j w C_pi) with the exact
+    // partials (gm = dIc/dvbe + dIc/dvbc, g_pi = dIb/dvbe + dIb/dvbc).
+    let gm = e.dic_dvbe + e.dic_dvbc;
+    let gpi = e.dib_dvbe + e.dib_dvbc;
+    let cpi = c.cbe + c.cbc + c.cbe_vbc;
+    assert_ac(&r, "I(VC)", |freq| {
+        let y = add(real(gpi), mul(jw(freq), real(cpi)));
+        div(real(-gm * 1e-9), y)
+    })
+}
+
+/// A PNP biased as the mirror of the NPN has the same small-signal circuit.
+#[test]
+fn pnp_ac_matches_mirrored_npn() -> TestResult {
+    let n = run_ac(&bjt_ac_netlist("NPN", false))?;
+    let q = run_ac(&bjt_ac_netlist("PNP", true))?;
+    for signal in ["V(b)", "I(VC)"] {
+        let (x, y) = (series(&n, signal)?, series(&q, signal)?);
+        assert_eq!(x.re.len(), y.re.len());
+        for k in 0..x.re.len() {
+            let diff = (x.re[k] - y.re[k]).hypot(x.im[k] - y.im[k]);
+            assert!(
+                diff <= 1e-6 * x.re[k].hypot(x.im[k]),
+                "{signal} point {k}: ({}, {}) vs ({}, {})",
+                x.re[k],
+                x.im[k],
+                y.re[k],
+                y.im[k]
+            );
+        }
     }
     Ok(())
 }
