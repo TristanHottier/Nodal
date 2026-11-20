@@ -334,7 +334,7 @@ fn check_golden(dir: &Path, id: &str, kind: Kind, golden_path: &Path) -> Result<
             let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
             let op = results.iter().find_map(|r| match r {
                 AnalysisResult::Op(op) => Some(op),
-                AnalysisResult::Dc(_) => None,
+                AnalysisResult::Dc(_) | AnalysisResult::Ac(_) => None,
             });
             compare_op(
                 &golden,
@@ -347,7 +347,7 @@ fn check_golden(dir: &Path, id: &str, kind: Kind, golden_path: &Path) -> Result<
             let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
             let dc = results.iter().find_map(|r| match r {
                 AnalysisResult::Dc(dc) => Some(dc),
-                AnalysisResult::Op(_) => None,
+                AnalysisResult::Op(_) | AnalysisResult::Ac(_) => None,
             });
             compare_dc(
                 &golden,

@@ -10,6 +10,8 @@ use std::process::{Command, Output};
 const FIXTURE_DIVIDER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/divider.json");
 const FIXTURE_FLOATING: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/floating.json");
 
+const FIXTURE_RC_AC: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/rc_ac.json");
+
 fn run(args: &[&str]) -> Result<Output, Box<dyn Error>> {
     Ok(Command::new(env!("CARGO_BIN_EXE_nodal-cli"))
         .args(args)
@@ -62,6 +64,34 @@ fn run_divider() -> Result<(), Box<dyn Error>> {
         (i_v1 + 2.5e-3).abs() <= 1e-5 * 2.5e-3 + 1e-13,
         "I(V1) = {i_v1}"
     );
+    Ok(())
+}
+
+#[test]
+fn run_ac_json() -> Result<(), Box<dyn Error>> {
+    let out = run(&["run", FIXTURE_RC_AC])?;
+    assert_eq!(out.status.code(), Some(0));
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+    let result = &json["results"][0];
+    assert_eq!(result["type"], "ac");
+    let len = |v: &serde_json::Value| v.as_array().map(Vec::len);
+    assert_eq!(len(&result["frequencies"]), Some(71));
+    for part in ["re", "im"] {
+        assert_eq!(len(&result["nodeVoltages"]["out"][part]), Some(71));
+        assert_eq!(len(&result["nodeVoltages"]["in"][part]), Some(71));
+        assert_eq!(len(&result["branchCurrents"]["V1"][part]), Some(71));
+    }
+    // At 1 Hz, V(out) = 1 / (1 + j 2 pi 1e-3) (magnitude 1/sqrt(1 + w^2 RC^2)).
+    let re = result["nodeVoltages"]["out"]["re"][0]
+        .as_f64()
+        .ok_or("re")?;
+    let im = result["nodeVoltages"]["out"]["im"][0]
+        .as_f64()
+        .ok_or("im")?;
+    let w = 2.0 * std::f64::consts::PI * 1e-3;
+    let want = 1.0 / (1.0 + w * w);
+    assert!((re - want).abs() <= 1e-4 * want, "re = {re}");
+    assert!((im + w * want).abs() <= 1e-4 * w * want, "im = {im}");
     Ok(())
 }
 

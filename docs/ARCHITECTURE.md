@@ -111,8 +111,11 @@ nodal-engine/src/
 trait Device {
     /// Stamp the linearized companion model at the current Newton iterate.
     fn load(&self, x: &[f64], ctx: &LoadContext, sys: &mut RealSystem);
-    /// Stamp the small-signal model at the stored operating point.
-    fn load_ac(&self, op: &OpPoint, omega: f64, sys: &mut ComplexSystem);
+    /// Stamp dQ/dv (and -L on an inductor branch row) into the reactive
+    /// matrix C. Called once per AC run. Never touches C's right-hand side.
+    fn load_reactive(&self, x: &[f64], state: &[f64], ctx: &LoadContext, c: &mut RealSystem) {}
+    /// Stamp the AC phasor of an independent source.
+    fn load_ac_excitation(&self, b: &mut AcExcitation) {}
     /// Limit junction voltages between Newton iterations (pnjlim, fetlim).
     fn limit(&self, x_new: &mut [f64], x_old: &[f64]) {}
     /// Accept a converged time point: store charges/currents for integration.
@@ -125,6 +128,8 @@ trait Device {
 ```
 
 As built in M2, limiting happens inside `load`, as in SPICE, so there is no separate `limit` method. `load` receives the iterate `x`, the device's slice of the state vector (previous limited voltages, currents and conductances) and a `LoadContext` (mode, gmin, source factor), and returns true when it limited a junction voltage. `Device::converged` is the device's own convergence test.
+
+AC analysis uses `LoadMode::SmallSignal`. In it `load` stamps the conductance matrix $G$ at the operating point without writing state: a diode or BJT reads the junction voltages stored by the last Newton load, a MOSFET reads `x` limited against the state, and a switch keeps its stored on/off state. `load_reactive` fills $C$, and `load_ac_excitation` fills the phasor right-hand side. Per frequency, `mna::assemble_ac` forms $G + j\omega C$ and a dense complex LU solves it.
 
 The stamps and equations each device must implement are in [`reference/mna.md`](reference/mna.md) and [`reference/devices.md`](reference/devices.md).
 

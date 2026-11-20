@@ -1,11 +1,13 @@
 //! Analyses and their results.
 
+mod ac;
 mod dc;
 mod newton;
 mod op;
 
 use serde::{Deserialize, Serialize};
 
+pub use ac::{AcResult, ComplexSeries, solve_ac};
 pub use dc::{DcResult, solve_dc_sweep};
 pub use op::{OpResult, solve_op};
 
@@ -15,4 +17,5 @@ pub use op::{OpResult, solve_op};
 pub enum AnalysisResult {
     Op(OpResult),
     Dc(DcResult),
+    Ac(AcResult),
 }

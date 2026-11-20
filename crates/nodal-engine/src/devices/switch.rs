@@ -90,9 +90,10 @@ impl Device for Switch {
                 limited = on != (stored != 0.0);
                 on
             }
-            LoadMode::Exact => stored != 0.0,
+            // AC: the switch keeps the state the operating point left.
+            LoadMode::Exact | LoadMode::SmallSignal => stored != 0.0,
         };
-        if ctx.mode != LoadMode::Exact
+        if ctx.mode.writes_state()
             && let Some(s) = state.first_mut()
         {
             *s = if on { 1.0 } else { 0.0 };

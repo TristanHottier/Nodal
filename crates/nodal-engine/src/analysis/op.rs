@@ -20,12 +20,19 @@ pub struct OpResult {
 /// Solves the DC operating point of `circuit`: Newton from zero with the
 /// nodeset held (numerical-methods.md section 1.4), then gmin stepping, then source stepping.
 pub fn solve_op(circuit: &Circuit) -> Result<OpResult, Error> {
-    let (result, _) = solve_op_counted(circuit);
-    result
+    solve_op_with_state(circuit).map(|(x, _)| report(circuit, &x))
 }
 
-/// `solve_op` plus the Newton iteration count of the run.
-pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, usize) {
+/// The unknown vector and the device state vector of an operating point.
+pub(crate) type OpState = (Vec<f64>, Vec<f64>);
+
+/// The operating point as the unknown vector and the device state vector
+/// after convergence. AC analysis linearises about both.
+pub(crate) fn solve_op_with_state(circuit: &Circuit) -> Result<OpState, Error> {
+    op_counted(circuit).0
+}
+
+fn op_counted(circuit: &Circuit) -> (Result<OpState, Error>, usize) {
     let x0 = vec![0.0; circuit.unknown_count()];
     let mut state = vec![0.0; circuit.state_len()];
     let (outcome, iterations) = solve_dc_counted(
@@ -35,8 +42,14 @@ pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, u
         Strategy::All,
         &mut Trace::default(),
     );
-    let result = outcome.map(|x| report(circuit, &x));
-    (result, iterations)
+    (outcome.map(|x| (x, state)), iterations)
+}
+
+/// `solve_op` plus the Newton iteration count of the run.
+#[cfg(test)]
+pub(crate) fn solve_op_counted(circuit: &Circuit) -> (Result<OpResult, Error>, usize) {
+    let (outcome, iterations) = op_counted(circuit);
+    (outcome.map(|(x, _)| report(circuit, &x)), iterations)
 }
 
 pub(super) fn report(circuit: &Circuit, x: &[f64]) -> OpResult {

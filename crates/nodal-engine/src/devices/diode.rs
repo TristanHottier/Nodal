@@ -119,9 +119,11 @@ impl Device for Diode {
                 pnjlim(vnew, vold, p.vte(), p.vcrit())
             }
             LoadMode::Exact => (vnew, false),
+            // dioacld.c reads the junction voltage stored by the last load.
+            LoadMode::SmallSignal => (state.get(STATE_V).copied().unwrap_or(0.0), false),
         };
         let (id, gd) = eval(vd, p, ctx.gmin);
-        if ctx.mode != LoadMode::Exact
+        if ctx.mode.writes_state()
             && let [v, i, g, ..] = state
         {
             *v = vd;

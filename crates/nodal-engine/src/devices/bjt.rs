@@ -207,9 +207,17 @@ impl Device for Bjt {
                 ((s * be, s * bc), lim_be || lim_bc)
             }
             LoadMode::Exact => ((raw_be, raw_bc), false),
+            // bjtacld.c reads the junction voltages stored by the last load.
+            LoadMode::SmallSignal => (
+                (
+                    state.get(S_VBE).copied().unwrap_or(0.0),
+                    state.get(S_VBC).copied().unwrap_or(0.0),
+                ),
+                false,
+            ),
         };
         let e = eval_signed(s, vbe, vbc, p, ctx.gmin);
-        if ctx.mode != LoadMode::Exact
+        if ctx.mode.writes_state()
             && let Some(slots) = state.first_chunk_mut::<8>()
         {
             *slots = [

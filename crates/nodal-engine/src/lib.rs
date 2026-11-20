@@ -36,7 +36,23 @@ pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
                 let values = ir::sweep_values(*start, *stop, *step);
                 analysis::solve_dc_sweep(&mut circuit, source, &values).map(AnalysisResult::Dc)
             }
-            Analysis::Ac { .. } => Err(Error::Invalid("ac analysis is not simulated yet".into())),
+            Analysis::Ac {
+                sweep,
+                points,
+                fstart,
+                fstop,
+            } => {
+                let frequencies = ir::ac_frequencies(
+                    *sweep,
+                    *points,
+                    *fstart,
+                    *fstop,
+                    circuit.options.reltol,
+                    ir::MAX_AC_POINTS,
+                )
+                .ok_or_else(|| Error::Invalid("ac analysis: invalid frequency sweep".into()))?;
+                analysis::solve_ac(&circuit, &frequencies).map(AnalysisResult::Ac)
+            }
         })
         .collect()
 }

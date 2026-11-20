@@ -236,7 +236,9 @@ impl Device for Mos1 {
         let ((vgs, vds, vbs), limited) = match ctx.mode {
             // mos1load.c MODEINITJCT, device not OFF, no ICs.
             LoadMode::InitJunction => ((p.vto, 0.0, -1.0), false),
-            LoadMode::Float => {
+            // SmallSignal (mos1load.c MODEINITSMSIG) takes x limited against
+            // the stored state, like Float, but the state write below is skipped.
+            LoadMode::Float | LoadMode::SmallSignal => {
                 let old_gs = state.get(S_VGS).copied().unwrap_or(0.0);
                 let old_ds = state.get(S_VDS).copied().unwrap_or(0.0);
                 let von = state.get(S_VON).copied().unwrap_or(0.0);
@@ -273,7 +275,7 @@ impl Device for Mos1 {
             LoadMode::Exact => ((raw_gs, raw_ds, raw_bs), false),
         };
         let e = eval_oriented(vgs, vds, vbs, p, self.beta);
-        if ctx.mode != LoadMode::Exact
+        if ctx.mode.writes_state()
             && let Some(slots) = state.first_chunk_mut::<STATE_LEN>()
         {
             *slots = [

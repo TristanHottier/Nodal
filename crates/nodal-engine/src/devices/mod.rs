@@ -19,7 +19,7 @@ mod vsource;
 use crate::circuit::Circuit;
 use crate::error::Error;
 use crate::ir::{Element, MOS_DEFAULT_SIZE, Model, ModelKind, param};
-use crate::mna::RealSystem;
+use crate::mna::{AcExcitation, RealSystem};
 
 pub use bjt::{Bjt, BjtParams};
 pub use capacitor::Capacitor;
@@ -48,6 +48,19 @@ pub enum LoadMode {
     /// Evaluate at `x` without limiting and without touching `state`. Used
     /// for residuals and stamp tests.
     Exact,
+    /// Small-signal evaluation for AC analysis, the ngspice `MODEINITSMSIG`
+    /// point. Diodes and BJTs use the junction voltages stored in `state` by
+    /// the last Newton load, a MOSFET reads `x` limited against `state`, and
+    /// a switch keeps its stored on/off state. Never writes `state`.
+    SmallSignal,
+}
+
+impl LoadMode {
+    /// True for the modes in which `load` stores limited voltages and
+    /// currents in `state`.
+    pub fn writes_state(self) -> bool {
+        matches!(self, LoadMode::InitJunction | LoadMode::Float)
+    }
 }
 
 /// Per-load settings shared by every device.
@@ -94,6 +107,15 @@ pub trait Device: std::fmt::Debug {
     /// Adds the DC stamp for the iterate `x`. Returns true if limiting
     /// changed a junction voltage.
     fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool;
+
+    /// Stamps dQ/dv (and `-L` on an inductor branch row) into `c.a`, the
+    /// matrix that multiplies `j omega` in AC analysis. Called once per AC
+    /// run, after the operating point, with the state that point left behind.
+    /// Never touches `c.b`.
+    fn load_reactive(&self, _x: &[f64], _state: &[f64], _ctx: &LoadContext, _c: &mut RealSystem) {}
+
+    /// Stamps the AC phasor of an independent source into the right-hand side.
+    fn load_ac_excitation(&self, _b: &mut AcExcitation) {}
 
     /// True if the device's own convergence test holds at `x_new`, given the
     /// state stored by the last `load`.
@@ -231,16 +253,23 @@ pub(crate) fn instantiate(
             ))
         }
         Element::R { value, .. } => Box::new(Resistor::new(name, p, n, *value)),
-        Element::C { .. } => Box::new(Capacitor::new(name)),
-        Element::L { .. } => Box::new(Inductor::new(name.clone(), p, n, branch(circuit, &name)?)),
-        Element::V { dc, .. } => Box::new(VoltageSource::new(
+        Element::C { value, .. } => Box::new(Capacitor::new(name, p, n, *value)),
+        Element::L { value, .. } => Box::new(Inductor::new(
+            name.clone(),
+            p,
+            n,
+            branch(circuit, &name)?,
+            *value,
+        )),
+        Element::V { dc, ac, .. } => Box::new(VoltageSource::new(
             name.clone(),
             p,
             n,
             branch(circuit, &name)?,
             *dc,
+            *ac,
         )),
-        Element::I { dc, .. } => Box::new(CurrentSource::new(name, p, n, *dc)),
+        Element::I { dc, ac, .. } => Box::new(CurrentSource::new(name, p, n, *dc, *ac)),
         Element::E {
             control_nodes,
             gain,
@@ -360,6 +389,24 @@ mod tests {
         assert_eq!(sys.a.get(1, 0), -g);
         assert_eq!(sys.a.get(1, 1), g);
         assert_eq!(sys.b, [-ieq, ieq]);
+    }
+
+    #[test]
+    fn small_signal_uses_stored_state_and_leaves_it() {
+        let p = DiodeParams {
+            is: 1e-14,
+            n: 1.0,
+            rs: 0.0,
+        };
+        let d = Diode::new("D1".into(), Some(0), None, None, p);
+        let mut sys = RealSystem::new(1);
+        let (i, g) = eval(0.6, &p, 1e-12);
+        let mut state = [0.6, i, g];
+        let ctx = LoadContext::new(LoadMode::SmallSignal);
+        // x is far from the stored voltage and must be ignored.
+        assert!(!d.load(&[5.0], &mut state, &ctx, &mut sys));
+        assert_eq!(state, [0.6, i, g]);
+        assert_eq!(sys.a.get(0, 0), g);
     }
 
     #[test]

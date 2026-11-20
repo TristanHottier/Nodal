@@ -140,6 +140,19 @@ Accepted points are returned as computed, with irregular spacing. The waveform v
 
 $G$ and $C$ are assembled once. Only the complex sum and its factorization change per frequency.
 
+### 5.1 Frequency grid
+
+The grid follows `ACan` in ngspice `acan.c`. With `points` $= n$:
+
+- `dec`: the ratio between neighbours is $\delta = 10^{1/n}$ when $f_{stop}/10 < f_{start}$. Otherwise $\delta = \exp\!\left(\dfrac{\ln(f_{stop}/f_{start})}{m}\right)$ with $m = \lfloor n \left|\log_{10}(f_{stop}/f_{start})\right|\rfloor$.
+- `oct`: $\delta = 2^{1/n}$.
+- Both start at $f_{start}$, multiply by $\delta$, and stop when $f > f_{stop} + \delta\, f_{stop}\, \mathrm{reltol}$. If $f_{start} = f_{stop}$ there is one point.
+- `lin`: $n$ points $f_i = f_{start} + i\,\dfrac{f_{stop} - f_{start}}{n - 1}$. One point, or $f_{start} = f_{stop}$, gives the single frequency $f_{start}$.
+
+Deviation from ngspice: for `lin` with two points, ngspice sets the step to 0 and produces a single point. Nodal returns $f_{start}$ and $f_{stop}$.
+
+The grid uses the circuit's `reltol` option (default $10^{-3}$) and is limited to $10^6$ frequencies. A failed solve reports the frequency at which it failed.
+
 ## References
 
 - C. W. Ho, A. E. Ruehli, P. A. Brennan, "The modified nodal approach to network analysis," *IEEE Trans. Circuits Syst.*, 22(6), 1975.

@@ -33,6 +33,8 @@ pub enum Error {
         value: f64,
         cause: Box<Error>,
     },
+    /// An AC analysis failed at one frequency. `cause` is the original error.
+    AcPoint { frequency: f64, cause: Box<Error> },
     /// A bug in the engine, not a problem with the netlist.
     Internal(String),
 }
@@ -77,9 +79,31 @@ impl fmt::Display for Error {
                 value,
                 cause,
             } => write!(f, "dc sweep of {source} failed at {value:e}: {cause}"),
+            Error::AcPoint { frequency, cause } => {
+                write!(f, "ac analysis failed at {frequency:e} Hz: {cause}")
+            }
             Error::Internal(msg) => write!(f, "internal error: {msg}"),
         }
     }
 }
 
 impl std::error::Error for Error {}
+
+#[cfg(test)]
+mod tests {
+    use super::Error;
+
+    #[test]
+    fn ac_point_display_names_frequency_and_cause() {
+        let e = Error::AcPoint {
+            frequency: 1000.0,
+            cause: Box::new(Error::Singular {
+                unknown: "V(a)".into(),
+            }),
+        };
+        assert_eq!(
+            e.to_string(),
+            "ac analysis failed at 1e3 Hz: singular system: no unique solution for V(a)"
+        );
+    }
+}
