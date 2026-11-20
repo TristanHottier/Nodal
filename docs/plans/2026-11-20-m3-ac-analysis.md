@@ -199,7 +199,7 @@
 - VALIDATION §3: one line under the table saying phase is not compared where $|x_{ref}| \le 10^{-12}$, because phase is undefined there. This is the first AC comparator, so no existing tolerance changes. Tristan confirmed it on 2026-11-20.
 
 - [ ] **Step 1: Write the failing tests** in `validate.rs`: `parse_ac_golden`, `parse_ac_golden_rejects_half_signal`, `compare_ac_passes`, `compare_ac_phase_wraps` (179.999° vs −179.999° passes), `compare_ac_phase_failure`, `compare_ac_magnitude_failure`, `compare_ac_skips_phase_below_floor`, `compare_ac_frequency_mismatch_fails`. For the script: `node --test validation/scripts/regen-goldens.test.mjs` with `parseRaw` on a two-point complex rawfile literal and `mapSignals` for `ac` (create the test file; add it to the root `test` script).
-- [ ] **Step 2:** `cargo test -p nodal-cli && node --test validation/scripts/`. Expected: FAIL.
+- [ ] **Step 2:** `cargo test -p nodal-cli && node --test "validation/scripts/*.test.mjs"`. Expected: FAIL.
 - [ ] **Step 3:** Implement.
 - [ ] **Step 4:** `cargo test --workspace && cargo run -p nodal-cli -- validate validation && node --test validation/scripts/ && pnpm format:check`. Expected: PASS.
 - [ ] **Step 5:** Commit `test(validation): ac goldens, complex rawfiles, stale-golden check`.
