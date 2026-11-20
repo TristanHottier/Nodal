@@ -183,6 +183,10 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             validate_dc(n, source, *start, *stop, *step)?;
         }
     }
+    // V11
+    if let Some(o) = &n.options {
+        validate_options(o)?;
+    }
     // V17
     let reltol = n
         .options
@@ -214,10 +218,6 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
                 return invalid(format!("nodeset: value for node {node} must be finite"));
             }
         }
-    }
-    // V11
-    if let Some(o) = &n.options {
-        validate_options(o)?;
     }
     Ok(())
 }
@@ -447,22 +447,62 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn ac_limit_uses_option_reltol() -> TestResult {
-        // The grid is valid for any reltol here; the option only moves the
-        // tolerance on the last point.
+    fn ac_netlist(sweep: AcSweep, points: u32, fstart: f64, fstop: f64) -> Netlist {
         let mut n = base(resistor(1.0));
         n.analyses = vec![Analysis::Ac {
-            sweep: AcSweep::Dec,
-            points: 10,
-            fstart: 1.0,
-            fstop: 1e3,
+            sweep,
+            points,
+            fstart,
+            fstop,
         }];
+        n
+    }
+
+    #[test]
+    fn ac_point_limit_follows_option_reltol() -> TestResult {
+        // 111111 points per decade over 9 decades: 999999 steps, so the
+        // last grid point is fstop. With the default reltol the tolerance
+        // (1e-3 * fstop) also admits the next point, giving one more point
+        // than the limit; with reltol 1e-6 it does not.
+        let mut n = ac_netlist(AcSweep::Dec, 111_111, 1.0, 1e9);
+        let msg = message(&n)?;
+        assert!(msg.contains("more than 1000000 points"), "{msg}");
         n.options = Some(Options {
             reltol: Some(1e-6),
             ..Options::default()
         });
         validate(&n)?;
+        Ok(())
+    }
+
+    #[test]
+    fn bad_reltol_reports_the_option_before_the_ac_sweep() -> TestResult {
+        let mut n = ac_netlist(AcSweep::Dec, 111_111, 1.0, 1e9);
+        n.options = Some(Options {
+            reltol: Some(0.0),
+            ..Options::default()
+        });
+        let msg = message(&n)?;
+        assert!(
+            msg.contains("option reltol must be finite and > 0"),
+            "{msg}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn ac_start_frequency_rules_per_sweep() -> TestResult {
+        let msg = message(&ac_netlist(AcSweep::Oct, 4, 0.0, 100.0))?;
+        assert!(
+            msg.contains("analysis ac: fstart must be > 0 for oct"),
+            "{msg}"
+        );
+        let msg = message(&ac_netlist(AcSweep::Lin, 4, -1.0, 100.0))?;
+        assert!(
+            msg.contains("analysis ac: fstart must be >= 0 for lin"),
+            "{msg}"
+        );
+        validate(&ac_netlist(AcSweep::Lin, 4, 0.0, 100.0))?;
         Ok(())
     }
 

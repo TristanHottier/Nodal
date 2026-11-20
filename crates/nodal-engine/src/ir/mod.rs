@@ -324,7 +324,9 @@ pub fn ac_frequencies(
     let n = f64::from(points);
     let delta = match sweep {
         AcSweep::Lin => {
-            if points == 1 {
+            // ngspice sets the step to 0 for one point or an empty range
+            // and stops after the first frequency (`goto endsweep`).
+            if points == 1 || fstart == fstop {
                 return Some(vec![fstart]);
             }
             let count = usize::try_from(points).ok()?;
@@ -506,6 +508,21 @@ mod tests {
     fn ac_frequencies_lin_two_points() {
         let f = ac_frequencies(AcSweep::Lin, 2, 1.0, 2.0, 1e-3, MAX_AC_POINTS);
         assert_eq!(f, Some(vec![1.0, 2.0]));
+    }
+
+    #[test]
+    fn ac_frequencies_lin_empty_range_is_one_point() {
+        let f = ac_frequencies(AcSweep::Lin, 5, 50.0, 50.0, 1e-3, MAX_AC_POINTS);
+        assert_eq!(f, Some(vec![50.0]));
+    }
+
+    #[test]
+    fn ac_frequencies_reltol_can_admit_one_more_point() {
+        // 30 steps up to 1e3; the next point is delta * 1e3 = 1258.9.
+        let tight = ac_frequencies(AcSweep::Dec, 10, 1.0, 1e3, 1e-3, MAX_AC_POINTS);
+        let loose = ac_frequencies(AcSweep::Dec, 10, 1.0, 1e3, 0.3, MAX_AC_POINTS);
+        assert_eq!(tight.map(|f| f.len()), Some(31));
+        assert_eq!(loose.map(|f| f.len()), Some(32));
     }
 
     #[test]

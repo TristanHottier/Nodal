@@ -71,7 +71,7 @@ impl LoadContext {
             mode,
             gmin: crate::ir::DEFAULT_GMIN,
             source_factor: 1.0,
-            reltol: 1e-3,
+            reltol: crate::ir::DEFAULT_RELTOL,
             abstol: 1e-12,
         }
     }
