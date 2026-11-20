@@ -2,7 +2,7 @@
 
 Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
 
-> **Status: pre-alpha: M2 done (nonlinear DC operating point and DC sweep in the CLI); no simulation in the browser yet.**
+> **Status: pre-alpha: M3 done (DC operating point, DC sweep and AC small-signal analysis in the CLI); no simulation in the browser yet.**
 > Live shell: https://tristanhottier.github.io/Nodal/
 > The repository holds the workspaces, CI, an empty web app shell, and the DC engine: operating point and DC sweep for R, L, C, V, I, E, G, H and F elements plus diode, BJT, MOSFET Level 1 and voltage-controlled switch. `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`. The browser does not simulate yet. Nothing else described below exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
 

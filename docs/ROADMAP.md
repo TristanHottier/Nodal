@@ -35,11 +35,12 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4311545691
 **Exit:** finite-difference Jacobian tests pass for every nonlinear device in every operating region; circuits N1–N5 pass.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/43156593522 at bb53ca6 (rust, web, deploy green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/43156593522/job/130977856325) runs the Jacobian tests for the diode, BJT, MOSFET and switch, and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/43156593522/artifacts/13916217141) shows N1, N2, N3-vgs1..3, N4, N5 and N6 passing against ngspice-42.
 
-### M3 — AC analysis · not started
+### M3 — AC analysis · done
 - Complex MNA assembly; small-signal models of all devices, including junction and overlap capacitances.
 - Linear, decade and octave sweeps.
 
 **Exit:** circuits A1–A4 pass (magnitude and phase).
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44826285994 at 0c6e64e (rust, web, deploy green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/job/136599600321) runs the AC closed-form tests for A1 and A2, the capacitance finite-difference tests for the diode and BJT, and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/artifacts/14673776614) shows A1–A6 passing against ngspice-42 in magnitude and phase.
 
 ### M4 — Transient analysis · not started
 - C, L and junction charges integrated with trapezoidal and BDF2.
