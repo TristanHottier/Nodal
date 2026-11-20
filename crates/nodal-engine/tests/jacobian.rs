@@ -461,8 +461,15 @@ fn mos1_terminal_currents_with_junctions() {
             1e-5,
         );
         // Oriented (vgs, vds, vbs): vbs = 0.6; and vds = -1, vbs = -0.4
-        // (vbd = 0.6).
-        for (vgs, vds, vbs) in [(2.0, 1.0, 0.6), (2.0, -1.0, -0.4)] {
+        // (vbd = 0.6). The last two are channel-off, reverse-biased points
+        // where every junction partial is gmin (1e-12 S) and the currents are
+        // tiny, so the gmin-sized partials can be differenced cleanly.
+        for (vgs, vds, vbs, forward) in [
+            (2.0, 1.0, 0.6, true),
+            (2.0, -1.0, -0.4, true),
+            (0.3, 1.0, -0.5, false),
+            (0.3, -1.0, -0.5, false),
+        ] {
             let x0 = [sign * vds, sign * vgs, 0.0, sign * vbs];
             let mut ctx = LoadContext::new(LoadMode::Exact);
             ctx.gmin = GMIN;
@@ -481,22 +488,29 @@ fn mos1_terminal_currents_with_junctions() {
             let (_, sys) = resid(&x0);
             for row in [0usize, 3] {
                 for col in [0usize, 1, 3] {
-                    let h = 1e-6;
+                    let analytic = sys.a.get(row, col);
+                    // At the forward points the currents are about 1e-4 A, so
+                    // the rounding of the load itself (about 1e-19 A) swamps a
+                    // gmin-sized partial whatever the step. Those entries are
+                    // checked at the reverse points instead.
+                    if forward && analytic.abs() < 1e-9 {
+                        continue;
+                    }
+                    // VALIDATION section 5 allows a step up to 1e-3 Vt when a
+                    // conductance near gmin would be lost in rounding.
+                    let h = if analytic.abs() < 1e-9 {
+                        1e-3 * VT
+                    } else {
+                        1e-6
+                    };
                     let (mut xp, mut xm) = (x0, x0);
                     xp[col] += h;
                     xm[col] -= h;
                     let numeric = (resid(&xp).0[row] - resid(&xm).0[row]) / (2.0 * h);
-                    let analytic = sys.a.get(row, col);
                     let abs = (numeric - analytic).abs();
                     let rel = abs / numeric.abs().max(analytic.abs());
-                    // Entries at the gmin level (1e-12 S) sit below the
-                    // rounding noise of a central difference of a current of
-                    // 1e-4 A (about 2e-13 S at h = 1e-6 V); they are covered
-                    // by `mos1_bulk_junction_regions`. Everything above 1e-9 S
-                    // meets the usual rule.
-                    let noise = if analytic.abs() < 1e-9 { 5e-13 } else { 1e-15 };
                     assert!(
-                        rel <= 1e-5 || abs <= noise,
+                        rel <= 1e-5 || abs <= 1e-15,
                         "pmos {pmos} bias ({vgs}, {vds}, {vbs}) row {row} col {col}: analytic {analytic:e}, numeric {numeric:e}"
                     );
                 }

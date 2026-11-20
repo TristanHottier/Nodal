@@ -163,7 +163,7 @@ pub fn terminal(sign: f64, vgs: f64, vds: f64, vbs: f64, p: &Mos1Params, beta: f
 }
 
 /// Largest exponent such that `exp` does not overflow (ngspice
-/// `include/ngspice/defines.h`, `MAX_EXP_ARG`).
+/// `include/ngspice/defines.h`, `MAX_EXP_ARG`; not in `const.h`).
 const MAX_EXP_ARG: f64 = 709.0;
 
 /// Bulk junction diode current and conductance at the junction voltage `v`
@@ -559,6 +559,35 @@ mod tests {
         let mut sys = RealSystem::new(4);
         m.load(&[1.0, 2.0, 0.5, 0.0], &mut state, &ctx, &mut sys);
         assert_eq!(state.map(f64::to_bits), before);
+    }
+
+    /// `vds < 0`: pnjlim acts on `vbd` against the stored `vbd` and
+    /// `vbs = vbd + vds`; limiting the bulk sets the returned flag even though
+    /// the channel voltages are not limited.
+    #[test]
+    fn reverse_mode_limits_vbd_and_sets_flag() {
+        let m = Mos1::new(
+            "M1".into(),
+            [Some(0), Some(1), Some(2), Some(3)],
+            false,
+            params(),
+            1e-3,
+            1e-5,
+            1e-5,
+        );
+        let ctx = LoadContext::new(LoadMode::Float);
+        // Stored: vgs 0.2, vds -1 (reverse), vbd 0.1 so vbs = -0.9.
+        let mut state = [0.2, -1.0, -0.9, 0.7, 0.0, 0.0, 0.0, 0.0, 0.1];
+        // x: drain -1, gate 0.2, source 0, bulk -0.1: vds and vgs are
+        // unchanged, raw vbd = vbs - vds = 0.9, a forward step of 0.8 V.
+        let mut sys = RealSystem::new(4);
+        assert!(m.load(&[-1.0, 0.2, 0.0, -0.1], &mut state, &ctx, &mut sys));
+        let vcrit = bulk_vcrit(1e-14);
+        let (want_bd, limited) = pnjlim(0.9, 0.1, VT, vcrit);
+        assert!(limited && want_bd < 0.9);
+        assert_eq!(state[S_VBD], want_bd);
+        assert_eq!(state[S_VDS], -1.0);
+        assert_eq!(state[S_VBS], want_bd - 1.0);
     }
 
     #[test]
