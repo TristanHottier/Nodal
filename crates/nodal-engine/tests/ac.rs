@@ -8,6 +8,8 @@ use std::error::Error;
 use std::f64::consts::PI;
 
 use nodal_engine::analysis::{AcResult, AnalysisResult, ComplexSeries};
+use nodal_engine::devices::constants::VT;
+use nodal_engine::devices::diode::{DiodeParams, charge, eval};
 use nodal_engine::linalg::C64;
 use nodal_engine::{parse_netlist, simulate};
 
@@ -263,5 +265,80 @@ fn ac_json_shape() -> TestResult {
         Some(71)
     );
     assert!(json["branchCurrents"]["V1"]["im"].is_array());
+    Ok(())
+}
+
+/// Uses the golden-run tolerances (docs/VALIDATION.md section 3): the small-signal
+/// point is the junction voltage stored by the last Newton load, which lags
+/// the converged solution by up to one iteration, so the default `reltol`
+/// would leave a visible gap to the closed form.
+fn diode_ac_netlist(model_params: &str, elements: &str) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"I","name":"I1","nodes":["0","a"],"dc":1e-3}},
+{{"kind":"I","name":"I2","nodes":["0","a"],"ac":{{"mag":1e-6}}}},
+{elements}],
+"models":[{{"name":"DM","type":"D","params":{{"IS":1e-14,"CJO":2e-12,"TT":1e-8{model_params}}}}}],
+"options":{{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}},
+"analyses":[{{"type":"ac","sweep":"dec","points":5,"fstart":1e3,"fstop":1e9}}]}}"#
+    )
+}
+
+#[test]
+fn diode_small_signal_analytic() -> TestResult {
+    let r = run_ac(&diode_ac_netlist(
+        "",
+        r#"{"kind":"D","name":"D1","nodes":["a","0"],"model":"DM"}"#,
+    ))?;
+    let p = DiodeParams {
+        is: 1e-14,
+        n: 1.0,
+        rs: 0.0,
+        cjo: 2e-12,
+        vj: 1.0,
+        m: 0.5,
+        fc: 0.5,
+        tt: 1e-8,
+    };
+    let gmin = 1e-12;
+    // Operating voltage: 1e-3 = Id(v), by bisection.
+    let f = |v: f64| 1e-14 * ((v / VT).exp() - 1.0) + gmin * v - 1e-3;
+    let (mut lo, mut hi) = (0.0_f64, 1.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let (_, gd) = eval(lo, &p, gmin);
+    let (_, cap) = charge(lo, &p, gmin);
+    assert_ac(&r, "V(a)", |freq| {
+        div(real(1e-6), add(real(gd), mul(jw(freq), real(cap))))
+    })
+}
+
+#[test]
+fn diode_rs_ac_matches_explicit_resistor() -> TestResult {
+    let with_rs = run_ac(&diode_ac_netlist(
+        r#","RS":100"#,
+        r#"{"kind":"D","name":"D1","nodes":["a","0"],"model":"DM"}"#,
+    ))?;
+    let explicit = run_ac(&diode_ac_netlist(
+        "",
+        r#"{"kind":"R","name":"R1","nodes":["a","b"],"value":100},
+{"kind":"D","name":"D1","nodes":["b","0"],"model":"DM"}"#,
+    ))?;
+    let (x, y) = (series(&with_rs, "V(a)")?, series(&explicit, "V(a)")?);
+    assert_eq!(x.re.len(), y.re.len());
+    for k in 0..x.re.len() {
+        let (a, b) = (C64::new(x.re[k], x.im[k]), C64::new(y.re[k], y.im[k]));
+        let diff = (a.re - b.re).hypot(a.im - b.im);
+        assert!(
+            diff <= 1e-12 * b.re.hypot(b.im),
+            "point {k}: {a:?} vs {b:?}"
+        );
+    }
     Ok(())
 }

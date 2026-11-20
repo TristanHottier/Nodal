@@ -4,7 +4,7 @@
 //! is at most 1e-5 or the absolute error is at most 1e-15 S.
 
 use nodal_engine::devices::constants::VT;
-use nodal_engine::devices::diode::{DiodeParams, eval};
+use nodal_engine::devices::diode::{DiodeParams, charge, eval};
 
 const GMIN: f64 = 1e-12;
 
@@ -23,7 +23,67 @@ fn params(n: f64) -> DiodeParams {
         is: 1e-14,
         n,
         rs: 0.0,
+        cjo: 0.0,
+        vj: 1.0,
+        m: 0.5,
+        fc: 0.5,
+        tt: 0.0,
     }
+}
+
+fn charge_params() -> DiodeParams {
+    DiodeParams {
+        is: 1e-14,
+        n: 1.0,
+        rs: 0.0,
+        cjo: 2e-12,
+        vj: 0.7,
+        m: 0.4,
+        fc: 0.5,
+        tt: 1e-8,
+    }
+}
+
+fn charge_case(v: f64) {
+    let p = charge_params();
+    let (_, c) = charge(v, &p, GMIN);
+    check(|x| charge(x, &p, GMIN).0, c, v, 1e-6 * VT);
+}
+
+#[test]
+fn diode_charge_reverse() {
+    charge_case(-2.0);
+}
+
+#[test]
+fn diode_charge_below_fc() {
+    charge_case(0.2);
+}
+
+#[test]
+fn diode_charge_above_fc() {
+    charge_case(0.6);
+}
+
+#[test]
+fn diode_charge_strong_forward() {
+    charge_case(0.75);
+}
+
+#[test]
+fn diode_charge_continuous_at_fc() {
+    let p = charge_params();
+    let b = p.fc * p.vj;
+    // C has a slope of about 1.1 /V relative to its value here, so a gap of
+    // 2e-12 V would alone move C by 2.4e-12 relative. The 1e-15 relative
+    // criterion needs a gap of a few ulp of FC*VJ, hence 2e-16 V on each side.
+    let (q0, c0) = charge(b - 2e-16, &p, GMIN);
+    let (q1, c1) = charge(b + 2e-16, &p, GMIN);
+    assert!((q0 - q1).abs() <= 1e-20, "Q {q0:e} vs {q1:e}");
+    assert!(
+        (c0 - c1).abs() <= 1e-15 * c0.abs().max(c1.abs()),
+        "C {c0:e} vs {c1:e}"
+    );
 }
 
 fn diode_case(n: f64, v: f64) {

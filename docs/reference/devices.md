@@ -66,6 +66,8 @@ $$
 
 $Q_j$ is the integral of that expression, continuous at $V_d = F_C V_J$.
 
+The diffusion term $T_T I_d$ and its derivative $T_T g_d$ use the same $I_d$ and $g_d$ as the DC current above, so they include the $g_{min}$ current and conductance, as `cd` and `gd` do in `dioload.c`. The AC capacitance is $C = T_T g_d + C_j$ evaluated at the junction voltage stored by the last Newton load, and it is stamped between the junction node (the internal node when $R_S > 0$) and the cathode. The Jacobian tests compare $C$ with central differences of $Q$ in the reverse, below-$F_C V_J$, above-$F_C V_J$ and strong-forward regions.
+
 **Integrate charge, not capacitance.** The transient companion is built from $Q(V)$ and $C = dQ/dV$, not from $C\,dV/dt$, so that charge is conserved ([numerical-methods.md](numerical-methods.md) §2.4).
 
 **Limiting (pnjlim).** This is SPICE3's `DEVpnjlim` from `devsup.c`, ported exactly. With $v_t = nV_t$ and $V_{crit} = v_t \ln\!\left(\dfrac{v_t}{\sqrt{2}\,I_S}\right)$:

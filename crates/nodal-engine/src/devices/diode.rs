@@ -22,6 +22,16 @@ pub struct DiodeParams {
     pub n: f64,
     /// Series resistance `RS` in ohms.
     pub rs: f64,
+    /// Zero-bias junction capacitance `CJO` in farads.
+    pub cjo: f64,
+    /// Junction potential `VJ` in volts.
+    pub vj: f64,
+    /// Grading coefficient `M`.
+    pub m: f64,
+    /// Forward-bias depletion capacitance coefficient `FC`.
+    pub fc: f64,
+    /// Transit time `TT` in seconds.
+    pub tt: f64,
 }
 
 impl DiodeParams {
@@ -31,6 +41,11 @@ impl DiodeParams {
             is: param(model, "IS")?,
             n: param(model, "N")?,
             rs: param(model, "RS")?,
+            cjo: param(model, "CJO")?,
+            vj: param(model, "VJ")?,
+            m: param(model, "M")?,
+            fc: param(model, "FC")?,
+            tt: param(model, "TT")?,
         })
     }
 
@@ -65,6 +80,37 @@ pub(crate) fn junction(v: f64, is: f64, nvt: f64) -> (f64, f64) {
 pub fn eval(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
     let (cdb, gdb) = junction(vd, p.is, p.vte());
     (cdb + gmin * vd, gdb + gmin)
+}
+
+/// Charge and capacitance at junction voltage `vd`: depletion plus
+/// diffusion (`dioload.c`, charge block; `DIOtF1`, `DIOtF2`, `DIOtF3` and
+/// `DIOtDepCap` from `diotemp.c`). The diffusion terms are `TT * cd` and
+/// `TT * gd`, with `cd` and `gd` including the `gmin` term as in `dioload.c`.
+/// Returns `(Q, C)`.
+pub fn charge(vd: f64, p: &DiodeParams, gmin: f64) -> (f64, f64) {
+    let xfc = (1.0 - p.fc).ln();
+    let f1 = p.vj * (1.0 - ((1.0 - p.m) * xfc).exp()) / (1.0 - p.m);
+    let f2 = ((1.0 + p.m) * xfc).exp();
+    let f3 = 1.0 - p.fc * (1.0 + p.m);
+    let dep_cap = p.fc * p.vj;
+    let (depl_charge, depl_cap) = if vd < dep_cap {
+        let arg = 1.0 - vd / p.vj;
+        let sarg = (-p.m * arg.ln()).exp();
+        (
+            p.vj * p.cjo * (1.0 - arg * sarg) / (1.0 - p.m),
+            p.cjo * sarg,
+        )
+    } else {
+        let czof2 = p.cjo / f2;
+        (
+            p.cjo * f1
+                + czof2
+                    * (f3 * (vd - dep_cap) + (p.m / (p.vj + p.vj)) * (vd * vd - dep_cap * dep_cap)),
+            czof2 * (f3 + p.m * vd / p.vj),
+        )
+    };
+    let (cd, gd) = eval(vd, p, gmin);
+    (p.tt * cd + depl_charge, p.tt * gd + depl_cap)
 }
 
 /// State layout: junction voltage, current, conductance.
@@ -145,6 +191,17 @@ impl Device for Diode {
         sys.add_b(self.prime, -ieq);
         sys.add_b(self.cathode, ieq);
         limited
+    }
+
+    /// Stamps the junction capacitance between the junction node and the
+    /// cathode (`dioacld.c`), at the voltage stored by the last Newton load.
+    fn load_reactive(&self, _x: &[f64], state: &[f64], ctx: &LoadContext, c: &mut RealSystem) {
+        let vd = state.get(STATE_V).copied().unwrap_or(0.0);
+        let (_, cap) = charge(vd, &self.params, ctx.gmin);
+        c.add_a(self.prime, self.prime, cap);
+        c.add_a(self.prime, self.cathode, -cap);
+        c.add_a(self.cathode, self.prime, -cap);
+        c.add_a(self.cathode, self.cathode, cap);
     }
 
     /// Deliberately differs from `dioconv.c`, which compares the prediction

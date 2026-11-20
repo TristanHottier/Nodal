@@ -374,6 +374,11 @@ mod tests {
             is: 1e-14,
             n: 1.0,
             rs: 0.0,
+            cjo: 0.0,
+            vj: 1.0,
+            m: 0.5,
+            fc: 0.5,
+            tt: 0.0,
         };
         let d = Diode::new("D1".into(), Some(0), None, Some(1), p);
         let x = [0.7, 0.0];
@@ -397,6 +402,11 @@ mod tests {
             is: 1e-14,
             n: 1.0,
             rs: 0.0,
+            cjo: 0.0,
+            vj: 1.0,
+            m: 0.5,
+            fc: 0.5,
+            tt: 0.0,
         };
         let d = Diode::new("D1".into(), Some(0), None, None, p);
         let mut sys = RealSystem::new(1);
@@ -415,6 +425,11 @@ mod tests {
             is: 1e-14,
             n: 1.0,
             rs: 0.0,
+            cjo: 0.0,
+            vj: 1.0,
+            m: 0.5,
+            fc: 0.5,
+            tt: 0.0,
         };
         let d = Diode::new("D1".into(), Some(0), None, None, p);
         let mut sys = RealSystem::new(1);
