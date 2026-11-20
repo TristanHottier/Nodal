@@ -11,7 +11,7 @@ use nodal_engine::analysis::{AcResult, AnalysisResult, ComplexSeries};
 use nodal_engine::devices::bjt::{BjtParams, charges, eval as bjt_eval};
 use nodal_engine::devices::constants::VT;
 use nodal_engine::devices::diode::{DiodeParams, charge, eval};
-use nodal_engine::devices::mos1::{Mos1, Mos1Params, eval as mos_eval};
+use nodal_engine::devices::mos1::{Mos1, Mos1Params, bulk_junction, eval as mos_eval};
 use nodal_engine::devices::{Device, LoadContext, LoadMode};
 use nodal_engine::linalg::C64;
 use nodal_engine::mna::RealSystem;
@@ -620,6 +620,7 @@ fn mos_stage_params() -> Mos1Params {
         cgso: 4e-10,
         cgdo: 4e-10,
         cgbo: 2e-10,
+        is: 1e-14,
     }
 }
 
@@ -723,4 +724,68 @@ fn overlap_caps_scale_with_w_and_l() {
     assert_eq!((gs2, gd2, gb2), (2.0 * gs, 2.0 * gd, gb));
     let (gs3, gd3, gb3) = stamped_caps(100e-6, 2e-6);
     assert_eq!((gs3, gd3, gb3), (gs, gd, 2.0 * gb));
+}
+
+/// Reverse mode (`Vds < 0`): the overlap capacitances stay on the physical
+/// terminals, so `CGDO` joins the gate to the physical drain even though the
+/// drain acts as the channel source. Source at 1 V, bulk and drain pulled to
+/// ground (the drain through `RD`), gate at 3 V with a unit AC drive. The
+/// closed form uses the swapped channel (`vgs = Vg - Vd`, `vds = Vs - Vd`,
+/// `vbs = -Vd`) and the drain-bulk junction, which is the only junction that
+/// matters at the drain node.
+#[test]
+fn mos_reverse_mode_capacitance() -> TestResult {
+    let text = r#"{"irVersion":1,"elements":[
+{"kind":"V","name":"VS","nodes":["s","0"],"dc":1},
+{"kind":"V","name":"VG","nodes":["g","0"],"dc":3,"ac":{"mag":1}},
+{"kind":"R","name":"RD","nodes":["d","0"],"value":10000},
+{"kind":"M","name":"M1","nodes":["d","g","s","0"],"model":"MM","w":100e-6,"l":1e-6}],
+"models":[{"name":"MM","type":"NMOS","params":{"VTO":0.7,"KP":1e-4,"LAMBDA":0.02,"CGSO":4e-10,"CGDO":1e-10,"CGBO":2e-10}}],
+"options":{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15},
+"analyses":[{"type":"ac","sweep":"dec","points":5,"fstart":1e3,"fstop":1e11}]}"#;
+    let r = run_ac(text)?;
+    let (w, rd) = (100e-6, 1e4);
+    let beta = 1e-4 * w / 1e-6;
+    let p = Mos1Params {
+        vto: 0.7,
+        gamma: 0.0,
+        phi: 0.6,
+        lambda: 0.02,
+        cgso: 4e-10,
+        cgdo: 1e-10,
+        cgbo: 2e-10,
+        is: 1e-14,
+    };
+    let (is, gmin) = (1e-14, 1e-12);
+    // KCL at d: Vd / RD - Id' - cbd = 0, with Id' the channel current from
+    // the source node to the drain node and cbd the bulk-to-drain current.
+    let f = |vd: f64| {
+        let id = mos_eval(3.0 - vd, 1.0 - vd, -vd, &p, beta).id;
+        vd / rd - id - bulk_junction(-vd, is, gmin).0
+    };
+    let (mut lo, mut hi) = (0.0_f64, 1.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let vd0 = lo;
+    assert!(vd0 < 1.0, "reverse mode expected, Vd = {vd0}");
+    let e = mos_eval(3.0 - vd0, 1.0 - vd0, -vd0, &p, beta);
+    let gbd = bulk_junction(-vd0, is, gmin).1;
+    let cgd = p.cgdo * w;
+    // Small signal, gate drive 1: v (1/RD + gm + gds + gmbs + gbd + jw Cgd)
+    //                                = gm + jw Cgd.
+    let vd = |freq: f64| {
+        let y = add(
+            real(1.0 / rd + e.gm + e.gds + e.gmbs + gbd),
+            mul(jw(freq), real(cgd)),
+        );
+        let i = add(real(e.gm), mul(jw(freq), real(cgd)));
+        div(i, y)
+    };
+    assert_ac(&r, "V(d)", vd)
 }

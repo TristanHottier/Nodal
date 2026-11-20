@@ -2,13 +2,13 @@
 //!
 //! Loading follows ngspice `mos1load.c`; the convergence test follows
 //! `mos1conv.c`, with the deliberate difference noted on `Device::converged`.
-//! There are no bulk junction diodes (docs/reference/devices.md section 5), so
-//! only the `gmin` part of the bulk junctions is kept: a conductance from
-//! drain to bulk and from source to bulk. There is no `pnjlim` on the bulk
-//! voltages. There is no series resistance, so the
-//! drain and source nodes are the terminals.
+//! The bulk-drain and bulk-source junction diodes (saturation current `IS`,
+//! `gmin` in parallel, `pnjlim` on the bulk voltage) are loaded as in
+//! `mos1load.c`. There is no series resistance, so the drain and source
+//! nodes are the terminals.
 
-use super::limit::{fetlim, limvds};
+use super::constants::VT;
+use super::limit::{fetlim, limvds, pnjlim};
 use super::{Device, LoadContext, LoadMode, volt};
 use crate::error::Error;
 use crate::ir::{Model, param};
@@ -32,6 +32,8 @@ pub struct Mos1Params {
     pub cgdo: f64,
     /// Gate-bulk overlap capacitance per unit length `CGBO` in F/m.
     pub cgbo: f64,
+    /// Bulk junction saturation current `IS` in amperes (both junctions).
+    pub is: f64,
 }
 
 impl Mos1Params {
@@ -45,6 +47,7 @@ impl Mos1Params {
             cgso: param(model, "CGSO")?,
             cgdo: param(model, "CGDO")?,
             cgbo: param(model, "CGBO")?,
+            is: param(model, "IS")?,
         })
     }
 }
@@ -159,12 +162,38 @@ pub fn terminal(sign: f64, vgs: f64, vds: f64, vbs: f64, p: &Mos1Params, beta: f
     }
 }
 
+/// Largest exponent such that `exp` does not overflow (ngspice
+/// `include/ngspice/defines.h`, `MAX_EXP_ARG`).
+const MAX_EXP_ARG: f64 = 709.0;
+
+/// Bulk junction diode current and conductance at the junction voltage `v`
+/// (anode bulk), with `gmin` in parallel. Port of the `MOS1gbs`/`MOS1cbs`
+/// block of ngspice `mos1load.c`: for `v <= -3 Vt` the current is the linear
+/// `gmin v - IS`, otherwise `IS (exp(v / Vt) - 1) + gmin v`, with the
+/// exponent clamped at `MAX_EXP_ARG`. Returns `(current, conductance)`.
+pub fn bulk_junction(v: f64, is: f64, gmin: f64) -> (f64, f64) {
+    if v <= -3.0 * VT {
+        (gmin * v - is, gmin)
+    } else {
+        let ev = (v / VT).min(MAX_EXP_ARG).exp();
+        (is * (ev - 1.0) + gmin * v, is * ev / VT + gmin)
+    }
+}
+
+/// `vcrit` of the bulk junctions (`mos1temp.c`): `Vt ln(Vt / (sqrt2 IS))`.
+fn bulk_vcrit(is: f64) -> f64 {
+    VT * (VT / (std::f64::consts::SQRT_2 * is)).ln()
+}
+
 /// State layout, NMOS-oriented: limited `vgs`, `vds`, `vbs`, the threshold
-/// `von`, the drain current, then `dId/dvgs`, `dId/dvds`, `dId/dvbs`.
+/// `von`, the drain current, then `dId/dvgs`, `dId/dvds`, `dId/dvbs`, and
+/// last the limited `vbd`.
 const S_VGS: usize = 0;
 const S_VDS: usize = 1;
+const S_VBS: usize = 2;
 const S_VON: usize = 3;
-const STATE_LEN: usize = 8;
+const S_VBD: usize = 8;
+const STATE_LEN: usize = 9;
 
 #[derive(Debug)]
 pub struct Mos1 {
@@ -249,18 +278,22 @@ impl Device for Mos1 {
     // and the constant Id_eq = Id - A vgs - B vds - C vbs moves to the right
     // side: b[D] -= Id_eq, b[S] += Id_eq. The current leaves the source node
     // through the same branch, so the source row is the negated drain row.
-    // gmin is stamped drain-bulk and source-bulk (devices.md section 5).
+    // The bulk junctions (anode bulk) have physical current s * cb(v) with
+    // v = s * (Vb - Vt) oriented, conductance gb and equivalent current
+    // ceq = s * (cb - gb v), stamped as in mos1load.c (ceqbs, ceqbd).
     fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool {
         let p = &self.params;
         let (raw_gs, raw_ds, raw_bs) = self.oriented(x);
-        let ((vgs, vds, vbs), limited) = match ctx.mode {
+        let ((vgs, vds, vbs, vbd), limited) = match ctx.mode {
             // mos1load.c MODEINITJCT, device not OFF, no ICs.
-            LoadMode::InitJunction => ((p.vto, 0.0, -1.0), false),
+            LoadMode::InitJunction => ((p.vto, 0.0, -1.0, -1.0), false),
             // SmallSignal (mos1load.c MODEINITSMSIG) takes x limited against
             // the stored state, like Float, but the state write below is skipped.
             LoadMode::Float | LoadMode::SmallSignal => {
                 let old_gs = state.get(S_VGS).copied().unwrap_or(0.0);
                 let old_ds = state.get(S_VDS).copied().unwrap_or(0.0);
+                let old_bs = state.get(S_VBS).copied().unwrap_or(0.0);
+                let old_bd = state.get(S_VBD).copied().unwrap_or(0.0);
                 let von = state.get(S_VON).copied().unwrap_or(0.0);
                 let raw_gd = raw_gs - raw_ds;
                 // devsup.c DEVfetlim / DEVlimvds, in the order of mos1load.c.
@@ -283,16 +316,20 @@ impl Device for Mos1 {
                     };
                     (gs, ds, gd != raw_gd || ds != raw_ds)
                 };
-                // No pnjlim: the bulk voltage keeps its raw source (or drain)
-                // referenced value, so vbd - vbs follows the limited vds.
-                let bs = if lim && ds < 0.0 {
-                    raw_bs - raw_ds + ds
+                // mos1load.c: pnjlim on the bulk voltage of the junction that
+                // is reverse-referenced to the channel source, the other
+                // follows through the limited vds.
+                let vcrit = bulk_vcrit(p.is);
+                let ((bs, bd), bulk_limited) = if ds >= 0.0 {
+                    let (bs, l) = pnjlim(raw_bs, old_bs, VT, vcrit);
+                    ((bs, bs - ds), l)
                 } else {
-                    raw_bs
+                    let (bd, l) = pnjlim(raw_bs - raw_ds, old_bd, VT, vcrit);
+                    ((bd + ds, bd), l)
                 };
-                ((gs, ds, bs), lim)
+                ((gs, ds, bs, bd), lim || bulk_limited)
             }
-            LoadMode::Exact => ((raw_gs, raw_ds, raw_bs), false),
+            LoadMode::Exact => ((raw_gs, raw_ds, raw_bs, raw_bs - raw_ds), false),
         };
         let e = eval_oriented(vgs, vds, vbs, p, self.beta);
         if ctx.mode.writes_state()
@@ -307,6 +344,7 @@ impl Device for Mos1 {
                 e.gm,
                 e.gds,
                 e.gmbs,
+                vbd,
             ];
         }
         let s = self.sign;
@@ -325,13 +363,20 @@ impl Device for Mos1 {
         }
         sys.add_b(d, -id_eq);
         sys.add_b(src, id_eq);
-        // mos1load.c adds gmin to each bulk junction conductance (gbd, gbs):
-        // gmin goes drain-bulk and source-bulk, not drain-source.
-        for t in [d, src] {
-            sys.add_a(t, t, ctx.gmin);
-            sys.add_a(b, b, ctx.gmin);
-            sys.add_a(t, b, -ctx.gmin);
-            sys.add_a(b, t, -ctx.gmin);
+        // Bulk junctions (mos1load.c): bulk-source and bulk-drain diodes, each
+        // with gmin in parallel. The anode is the bulk; the physical current
+        // is s * cb, so ceq = s * (cb - gb v) with v the oriented voltage.
+        let (cbs, gbs) = bulk_junction(vbs, p.is, ctx.gmin);
+        let (cbd, gbd) = bulk_junction(vbd, p.is, ctx.gmin);
+        let ceqbs = s * (cbs - gbs * vbs);
+        let ceqbd = s * (cbd - gbd * vbd);
+        for (t, g, ceq) in [(src, gbs, ceqbs), (d, gbd, ceqbd)] {
+            sys.add_a(b, b, g);
+            sys.add_a(t, t, g);
+            sys.add_a(b, t, -g);
+            sys.add_a(t, b, -g);
+            sys.add_b(b, -ceq);
+            sys.add_b(t, ceq);
         }
         limited
     }
@@ -341,7 +386,7 @@ impl Device for Mos1 {
     /// is 0), so only `CGSO W`, `CGDO W` and `CGBO L` remain. They sit on the
     /// physical gate, source, drain and bulk whatever the operating mode, and
     /// a PMOS keeps the same signs. The bulk junction capacitances are zero
-    /// because there are no bulk diodes (docs/reference/devices.md section 5).
+    /// (`CBD`, `CBS`, `CJ` and `CJSW` are not supported).
     fn load_reactive(&self, _x: &[f64], _state: &[f64], _ctx: &LoadContext, c: &mut RealSystem) {
         let g = self.gate;
         for (other, cap) in [
@@ -357,20 +402,31 @@ impl Device for Mos1 {
     }
 
     /// `mos1conv.c` compares the linear prediction `cdhat` of the drain
-    /// current with the stored `cd`, and then the same for the bulk diode
-    /// currents. Here the prediction is compared with the drain current
-    /// recomputed at the new voltages, as docs/reference/numerical-methods.md
-    /// section 1.2 rules, exactly as the diode and BJT do. There is no bulk
-    /// diode test because there are no bulk diodes. Do not change it back.
+    /// current with the stored `cd`, and then `cbhat`, the prediction of the
+    /// sum of the two bulk diode currents, with the stored `cbs + cbd`. Here
+    /// each prediction is compared with the quantity recomputed at the new
+    /// voltages, as docs/reference/numerical-methods.md section 1.2 rules,
+    /// exactly as the diode and BJT do. Do not change it back.
     fn converged(&self, x: &[f64], state: &[f64], ctx: &LoadContext) -> bool {
-        let Some(&[vgs, vds, vbs, _, id, gm, gds, gmbs]) = state.first_chunk::<STATE_LEN>() else {
+        let Some(&[vgs, vds, vbs, _, id, gm, gds, gmbs, vbd]) = state.first_chunk::<STATE_LEN>()
+        else {
             return true;
         };
         let (ngs, nds, nbs) = self.oriented(x);
         let id_hat = id + gm * (ngs - vgs) + gds * (nds - vds) + gmbs * (nbs - vbs);
         let e = eval_oriented(ngs, nds, nbs, &self.params, self.beta);
         let tol = ctx.reltol * id_hat.abs().max(e.id.abs()) + ctx.abstol;
-        (id_hat - e.id).abs() <= tol
+        if (id_hat - e.id).abs() > tol {
+            return false;
+        }
+        let is = self.params.is;
+        let nbd = nbs - nds;
+        let (cbs, gbs) = bulk_junction(vbs, is, ctx.gmin);
+        let (cbd, gbd) = bulk_junction(vbd, is, ctx.gmin);
+        let cb_hat = cbs + cbd + gbd * (nbd - vbd) + gbs * (nbs - vbs);
+        let cb_new = bulk_junction(nbs, is, ctx.gmin).0 + bulk_junction(nbd, is, ctx.gmin).0;
+        let tol = ctx.reltol * cb_hat.abs().max(cb_new.abs()) + ctx.abstol;
+        (cb_hat - cb_new).abs() <= tol
     }
 }
 
@@ -387,6 +443,7 @@ mod tests {
             cgso: 0.0,
             cgdo: 0.0,
             cgbo: 0.0,
+            is: 1e-14,
         }
     }
 
@@ -399,7 +456,7 @@ mod tests {
             "M1".into(),
             [Some(0), Some(1), Some(2), Some(3)],
             false,
-            params(),
+            channel_only(),
             1e-3,
             1e-5,
             1e-5,
@@ -412,7 +469,7 @@ mod tests {
             assert!(!m.load(&x, &mut state, &ctx, &mut sys));
             assert_eq!(state, [0.0; STATE_LEN]);
             let (vgs, vds, vbs) = (x[1] - x[2], x[0] - x[2], x[3] - x[2]);
-            let e = terminal(1.0, vgs, vds, vbs, &params(), 1e-3);
+            let e = terminal(1.0, vgs, vds, vbs, &channel_only(), 1e-3);
             assert!((sys.a.get(0, 0) - e.gds).abs() < 1e-18);
             assert!((sys.a.get(0, 1) - e.gm).abs() < 1e-18);
             assert!((sys.a.get(0, 3) - e.gmbs).abs() < 1e-18);
@@ -424,9 +481,20 @@ mod tests {
         }
     }
 
-    /// gmin goes drain-bulk and source-bulk, never drain-source.
+    /// With `IS = 0` and `gmin = 0` the junctions vanish, so the stamp is the
+    /// channel alone (the junction itself is tested below).
+    fn channel_only() -> Mos1Params {
+        Mos1Params {
+            is: 0.0,
+            ..params()
+        }
+    }
+
+    /// The junction stamps: with a reverse-biased bulk (both junctions below
+    /// -3 Vt) each contributes `gmin` between bulk and its terminal and the
+    /// current `gmin v - IS`; never between drain and source.
     #[test]
-    fn gmin_is_stamped_on_bulk_junctions() {
+    fn junctions_are_stamped_bulk_to_drain_and_source() {
         let m = Mos1::new(
             "M1".into(),
             [Some(0), Some(1), Some(2), Some(3)],
@@ -439,7 +507,8 @@ mod tests {
         let mut ctx = LoadContext::new(LoadMode::Exact);
         let mut with = RealSystem::new(4);
         let mut without = RealSystem::new(4);
-        let x = [0.0, 0.0, 0.0, 0.0];
+        // Vgs = 0 (channel off), Vbs = -0.5, Vbd = -0.5 (vds = 0).
+        let x = [1.0, 0.0, 1.0, 0.5];
         let mut state = [0.0; STATE_LEN];
         assert!(!m.load(&x, &mut state, &ctx, &mut with));
         ctx.gmin = 0.0;
@@ -450,6 +519,46 @@ mod tests {
         assert!((diff(2, 2) - g).abs() < 1e-20 && (diff(2, 3) + g).abs() < 1e-20);
         assert!((diff(3, 3) - 2.0 * g).abs() < 1e-20);
         assert!(diff(0, 2).abs() < 1e-20 && diff(2, 0).abs() < 1e-20);
+        // Equivalent currents: ceq = gmin v - IS - gmin v = -IS on each
+        // junction, leaving the bulk row at 2 IS.
+        let is = 1e-14;
+        assert!((without.b[3] - 2.0 * is).abs() < 1e-26, "{}", without.b[3]);
+        assert!((without.b[0] + is).abs() < 1e-26 && (without.b[2] + is).abs() < 1e-26);
+    }
+
+    /// `bulk_junction` follows the two branches of `mos1load.c`.
+    #[test]
+    fn bulk_junction_branches() {
+        let (is, gmin) = (1e-14, 1e-12);
+        assert_eq!(bulk_junction(-1.0, is, gmin), (-gmin - is, gmin));
+        let v = 0.5;
+        let ev = (v / VT).exp();
+        assert_eq!(
+            bulk_junction(v, is, gmin),
+            (is * (ev - 1.0) + gmin * v, is * ev / VT + gmin)
+        );
+        // The exponent is clamped, so a huge voltage stays finite.
+        assert!(bulk_junction(1e6, is, gmin).0.is_finite());
+    }
+
+    /// A SmallSignal load leaves the state slice unchanged, bit for bit.
+    #[test]
+    fn small_signal_leaves_state_untouched() {
+        let m = Mos1::new(
+            "M1".into(),
+            [Some(0), Some(1), Some(2), Some(3)],
+            false,
+            params(),
+            1e-3,
+            1e-5,
+            1e-5,
+        );
+        let ctx = LoadContext::new(LoadMode::SmallSignal);
+        let mut state = [0.31, 0.77, -0.2, 0.7, 1e-4, 2e-4, 3e-5, 4e-5, -0.97];
+        let before = state.map(f64::to_bits);
+        let mut sys = RealSystem::new(4);
+        m.load(&[1.0, 2.0, 0.5, 0.0], &mut state, &ctx, &mut sys);
+        assert_eq!(state.map(f64::to_bits), before);
     }
 
     #[test]

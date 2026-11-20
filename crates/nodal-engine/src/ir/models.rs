@@ -143,6 +143,7 @@ const MOSFET: &[ParamSpec] = &[
     p("CGSO", 0.0, NonNeg),
     p("CGDO", 0.0, NonNeg),
     p("CGBO", 0.0, NonNeg),
+    p("IS", 1e-14, Pos),
 ];
 
 /// `ROFF` defaults to NaN, meaning `1/gmin`; the switch resolves it when

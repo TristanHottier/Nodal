@@ -46,7 +46,7 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4482628599
 - C, L and junction charges integrated with trapezoidal and BDF2.
 - Source waveforms: pulse, sine, PWL, with breakpoints.
 - LTE-based step control (ported from ngspice `cktterr.c`); `uic`; switch hysteresis, with step rejection and crossing location at each threshold crossing.
-- MOSFET bulk junction diodes with saturation current (IS) and forward-biased bulk, as in ngspice `mos1load.c`. Today only their gmin part is stamped (devices.md §5).
+- MOSFET bulk junction diodes with saturation current (IS) and forward-biased bulk, as in ngspice `mos1load.c`. The DC and AC loading is done (devices.md §3); junction capacitances are not supported.
 
 **Exit:** circuits T1–T6 pass with both `trap` and `gear`.
 

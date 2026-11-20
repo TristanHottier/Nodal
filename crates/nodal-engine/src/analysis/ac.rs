@@ -105,7 +105,7 @@ pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Erro
             cause: Box::new(cause),
         };
         let omega = 2.0 * std::f64::consts::PI * frequency;
-        let a = assemble_ac(&g.a, &c.a, omega);
+        let a = assemble_ac(&g.a, &c.a, omega).map_err(at)?;
         let mut solution = excitation.b.clone();
         solver
             .factor(&a)

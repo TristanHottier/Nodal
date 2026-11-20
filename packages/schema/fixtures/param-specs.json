@@ -237,6 +237,11 @@
       "key": "CGBO",
       "default": 0,
       "range": "nonNegative"
+    },
+    {
+      "key": "IS",
+      "default": 1e-14,
+      "range": "positive"
     }
   ],
   "PMOS": [
@@ -279,6 +284,11 @@
       "key": "CGBO",
       "default": 0,
       "range": "nonNegative"
+    },
+    {
+      "key": "IS",
+      "default": 1e-14,
+      "range": "positive"
     }
   ],
   "SW": [

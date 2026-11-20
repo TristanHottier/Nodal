@@ -276,10 +276,12 @@ fn nmos_reverse_conduction() -> TestResult {
     let vov = vgs - vth;
     assert!(vov > vds, "triode expected, vov = {vov}");
     let id = beta * (vov - vds / 2.0) * vds * (1.0 + lambda * vds);
-    // Current into the physical drain is -id; gmin joins the drain to the
-    // bulk, so it carries gmin * (-0.5) into the drain as well. VD supplies
-    // the negative of the current that the device takes from node d.
-    let want = id + 1e-12 * 0.5;
+    // Current into the physical drain is -id. The bulk-drain junction is
+    // forward biased (Vbd = 0.5 V) and injects its current into the drain
+    // node, IS (exp(Vbd / Vt) - 1) + gmin Vbd, which VD also supplies. VD
+    // supplies the negative of the current that the device takes from node d.
+    let vbd = 0.5;
+    let want = id + 1e-14 * ((vbd / VT).exp() - 1.0) + 1e-12 * vbd;
     let got = r.branch_currents["VD"];
     assert!(close(got, want, 1e-13), "I(VD) = {got}, want {want}");
     Ok(())
@@ -398,5 +400,42 @@ fn pnp_substrate_gmin_goes_base_to_ground() -> TestResult {
     let (vb, vc) = (r.node_voltages["b"], r.node_voltages["c"]);
     assert!(close(vb, 4.995015, 1e-8), "V(b) = {vb}");
     assert!(close(vc, 4.999995, 1e-8), "V(c) = {vc}");
+    Ok(())
+}
+
+/// Source driven to -0.65 V (NMOS) with gate, drain and bulk at ground: the
+/// bulk-source junction is forward biased (Vbs = 0.65) and the channel is off,
+/// so the supply carries the junction current only. The drain junction sees
+/// Vbd = 0 and carries nothing. `VS` has its positive terminal at ground and
+/// its negative terminal on the source node, so the junction current flowing
+/// into the source node leaves the positive terminal: I(VS) is negative.
+fn forward_bulk_current(kind: &str, vs: f64) -> Result<f64, Box<dyn Error>> {
+    let els = format!(
+        r#"{{"kind":"V","name":"VS","nodes":["0","s"],"dc":{vs}}},{{"kind":"M","name":"M1","nodes":["0","0","s","0"],"model":"MM","w":100e-6,"l":10e-6}}"#
+    );
+    let text = format!(
+        r#"{{"irVersion":1,"elements":[{els}],"models":[{{"name":"MM","type":"{kind}","params":{{"VTO":{vto},"KP":1e-4}}}}],"analyses":[{{"type":"op"}}]}}"#,
+        vto = if kind == "PMOS" { -1 } else { 1 },
+    );
+    Ok(run(&text)?.branch_currents["VS"])
+}
+
+#[test]
+fn nmos_forward_bulk_current() -> TestResult {
+    let (is, gmin, v) = (1e-14, 1e-12, 0.65);
+    // Bulk-source diode current flows bulk to source; VS (source node +)
+    // sources the negative of it.
+    let want = -(is * ((v / VT).exp() - 1.0) + gmin * v);
+    let got = forward_bulk_current("NMOS", v)?;
+    assert!(close(got, want, 1e-13), "I(VS) = {got}, want {want}");
+    Ok(())
+}
+
+#[test]
+fn pmos_forward_bulk_current() -> TestResult {
+    let (is, gmin, v) = (1e-14, 1e-12, 0.65);
+    let want = is * ((v / VT).exp() - 1.0) + gmin * v;
+    let got = forward_bulk_current("PMOS", -v)?;
+    assert!(close(got, want, 1e-13), "I(VS) = {got}, want {want}");
     Ok(())
 }

@@ -133,7 +133,7 @@ For AC analysis, $G$ is the Jacobian at the small-signal point, and $C$ is the c
 
 ## 5. Gmin
 
-A conductance `gmin` (default $10^{-12}$ S) is placed in parallel with every pn junction, as in SPICE. ngspice also puts `gmin` on the MOSFET bulk junctions. Nodal v1 has no bulk junctions, so it puts `gmin` from drain to bulk and from source to bulk, the same pair of places where it stamps it in ngspice. This is a listed deviation ([devices.md](devices.md) §5). gmin stepping (numerical-methods §1.4) temporarily raises it to help DC convergence.
+A conductance `gmin` (default $10^{-12}$ S) is placed in parallel with every pn junction, as in SPICE. On a MOSFET the junctions are the two bulk diodes ([devices.md](devices.md) §3). gmin stepping (numerical-methods §1.4) temporarily raises it to help DC convergence.
 
 ## 6. Topology checks before solving
 

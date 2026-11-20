@@ -63,6 +63,7 @@ const MOSFET: readonly ParamSpec[] = [
   p("CGSO", 0, "nonNegative"),
   p("CGDO", 0, "nonNegative"),
   p("CGBO", 0, "nonNegative"),
+  p("IS", 1e-14, "positive"),
 ];
 
 const SWITCH: readonly ParamSpec[] = [

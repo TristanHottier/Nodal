@@ -324,6 +324,7 @@ fn mos_params() -> Mos1Params {
         cgso: 0.0,
         cgdo: 0.0,
         cgbo: 0.0,
+        is: 1e-14,
     }
 }
 
@@ -420,4 +421,86 @@ fn mos_current_continuous_at_vdsat() {
         (above - below).abs() <= 1e-12 * above.abs(),
         "{below} {above}"
     );
+}
+
+use nodal_engine::devices::mos1::bulk_junction;
+
+/// The bulk junction conductance against central differences of its current,
+/// below -3 Vt, on either side of the -3 Vt boundary, and forward.
+#[test]
+fn mos1_bulk_junction_regions() {
+    let is = 1e-14;
+    for v in [-1.0, -3.0 * VT - 1e-6, -3.0 * VT + 1e-6, 0.3, 0.7] {
+        let (_, g) = bulk_junction(v, is, GMIN);
+        check(|x| bulk_junction(x, is, GMIN).0, g, v, 1e-6 * VT);
+    }
+}
+
+/// Full terminal currents of the NMOS and PMOS, channel plus both junctions,
+/// against central differences with respect to the three terminal voltages
+/// (source as reference), at Vbs = 0.6 (forward source junction) and at
+/// Vbd = 0.6 (forward drain junction, reverse mode).
+#[test]
+fn mos1_terminal_currents_with_junctions() {
+    use nodal_engine::devices::{Device, LoadContext, LoadMode, mos1::Mos1};
+    use nodal_engine::mna::RealSystem;
+    // Unknowns: 0 drain, 1 gate, 2 source (grounded), 3 bulk.
+    for pmos in [false, true] {
+        let sign = if pmos { -1.0 } else { 1.0 };
+        let p = Mos1Params {
+            vto: sign * 0.7,
+            ..mos_params()
+        };
+        let m = Mos1::new(
+            "M1".into(),
+            [Some(0), Some(1), Some(2), Some(3)],
+            pmos,
+            p,
+            MOS_BETA,
+            1e-5,
+            1e-5,
+        );
+        // Oriented (vgs, vds, vbs): vbs = 0.6; and vds = -1, vbs = -0.4
+        // (vbd = 0.6).
+        for (vgs, vds, vbs) in [(2.0, 1.0, 0.6), (2.0, -1.0, -0.4)] {
+            let x0 = [sign * vds, sign * vgs, 0.0, sign * vbs];
+            let mut ctx = LoadContext::new(LoadMode::Exact);
+            ctx.gmin = GMIN;
+            // Current leaving each of drain and bulk and the Jacobian,
+            // read back from the stamp: rows of A x - b at x.
+            let resid = |x: &[f64; 4]| {
+                let mut sys = RealSystem::new(4);
+                let mut state = [0.0; 16];
+                m.load(x, &mut state, &ctx, &mut sys);
+                let mut r = [0.0; 4];
+                for (i, ri) in r.iter_mut().enumerate() {
+                    *ri = (0..4).map(|c| sys.a.get(i, c) * x[c]).sum::<f64>() - sys.b[i];
+                }
+                (r, sys)
+            };
+            let (_, sys) = resid(&x0);
+            for row in [0usize, 3] {
+                for col in [0usize, 1, 3] {
+                    let h = 1e-6;
+                    let (mut xp, mut xm) = (x0, x0);
+                    xp[col] += h;
+                    xm[col] -= h;
+                    let numeric = (resid(&xp).0[row] - resid(&xm).0[row]) / (2.0 * h);
+                    let analytic = sys.a.get(row, col);
+                    let abs = (numeric - analytic).abs();
+                    let rel = abs / numeric.abs().max(analytic.abs());
+                    // Entries at the gmin level (1e-12 S) sit below the
+                    // rounding noise of a central difference of a current of
+                    // 1e-4 A (about 2e-13 S at h = 1e-6 V); they are covered
+                    // by `mos1_bulk_junction_regions`. Everything above 1e-9 S
+                    // meets the usual rule.
+                    let noise = if analytic.abs() < 1e-9 { 5e-13 } else { 1e-15 };
+                    assert!(
+                        rel <= 1e-5 || abs <= noise,
+                        "pmos {pmos} bias ({vgs}, {vds}, {vbs}) row {row} col {col}: analytic {analytic:e}, numeric {numeric:e}"
+                    );
+                }
+            }
+        }
+    }
 }

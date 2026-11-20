@@ -152,11 +152,30 @@ with $\partial q_b/\partial V_{bc} = q_b^2/V_{AF}$, so the last term is $-T_F I_
 | `CGSO` | 0 F/m | Gate-source overlap capacitance per unit width |
 | `CGDO` | 0 F/m | Gate-drain overlap capacitance per unit width |
 | `CGBO` | 0 F/m | Gate-bulk overlap capacitance per unit **length** |
+| `IS` | 1e-14 A | Saturation current of both bulk junctions |
 | instance `W`, `L` | 100 µm, 100 µm | Channel width and length (ngspice defaults) |
 
 Without `TOX`, ngspice Level 1 has no intrinsic Meyer capacitances. v1 matches that: `TOX` is rejected, and only the constant overlap capacitances are modelled.
 
-**Overlap capacitances** (`mos1load.c`, `mos1acld.c`, with $L_D = 0$): $C_{gs} = C_{GSO}\,W$, $C_{gd} = C_{GDO}\,W$ and $C_{gb} = C_{GBO}\,L$. `CGBO` is per unit length, the other two per unit width. They are constant and sit on the physical gate, source, drain and bulk in every operating mode; a PMOS keeps the same signs. The AC stamp adds $j\omega C$ between gate and source, gate and drain, and gate and bulk. The small-signal conductances come from the converged $x$ limited against the stored state, and AC analysis never writes state. The tests compare a common-source stage with its closed form (including the Miller path through $C_{gd}$ and the gate-source loading), a PMOS with its mirrored NMOS, and the scaling of the three capacitances with $W$ and $L$. Junction diodes to bulk (`CBD`, `CBS`, `IS`, `JS`) are post-v1. This is a known deviation from ngspice (§5).
+**Overlap capacitances** (`mos1load.c`, `mos1acld.c`, with $L_D = 0$): $C_{gs} = C_{GSO}\,W$, $C_{gd} = C_{GDO}\,W$ and $C_{gb} = C_{GBO}\,L$. `CGBO` is per unit length, the other two per unit width. They are constant and sit on the physical gate, source, drain and bulk in every operating mode; a PMOS keeps the same signs. The AC stamp adds $j\omega C$ between gate and source, gate and drain, and gate and bulk. The small-signal conductances come from the converged $x$ limited against the stored state, and AC analysis never writes state. The tests compare a common-source stage with its closed form (including the Miller path through $C_{gd}$ and the gate-source loading), a PMOS with its mirrored NMOS, and the scaling of the three capacitances with $W$ and $L$. Bulk junction capacitances (`CBD`, `CBS`, `CJ`, `CJSW`) and the area-based saturation current (`JS`) are not supported.
+
+**Bulk junction diodes** (`mos1load.c`). The bulk-source and bulk-drain diodes are always present, anode on the bulk, both with saturation current $I_S$ and $g_{min}$ in parallel. With $v$ the junction voltage in NMOS orientation ($V_{bs}$ and $V_{bd} = V_{bs} - V_{ds}$, negated for a PMOS) and $V_t = kT/q$:
+
+$$
+i_b(v) =
+\begin{cases}
+g_{min}\,v - I_S & v \le -3 V_t \\
+I_S\left(e^{v/V_t} - 1\right) + g_{min}\,v & v > -3 V_t
+\end{cases}
+\qquad
+g_b(v) =
+\begin{cases}
+g_{min} & v \le -3 V_t \\
+\dfrac{I_S}{V_t}\,e^{v/V_t} + g_{min} & v > -3 V_t
+\end{cases}
+$$
+
+The exponent is clamped at 709, as `MAX_EXP_ARG` in ngspice. Each diode stamps its conductance between the bulk and the drain or source, with equivalent current $i_{eq} = \sigma\,(i_b - g_b v)$, $\sigma = +1$ for an NMOS and $-1$ for a PMOS, from the bulk to the terminal. The drain-source channel carries no `gmin`; the junctions carry it. **Limiting:** with $V_{crit} = V_t \ln\!\big(V_t / (\sqrt{2}\,I_S)\big)$, if the limited $V_{ds} \ge 0$ then $V_{bs}$ is limited with pnjlim against the stored $V_{bs}$ and $V_{bd} = V_{bs} - V_{ds}$, else $V_{bd}$ is limited against the stored $V_{bd}$ and $V_{bs} = V_{bd} + V_{ds}$. **Convergence:** besides the drain current, the predicted bulk current $c_{bs} + c_{bd} + g_{bd}\,\Delta V_{bd} + g_{bs}\,\Delta V_{bs}$ must agree with the sum recomputed at the new voltages (`mos1conv.c`, with the §1.2 comparison of numerical-methods.md). The small-signal $G$ includes $g_{bs}$ and $g_{bd}$ at the limited operating point. The tests compare $g_b$ with central differences of $i_b$ at $-1$ V, either side of $-3V_t$, 0.3 V and 0.7 V; compare the stamped bulk and drain rows of an NMOS and a PMOS with central differences at $V_{bs} = 0.6$ V and at $V_{bd} = 0.6$ V; and compare the operating point of a forward-biased bulk junction with the closed form.
 
 NMOS. If $V_{ds} < 0$, swap drain and source, evaluate, and swap back. With $\beta = K_P\, W / L$:
 
@@ -211,7 +230,6 @@ The state turns on when $v_c > V_T + V_H$ and off when $v_c < V_T - V_H$. In bet
 
 | Device | ngspice | Nodal v1 | Effect |
 |---|---|---|---|
-| MOSFET | Bulk–drain and bulk–source diodes always present (`IS` defaults to 1e-14 A), each with `gmin` in parallel | Only the `gmin` part of the two bulk junctions: `gmin` from drain to bulk and from source to bulk. The diode current of the junctions (saturation current 1e-14 A and the forward branch) is not modelled, and neither is `pnjlim` on the bulk voltages | No test bounds the effect of the omitted junction current on the DC results. A forward-biased bulk junction (`Vbs` or `Vbd` positive) is not covered by any test. The cascode N6, whose lower transistor is off for part of its sweep, matches ngspice within the §3 tolerance in CI. |
 | Diode, BJT | Reverse breakdown, high injection, recombination currents, parasitic resistances (BJT) | Not modelled | Model cards that set these parameters are rejected. |
 
 ## References

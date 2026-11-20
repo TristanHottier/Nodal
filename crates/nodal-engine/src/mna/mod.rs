@@ -1,5 +1,6 @@
 //! MNA system assembly. Stamps follow docs/reference/mna.md.
 
+use crate::error::Error;
 use crate::linalg::{C64, DenseMatrix};
 
 /// The real-valued system `A x = b`.
@@ -76,15 +77,28 @@ impl AcExcitation {
 }
 
 /// The complex matrix `G + j omega C`.
-pub fn assemble_ac(g: &DenseMatrix, c: &DenseMatrix, omega: f64) -> DenseMatrix<C64> {
+///
+/// `Error::Internal` if `g` and `c` differ in size.
+pub fn assemble_ac(
+    g: &DenseMatrix,
+    c: &DenseMatrix,
+    omega: f64,
+) -> Result<DenseMatrix<C64>, Error> {
     let n = g.n();
+    if c.n() != n {
+        return Err(Error::Internal(format!(
+            "assemble_ac: G is {n}x{n} but C is {}x{}",
+            c.n(),
+            c.n()
+        )));
+    }
     let mut a = DenseMatrix::<C64>::zeros(n);
     for r in 0..n {
         for col in 0..n {
             a.add(r, col, C64::new(g.get(r, col), omega * c.get(r, col)));
         }
     }
-    a
+    Ok(a)
 }
 
 #[cfg(test)]
@@ -106,19 +120,27 @@ mod tests {
     }
 
     #[test]
-    fn assemble_ac_combines() {
+    fn assemble_ac_combines() -> Result<(), Error> {
         let mut g = DenseMatrix::zeros(2);
         let mut c = DenseMatrix::zeros(2);
         g.add(0, 0, 2.0);
         g.add(0, 1, -1.0);
         c.add(0, 0, 3.0);
         c.add(1, 1, 5.0);
-        let a = assemble_ac(&g, &c, 10.0);
+        let a = assemble_ac(&g, &c, 10.0)?;
         assert_eq!(a.n(), 2);
         assert_eq!(a.get(0, 0), C64::new(2.0, 30.0));
         assert_eq!(a.get(0, 1), C64::new(-1.0, 0.0));
         assert_eq!(a.get(1, 0), C64::new(0.0, 0.0));
         assert_eq!(a.get(1, 1), C64::new(0.0, 50.0));
+        Ok(())
+    }
+
+    #[test]
+    fn assemble_ac_rejects_size_mismatch() {
+        let g = DenseMatrix::zeros(2);
+        let c = DenseMatrix::zeros(3);
+        assert!(matches!(assemble_ac(&g, &c, 1.0), Err(Error::Internal(_))));
     }
 
     #[test]

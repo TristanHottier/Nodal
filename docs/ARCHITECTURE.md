@@ -154,7 +154,7 @@ Defaults match ngspice so comparisons are like-for-like.
 | `reltol` | 1e-3 | Relative convergence tolerance. |
 | `vntol` | 1e-6 V | Absolute voltage tolerance. |
 | `abstol` | 1e-12 A | Absolute current tolerance. |
-| `gmin` | 1e-12 S | Conductance across every pn junction; across the drain–source channel of each MOSFET (a deviation from ngspice, see [reference/devices.md](reference/devices.md) §5). |
+| `gmin` | 1e-12 S | Conductance across every pn junction, including the two bulk junctions of each MOSFET. |
 | `itl1` | 100 | Max Newton iterations, DC. |
 | `itl4` | 10 | Max Newton iterations per transient time point before the step is cut. |
 | `trtol` | 7 | Truncation-error overestimate factor. |
