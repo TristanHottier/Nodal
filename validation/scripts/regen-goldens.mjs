@@ -114,6 +114,16 @@ function irNames(ir) {
  * than `#branch` are device-internal and skipped. Anything else unexpected is fatal.
  * In an ac plot the first vector must be `frequency`, which keeps that name.
  */
+/**
+ * Fails when the frequency scale of a complex ac plot has a non-zero imaginary part. The golden
+ * stores only the real part, so a non-zero imaginary part would be dropped silently.
+ */
+export function checkFrequencyScale(points) {
+  for (const row of points) {
+    if (row[0][1] !== 0) fail(`ac frequency scale has a non-zero imaginary part: ${row[0][1]}`);
+  }
+}
+
 export function mapSignals(names, ir, analysisType) {
   const { nodes, elements } = irNames(ir);
   const element = (key, what) => {
@@ -195,6 +205,7 @@ function compute(id, version) {
       ];
     } else if (analysisType === "ac") {
       if (!raw.complex) fail(`${id}: ac rawfile is not complex`);
+      checkFrequencyScale(raw.points);
       const signals = mapped.slice(1);
       body = [
         ["frequency", ...signals.flatMap(([, name]) => [`${name}.re`, `${name}.im`])].join(","),

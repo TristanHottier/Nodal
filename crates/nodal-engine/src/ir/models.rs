@@ -60,6 +60,10 @@ pub enum Range {
     NonNegative,
     /// `[0, 1)`
     UnitInterval,
+    /// `[0, 0.9]`. ngspice-42 limits the diode grading coefficient `M` to 0.9
+    /// ("temperature adjusted grading coefficient too large, limited to 0.9"),
+    /// so larger values are rejected instead of being adjusted silently.
+    DiodeGrading,
 }
 
 impl Range {
@@ -70,6 +74,7 @@ impl Range {
                 Range::Positive => v > 0.0,
                 Range::NonNegative => v >= 0.0,
                 Range::UnitInterval => (0.0..1.0).contains(&v),
+                Range::DiodeGrading => (0.0..=0.9).contains(&v),
             }
     }
 
@@ -79,6 +84,7 @@ impl Range {
             Range::Positive => "finite and > 0",
             Range::NonNegative => "finite and >= 0",
             Range::UnitInterval => "in [0, 1)",
+            Range::DiodeGrading => "in [0, 0.9]",
         }
     }
 }
@@ -95,7 +101,9 @@ const fn p(key: &'static str, default: f64, rule: Range) -> ParamSpec {
     ParamSpec { key, default, rule }
 }
 
-use Range::{Any, NonNegative as NonNeg, Positive as Pos, UnitInterval as Unit};
+use Range::{
+    Any, DiodeGrading as Grading, NonNegative as NonNeg, Positive as Pos, UnitInterval as Unit,
+};
 
 const DIODE: &[ParamSpec] = &[
     p("IS", 1e-14, Pos),
@@ -103,7 +111,7 @@ const DIODE: &[ParamSpec] = &[
     p("RS", 0.0, NonNeg),
     p("CJO", 0.0, NonNeg),
     p("VJ", 1.0, Pos),
-    p("M", 0.5, Unit),
+    p("M", 0.5, Grading),
     p("FC", 0.5, Unit),
     p("TT", 0.0, NonNeg),
 ];
@@ -274,6 +282,7 @@ mod tests {
             Range::Positive => "positive",
             Range::NonNegative => "nonNegative",
             Range::UnitInterval => "unitInterval",
+            Range::DiodeGrading => "diodeGrading",
         }
     }
 

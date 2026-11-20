@@ -146,8 +146,9 @@ The grid follows `ACan` in ngspice `acan.c`. With `points` $= n$:
 
 - `dec`: the ratio between neighbours is $\delta = 10^{1/n}$ when $f_{stop}/10 < f_{start}$. Otherwise $\delta = \exp\!\left(\dfrac{\ln(f_{stop}/f_{start})}{m}\right)$ with $m = \lfloor n \left|\log_{10}(f_{stop}/f_{start})\right|\rfloor$.
 - `oct`: $\delta = 2^{1/n}$.
-- Both start at $f_{start}$, multiply by $\delta$, and stop when $f > f_{stop} + \delta\, f_{stop}\, \mathrm{reltol}$. If $f_{start} = f_{stop}$ there is one point.
-- `lin`: $n$ points $f_i = f_{start} + i\,\dfrac{f_{stop} - f_{start}}{n - 1}$. One point, or $f_{start} = f_{stop}$, gives the single frequency $f_{start}$.
+- Both start at $f_{start}$, multiply by $\delta$, and stop when $f > f_{stop} + \delta\, f_{stop}\, \mathrm{reltol}$. ngspice also stops early when $\delta = 1$.
+- For `dec`, $f_{start} = f_{stop}$ gives $\delta = 1$ and therefore one point. For `oct`, $\delta = 2^{1/n} > 1$, so $f_{start} = f_{stop}$ gives one point only while $2^{1/n} > 1 + 2^{1/n}\,\mathrm{reltol}$. For a very large $n$ the tolerance admits further points, in ngspice as in Nodal.
+- `lin`: $n$ points $f_i = f_{start} + i\,\dfrac{f_{stop} - f_{start}}{n - 1}$. With $n = 1$, or with $f_{start} = f_{stop}$, the step is 0 and the grid is the single frequency $f_{start}$.
 
 Deviation from ngspice: for `lin` with two points, ngspice sets the step to 0 and produces a single point. Nodal returns $f_{start}$ and $f_{stop}$.
 

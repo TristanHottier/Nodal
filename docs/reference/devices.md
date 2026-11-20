@@ -20,7 +20,7 @@ Constants. Nodal uses the values ngspice has used since its `const.h` moved off 
 | `RS` | 0 | Ω | Series resistance (adds an internal node when > 0) |
 | `CJO` | 0 | F | Zero-bias junction capacitance |
 | `VJ` | 1 | V | Junction potential |
-| `M` | 0.5 | — | Grading coefficient |
+| `M` | 0.5 | — | Grading coefficient, accepted in [0, 0.9]. ngspice-42 limits it to 0.9, so larger values are rejected |
 | `FC` | 0.5 | — | Forward-bias depletion capacitance coefficient |
 | `TT` | 0 | s | Transit time |
 | `BV`, `IBV` | ∞, 1e-3 | V, A | Reverse breakdown — **post-v1**; rejected if set |

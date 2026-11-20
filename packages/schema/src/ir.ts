@@ -4,7 +4,7 @@
 import { z } from "zod";
 import type { AcSweep } from "./ac";
 import { acFrequencyCount } from "./ac";
-import { IR_VERSION } from "./constants";
+import { DEFAULT_RELTOL, IR_VERSION } from "./constants";
 import type { ModelKind } from "./models";
 import { MODEL_KINDS, PARAM_SPECS, describeRange, inRange } from "./models";
 
@@ -114,9 +114,6 @@ const analysis = z.discriminatedUnion("type", [
     fstop: z.number(),
   }),
 ]);
-
-/** Default relative tolerance, as in the engine; it bounds the last ac frequency. */
-const DEFAULT_RELTOL = 1e-3;
 
 /** Largest allowed number of points in a DC or AC sweep. */
 const MAX_SWEEP_POINTS = 1_000_000;

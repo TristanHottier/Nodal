@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mapSignals, parseRaw, staleGoldens } from "./regen-goldens.mjs";
+import { checkFrequencyScale, mapSignals, parseRaw, staleGoldens } from "./regen-goldens.mjs";
 
 const complexRaw = `Title: rc
 Date: Fri Nov 20 2026
@@ -23,7 +23,7 @@ Values:
 
 const ir = {
   elements: [
-    { kind: "V", name: "V1", nodes: ["in", "0"], dc: 0, ac: 1 },
+    { kind: "V", name: "V1", nodes: ["in", "0"], dc: 0, ac: { mag: 1 } },
     { kind: "R", name: "R1", nodes: ["in", "out"], value: 1000 },
     { kind: "C", name: "C1", nodes: ["out", "0"], value: 1e-6 },
   ],
@@ -70,4 +70,9 @@ test("staleGoldens names a golden of another kind", () => {
   assert.deepEqual(staleGoldens("A1", "op", files), ["A1.ac.csv"]);
   assert.deepEqual(staleGoldens("A1", "ac", files), []);
   assert.deepEqual(staleGoldens("A2", "dc", files), ["A2.op.csv"]);
+});
+
+test("checkFrequencyScale accepts a real scale and rejects an imaginary part", () => {
+  checkFrequencyScale(parseRaw(complexRaw).points);
+  assert.throws(() => checkFrequencyScale([[[1, 0]], [[10, 1e-3]]]), /non-zero imaginary part/);
 });

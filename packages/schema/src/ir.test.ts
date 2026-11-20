@@ -99,7 +99,8 @@ const NEEDLES: [string, string][] = [
   ["model-duplicate-case", "model names must be unique ignoring case: DMOD, dmod"],
   ["model-lowercase-param", "unsupported parameter is for model DMOD (D)"],
   ["model-bv-rejected", "unsupported parameter BV for model DMOD (D)"],
-  ["model-param-out-of-range", "parameter M of model DMOD must be in [0, 1), got 1"],
+  ["model-param-out-of-range", "parameter M of model DMOD must be in [0, 0.9], got 1"],
+  ["model-diode-m-above-0.9", "parameter M of model DMOD must be in [0, 0.9], got 0.95"],
   ["mos-zero-width", "element M1: w must be finite and > 0"],
   ["switch-same-output-nodes", "element S1: both terminals are node a"],
   ["dc-unknown-source", "analysis dc: unknown source V9"],
@@ -206,6 +207,46 @@ describe("ac parsed values", () => {
       analyses: [{ type: "op" }],
     });
     expect(r.ok).toBe(false);
+  });
+  test("a bad nodeset is reported before a bad option", () => {
+    const r = parseNetlist({
+      irVersion: 1,
+      elements: [
+        { kind: "V", name: "V1", nodes: ["a", "0"], dc: 1 },
+        { kind: "R", name: "R1", nodes: ["a", "0"], value: 1 },
+      ],
+      nodeset: { nowhere: 1 },
+      options: { reltol: 0 },
+      analyses: [{ type: "op" }],
+    });
+    expect(r.ok).toBe(false);
+    const text = r.ok ? "" : r.issues.join("\n");
+    expect(text).toContain("nodeset: unknown node nowhere");
+    expect(text).not.toContain("reltol");
+  });
+  test("lin with a negative fstart and an infinite ac phase are rejected", () => {
+    const lin = parseNetlist({
+      irVersion: 1,
+      elements: [
+        { kind: "V", name: "V1", nodes: ["a", "0"], ac: { mag: 1 } },
+        { kind: "R", name: "R1", nodes: ["a", "0"], value: 1 },
+      ],
+      analyses: [{ type: "ac", sweep: "lin", points: 4, fstart: -1, fstop: 100 }],
+    });
+    expect(lin.ok).toBe(false);
+    expect(lin.ok ? "" : lin.issues.join("\n")).toContain(
+      "analysis ac: fstart must be >= 0 for lin, got -1",
+    );
+    const phase = parseNetlist({
+      irVersion: 1,
+      elements: [
+        { kind: "V", name: "V1", nodes: ["a", "0"], ac: { mag: 1, phase: Infinity } },
+        { kind: "R", name: "R1", nodes: ["a", "0"], value: 1 },
+      ],
+      analyses: [{ type: "op" }],
+    });
+    expect(phase.ok).toBe(false);
+    expect(phase.ok ? "" : phase.issues.join("\n")).toContain("finite");
   });
   test("a bad reltol is reported before the ac sweep", () => {
     const r = parseNetlist({

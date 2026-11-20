@@ -6,8 +6,11 @@
 export const MODEL_KINDS = ["D", "NPN", "PNP", "NMOS", "PMOS", "SW"] as const;
 export type ModelKind = (typeof MODEL_KINDS)[number];
 
-/** The values a parameter may take. `unitInterval` is [0, 1). */
-export type ParamRange = "any" | "positive" | "nonNegative" | "unitInterval";
+/**
+ * The values a parameter may take. `unitInterval` is [0, 1). `diodeGrading` is
+ * [0, 0.9]: ngspice-42 limits the diode grading coefficient to 0.9.
+ */
+export type ParamRange = "any" | "positive" | "nonNegative" | "unitInterval" | "diodeGrading";
 
 export interface ParamSpec {
   readonly key: string;
@@ -28,7 +31,7 @@ const DIODE: readonly ParamSpec[] = [
   p("RS", 0, "nonNegative"),
   p("CJO", 0, "nonNegative"),
   p("VJ", 1, "positive"),
-  p("M", 0.5, "unitInterval"),
+  p("M", 0.5, "diodeGrading"),
   p("FC", 0.5, "unitInterval"),
   p("TT", 0, "nonNegative"),
 ];
@@ -90,6 +93,8 @@ export function inRange(range: ParamRange, value: number): boolean {
       return value >= 0;
     case "unitInterval":
       return value >= 0 && value < 1;
+    case "diodeGrading":
+      return value >= 0 && value <= 0.9;
   }
 }
 
@@ -103,6 +108,8 @@ export function describeRange(range: ParamRange): string {
       return "finite and >= 0";
     case "unitInterval":
       return "in [0, 1)";
+    case "diodeGrading":
+      return "in [0, 0.9]";
   }
 }
 

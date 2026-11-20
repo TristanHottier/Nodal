@@ -139,7 +139,11 @@ const NEEDLES: &[(&str, &str)] = &[
     ),
     (
         "model-param-out-of-range",
-        "parameter M of model DMOD must be in [0, 1), got 1",
+        "parameter M of model DMOD must be in [0, 0.9], got 1",
+    ),
+    (
+        "model-diode-m-above-0.9",
+        "parameter M of model DMOD must be in [0, 0.9], got 0.95",
     ),
     ("mos-zero-width", "element M1: w must be finite and > 0"),
     (

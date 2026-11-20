@@ -28,7 +28,7 @@
     {
       "key": "M",
       "default": 0.5,
-      "range": "unitInterval"
+      "range": "diodeGrading"
     },
     {
       "key": "FC",

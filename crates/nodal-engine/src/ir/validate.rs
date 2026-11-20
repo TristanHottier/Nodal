@@ -183,6 +183,21 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             validate_dc(n, source, *start, *stop, *step)?;
         }
     }
+    // V15
+    if let Some(set) = &n.nodeset {
+        for (node, value) in set {
+            let known = n
+                .elements
+                .iter()
+                .any(|e| e.nodes().iter().chain(e.control_nodes()).any(|x| x == node));
+            if node == "0" || !known {
+                return invalid(format!("nodeset: unknown node {node}"));
+            }
+            if !value.is_finite() {
+                return invalid(format!("nodeset: value for node {node} must be finite"));
+            }
+        }
+    }
     // V11
     if let Some(o) = &n.options {
         validate_options(o)?;
@@ -202,21 +217,6 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
         } = a
         {
             validate_ac(*sweep, *points, *fstart, *fstop, reltol)?;
-        }
-    }
-    // V15
-    if let Some(set) = &n.nodeset {
-        for (node, value) in set {
-            let known = n
-                .elements
-                .iter()
-                .any(|e| e.nodes().iter().chain(e.control_nodes()).any(|x| x == node));
-            if node == "0" || !known {
-                return invalid(format!("nodeset: unknown node {node}"));
-            }
-            if !value.is_finite() {
-                return invalid(format!("nodeset: value for node {node} must be finite"));
-            }
         }
     }
     Ok(())
@@ -503,6 +503,20 @@ mod tests {
             "{msg}"
         );
         validate(&ac_netlist(AcSweep::Lin, 4, 0.0, 100.0))?;
+        Ok(())
+    }
+
+    #[test]
+    fn nodeset_is_checked_before_options() -> TestResult {
+        // Same order as the TypeScript validator: V14, V15, V11, V17.
+        let mut n = base(resistor(1.0));
+        n.nodeset = Some([("nowhere".to_string(), 1.0)].into_iter().collect());
+        n.options = Some(Options {
+            reltol: Some(0.0),
+            ..Options::default()
+        });
+        let msg = message(&n)?;
+        assert!(msg.contains("nodeset: unknown node nowhere"), "{msg}");
         Ok(())
     }
 
