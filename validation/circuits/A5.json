@@ -1,0 +1,79 @@
+{
+  "irVersion": 1,
+  "title": "A5 forward and reverse biased diodes",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 5,
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "a"],
+      "value": 10000
+    },
+    {
+      "kind": "D",
+      "name": "D1",
+      "nodes": ["a", "0"],
+      "model": "DF"
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["in", "b"],
+      "value": 10000
+    },
+    {
+      "kind": "D",
+      "name": "D2",
+      "nodes": ["0", "b"],
+      "model": "DR"
+    }
+  ],
+  "models": [
+    {
+      "name": "DF",
+      "type": "D",
+      "params": {
+        "IS": 1e-14,
+        "RS": 10,
+        "CJO": 2e-12,
+        "VJ": 0.7,
+        "M": 0.4,
+        "TT": 1e-8
+      }
+    },
+    {
+      "name": "DR",
+      "type": "D",
+      "params": {
+        "IS": 1e-14,
+        "CJO": 5e-12,
+        "VJ": 0.7,
+        "M": 0.5
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 1000,
+      "fstop": 10000000000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

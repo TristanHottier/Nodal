@@ -1,0 +1,115 @@
+{
+  "irVersion": 1,
+  "title": "A3 NPN common-emitter amplifier",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VCC",
+      "nodes": ["vcc", "0"],
+      "dc": 12
+    },
+    {
+      "kind": "V",
+      "name": "VS",
+      "nodes": ["s", "0"],
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "R",
+      "name": "RS",
+      "nodes": ["s", "in"],
+      "value": 1000
+    },
+    {
+      "kind": "C",
+      "name": "CIN",
+      "nodes": ["in", "b"],
+      "value": 0.00001
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["vcc", "b"],
+      "value": 47000
+    },
+    {
+      "kind": "R",
+      "name": "R2",
+      "nodes": ["b", "0"],
+      "value": 10000
+    },
+    {
+      "kind": "R",
+      "name": "RC",
+      "nodes": ["vcc", "c"],
+      "value": 4700
+    },
+    {
+      "kind": "R",
+      "name": "RE",
+      "nodes": ["e", "0"],
+      "value": 1000
+    },
+    {
+      "kind": "C",
+      "name": "CE",
+      "nodes": ["e", "0"],
+      "value": 0.0001
+    },
+    {
+      "kind": "C",
+      "name": "COUT",
+      "nodes": ["c", "out"],
+      "value": 0.00001
+    },
+    {
+      "kind": "R",
+      "name": "RL",
+      "nodes": ["out", "0"],
+      "value": 10000
+    },
+    {
+      "kind": "Q",
+      "name": "Q1",
+      "nodes": ["c", "b", "e"],
+      "model": "QMOD"
+    }
+  ],
+  "models": [
+    {
+      "name": "QMOD",
+      "type": "NPN",
+      "params": {
+        "IS": 1e-15,
+        "BF": 200,
+        "VAF": 100,
+        "CJE": 1e-11,
+        "VJE": 0.75,
+        "MJE": 0.33,
+        "CJC": 5e-12,
+        "VJC": 0.75,
+        "MJC": 0.33,
+        "TF": 3e-10,
+        "TR": 1e-8
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 10,
+      "fstop": 1000000000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

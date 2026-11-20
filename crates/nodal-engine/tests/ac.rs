@@ -100,37 +100,63 @@ const RC: &str = r#"{"irVersion":1,"elements":[
 {"kind":"C","name":"C1","nodes":["out","0"],"value":1e-6}],
 "analyses":[{"type":"ac","sweep":"dec","points":10,"fstart":1,"fstop":1e7}]}"#;
 
-#[test]
-fn rc_lowpass_analytic() -> TestResult {
-    let r = run_ac(RC)?;
+fn rc_vout(f: f64) -> C64 {
+    div(real(1.0), add(real(1.0), mul(jw(f), real(1000.0 * 1e-6))))
+}
+
+fn check_rc(r: &AcResult) -> TestResult {
     assert_eq!(r.frequencies.len(), 71);
-    let vout = |f: f64| div(real(1.0), add(real(1.0), mul(jw(f), real(1000.0 * 1e-6))));
-    assert_ac(&r, "V(out)", vout)?;
-    assert_ac(&r, "V(in)", |_| real(1.0))?;
-    assert_ac(&r, "I(V1)", |f| {
-        let d = add(real(1.0), mul(real(-1.0), vout(f)));
+    assert_ac(r, "V(out)", rc_vout)?;
+    assert_ac(r, "V(in)", |_| real(1.0))?;
+    assert_ac(r, "I(V1)", |f| {
+        let d = add(real(1.0), mul(real(-1.0), rc_vout(f)));
         mul(real(-1.0 / 1000.0), d)
     })
 }
 
 #[test]
-fn series_rlc_bandpass_analytic() -> TestResult {
-    let r = run_ac(
-        r#"{"irVersion":1,"elements":[
-{"kind":"V","name":"V1","nodes":["in","0"],"ac":{"mag":1}},
-{"kind":"L","name":"L1","nodes":["in","a"],"value":10e-3},
-{"kind":"C","name":"C1","nodes":["a","out"],"value":1e-6},
-{"kind":"R","name":"R1","nodes":["out","0"],"value":10}],
-"analyses":[{"type":"ac","sweep":"dec","points":100,"fstart":100,"fstop":1e4}]}"#,
-    )?;
+fn rc_lowpass_analytic() -> TestResult {
+    check_rc(&run_ac(RC)?)
+}
+
+fn circuit_text(id: &str) -> Result<String, Box<dyn Error>> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../validation/circuits")
+        .join(format!("{id}.json"));
+    Ok(std::fs::read_to_string(path)?)
+}
+
+#[test]
+fn a1_matches_closed_form() -> TestResult {
+    check_rc(&run_ac(&circuit_text("A1")?)?)
+}
+
+#[test]
+fn a2_matches_closed_form() -> TestResult {
+    check_rlc(&run_ac(&circuit_text("A2")?)?)
+}
+
+fn check_rlc(r: &AcResult) -> TestResult {
     assert_eq!(r.frequencies.len(), 201);
     let vout = |f: f64| {
         let zl = mul(jw(f), real(10e-3));
         let zc = div(real(1.0), mul(jw(f), real(1e-6)));
         div(real(10.0), add(add(real(10.0), zl), zc))
     };
-    assert_ac(&r, "V(out)", vout)?;
-    assert_ac(&r, "I(L1)", |f| mul(vout(f), real(0.1)))
+    assert_ac(r, "V(out)", vout)?;
+    assert_ac(r, "I(L1)", |f| mul(vout(f), real(0.1)))
+}
+
+#[test]
+fn series_rlc_bandpass_analytic() -> TestResult {
+    check_rlc(&run_ac(
+        r#"{"irVersion":1,"elements":[
+{"kind":"V","name":"V1","nodes":["in","0"],"ac":{"mag":1}},
+{"kind":"L","name":"L1","nodes":["in","a"],"value":10e-3},
+{"kind":"C","name":"C1","nodes":["a","out"],"value":1e-6},
+{"kind":"R","name":"R1","nodes":["out","0"],"value":10}],
+"analyses":[{"type":"ac","sweep":"dec","points":100,"fstart":100,"fstop":1e4}]}"#,
+    )?)
 }
 
 #[test]

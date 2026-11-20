@@ -1,0 +1,61 @@
+{
+  "irVersion": 1,
+  "title": "A4 inverting op-amp with feedback RC",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VS",
+      "nodes": ["in", "0"],
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "R",
+      "name": "RIN",
+      "nodes": ["in", "inm"],
+      "value": 1000
+    },
+    {
+      "kind": "R",
+      "name": "RF",
+      "nodes": ["inm", "out"],
+      "value": 10000
+    },
+    {
+      "kind": "C",
+      "name": "CF",
+      "nodes": ["inm", "out"],
+      "value": 1e-9
+    },
+    {
+      "kind": "E",
+      "name": "E1",
+      "nodes": ["out", "0"],
+      "controlNodes": ["0", "inm"],
+      "gain": 1000000
+    },
+    {
+      "kind": "R",
+      "name": "RL",
+      "nodes": ["out", "0"],
+      "value": 10000
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 1,
+      "fstop": 100000000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "irVersion": 1,
+  "title": "A6 NMOS and PMOS common-source stages",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VDD",
+      "nodes": ["vdd", "0"],
+      "dc": 5
+    },
+    {
+      "kind": "V",
+      "name": "VG",
+      "nodes": ["g", "0"],
+      "dc": 1.5,
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "R",
+      "name": "RD",
+      "nodes": ["vdd", "d"],
+      "value": 10000
+    },
+    {
+      "kind": "M",
+      "name": "M1",
+      "nodes": ["d", "g", "0", "0"],
+      "model": "NMOD",
+      "w": 0.0001,
+      "l": 0.000001
+    },
+    {
+      "kind": "R",
+      "name": "RD2",
+      "nodes": ["d2", "0"],
+      "value": 10000
+    },
+    {
+      "kind": "M",
+      "name": "M2",
+      "nodes": ["d2", "g", "vdd", "vdd"],
+      "model": "PMOD",
+      "w": 0.0002,
+      "l": 0.000001
+    }
+  ],
+  "models": [
+    {
+      "name": "NMOD",
+      "type": "NMOS",
+      "params": {
+        "VTO": 0.7,
+        "KP": 0.0001,
+        "LAMBDA": 0.02,
+        "CGSO": 4e-10,
+        "CGDO": 4e-10,
+        "CGBO": 2e-10
+      }
+    },
+    {
+      "name": "PMOD",
+      "type": "PMOS",
+      "params": {
+        "VTO": -0.7,
+        "KP": 0.00005,
+        "LAMBDA": 0.02,
+        "CGSO": 4e-10,
+        "CGDO": 4e-10,
+        "CGBO": 2e-10
+      }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 1000,
+      "fstop": 100000000000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

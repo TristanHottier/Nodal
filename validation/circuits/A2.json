@@ -1,0 +1,48 @@
+{
+  "irVersion": 1,
+  "title": "A2 series RLC band-pass",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "L",
+      "name": "L1",
+      "nodes": ["in", "a"],
+      "value": 0.01
+    },
+    {
+      "kind": "C",
+      "name": "C1",
+      "nodes": ["a", "out"],
+      "value": 0.000001
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["out", "0"],
+      "value": 10
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 100,
+      "fstart": 100,
+      "fstop": 10000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}

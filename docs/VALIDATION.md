@@ -74,6 +74,8 @@ Circuit IDs are referenced by the roadmap's exit criteria. "A" in the Check colu
 | A2 | Series RLC band-pass (Q ≈ 10) | A, G |
 | A3 | NPN common-emitter amplifier with coupling/bypass capacitors and junction capacitances | G |
 | A4 | Inverting op-amp (VCVS macro, gain 1e6) with feedback RC | G |
+| A5 | Forward-biased diode with series resistance and diffusion capacitance, and a reverse-biased diode with junction capacitance | G |
+| A6 | NMOS and PMOS common-source stages with overlap capacitances | G |
 
 ### Transient (M4)
 

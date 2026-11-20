@@ -1,0 +1,42 @@
+{
+  "irVersion": 1,
+  "title": "A1 RC low-pass",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "ac": {
+        "mag": 1,
+        "phase": 0
+      }
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "out"],
+      "value": 1000
+    },
+    {
+      "kind": "C",
+      "name": "C1",
+      "nodes": ["out", "0"],
+      "value": 0.000001
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 1,
+      "fstop": 10000000
+    }
+  ],
+  "options": {
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18
+  }
+}
