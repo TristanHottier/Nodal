@@ -108,13 +108,6 @@ function irNames(ir) {
 }
 
 /**
- * Maps ngspice vector names to golden signal names; returns `[column, signal]` pairs.
- * In a dc plot the first vector is the scale (`v(v-sweep)` or `i(i-sweep)` in ngspice-42,
- * possibly the source name in newer versions) and becomes `sweep`. Vectors with a `#` other
- * than `#branch` are device-internal and skipped. Anything else unexpected is fatal.
- * In an ac plot the first vector must be `frequency`, which keeps that name.
- */
-/**
  * Fails when the frequency scale of a complex ac plot has a non-zero imaginary part. The golden
  * stores only the real part, so a non-zero imaginary part would be dropped silently.
  */
@@ -124,6 +117,13 @@ export function checkFrequencyScale(points) {
   }
 }
 
+/**
+ * Maps ngspice vector names to golden signal names; returns `[column, signal]` pairs.
+ * In a dc plot the first vector is the scale (`v(v-sweep)` or `i(i-sweep)` in ngspice-42,
+ * possibly the source name in newer versions) and becomes `sweep`. Vectors with a `#` other
+ * than `#branch` are device-internal and skipped. Anything else unexpected is fatal.
+ * In an ac plot the first vector must be `frequency`, which keeps that name.
+ */
 export function mapSignals(names, ir, analysisType) {
   const { nodes, elements } = irNames(ir);
   const element = (key, what) => {

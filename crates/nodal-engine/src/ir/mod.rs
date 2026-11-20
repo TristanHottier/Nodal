@@ -495,6 +495,15 @@ mod tests {
     }
 
     #[test]
+    fn ac_frequencies_oct_equal_bounds() {
+        // With fstart = fstop, oct admits fstart * delta while delta <= 1 + delta * reltol.
+        let len =
+            |n| ac_frequencies(AcSweep::Oct, n, 1e3, 1e3, 1e-3, MAX_AC_POINTS).map(|f| f.len());
+        assert_eq!(len(10), Some(1));
+        assert_eq!(len(1000), Some(2));
+    }
+
+    #[test]
     fn ac_frequencies_lin() {
         let f =
             ac_frequencies(AcSweep::Lin, 11, 0.0, 100.0, 1e-3, MAX_AC_POINTS).unwrap_or_default();
