@@ -85,26 +85,19 @@ pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Erro
     }
     let nodes = circuit.node_names.len();
     let voltages = circuit.voltage_count();
-    let mut node_voltages: BTreeMap<String, ComplexSeries> = circuit
-        .node_names
-        .iter()
-        .map(|name| {
-            (
-                name.clone(),
-                ComplexSeries::with_capacity(frequencies.len()),
-            )
-        })
-        .collect();
-    let mut branch_currents: BTreeMap<String, ComplexSeries> = circuit
-        .branch_names
-        .iter()
-        .map(|name| {
-            (
-                name.clone(),
-                ComplexSeries::with_capacity(frequencies.len()),
-            )
-        })
-        .collect();
+    let empty = |names: &[String]| -> BTreeMap<String, ComplexSeries> {
+        names
+            .iter()
+            .map(|name| {
+                (
+                    name.clone(),
+                    ComplexSeries::with_capacity(frequencies.len()),
+                )
+            })
+            .collect()
+    };
+    let mut node_voltages = empty(&circuit.node_names);
+    let mut branch_currents = empty(&circuit.branch_names);
     let mut solver = DenseLu::<C64>::new();
     for &frequency in frequencies {
         let at = |cause: Error| Error::AcPoint {

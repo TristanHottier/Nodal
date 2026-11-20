@@ -53,7 +53,7 @@ fn assert_ac(result: &AcResult, signal: &str, expected: impl Fn(f64) -> C64) -> 
         if (gm - wm).abs() > 1e-4 * wm + 1e-12 {
             return Err(format!("{signal} at {f} Hz: |got| {gm}, |want| {wm}").into());
         }
-        if wm > 1e-9 {
+        if wm > 1e-12 {
             let dp =
                 wrap(s.im[k].atan2(s.re[k]).to_degrees() - want.im.atan2(want.re).to_degrees());
             if dp.abs() > 0.01 {
@@ -177,18 +177,65 @@ fn vcvs_and_inductor_ac() -> TestResult {
     assert_ac(&r, "V(e)", |_| mul(real(2.0), vin))
 }
 
+fn switch_netlist(vc: f64) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"V","name":"VC","nodes":["c","0"],"dc":{vc}}},
+{{"kind":"V","name":"V1","nodes":["in","0"],"dc":10,"ac":{{"mag":1}}}},
+{{"kind":"R","name":"R1","nodes":["in","out"],"value":1000}},
+{{"kind":"S","name":"S1","nodes":["out","0"],"controlNodes":["c","0"],"model":"SM"}}],
+"models":[{{"name":"SM","type":"SW","params":{{"VT":1,"RON":10,"ROFF":1e5}}}}],
+"analyses":[{{"type":"ac","sweep":"dec","points":2,"fstart":1,"fstop":1e4}}]}}"#
+    )
+}
+
 #[test]
 fn switch_ac_uses_op_state() -> TestResult {
-    let r = run_ac(
-        r#"{"irVersion":1,"elements":[
-{"kind":"V","name":"VC","nodes":["c","0"],"dc":2},
-{"kind":"V","name":"V1","nodes":["in","0"],"dc":10,"ac":{"mag":1}},
-{"kind":"R","name":"R1","nodes":["in","out"],"value":1000},
-{"kind":"S","name":"S1","nodes":["out","0"],"controlNodes":["c","0"],"model":"SM"}],
-"models":[{"name":"SM","type":"SW","params":{"VT":1,"RON":10,"ROFF":1e9}}],
-"analyses":[{"type":"ac","sweep":"dec","points":2,"fstart":1,"fstop":1e4}]}"#,
-    )?;
-    assert_ac(&r, "V(out)", |_| real(10.0 / 1010.0))
+    // On at the operating point: RON divider. Off: ROFF divider.
+    let on = run_ac(&switch_netlist(2.0))?;
+    assert_ac(&on, "V(out)", |_| real(10.0 / 1010.0))?;
+    let off = run_ac(&switch_netlist(0.0))?;
+    assert_ac(&off, "V(out)", |_| real(1e5 / (1e5 + 1000.0)))
+}
+
+#[test]
+fn failing_frequency_is_reported() -> TestResult {
+    // L = 1 H and C = 0.25 F resonate at 1/pi Hz, where node a has no
+    // admittance left. The DC topology checks pass (the inductor shorts a to in).
+    let text = r#"{"irVersion":1,"elements":[
+{"kind":"V","name":"V1","nodes":["in","0"],"ac":{"mag":1}},
+{"kind":"L","name":"L1","nodes":["in","a"],"value":1},
+{"kind":"C","name":"C1","nodes":["a","0"],"value":0.25}],
+"analyses":[{"type":"ac","sweep":"lin","points":1,"fstart":0.3183098861837907,"fstop":0.3183098861837907}]}"#;
+    match simulate(&parse_netlist(text)?) {
+        Err(nodal_engine::Error::AcPoint { frequency, cause }) => {
+            assert_eq!(frequency, std::f64::consts::FRAC_1_PI);
+            assert!(
+                matches!(*cause, nodal_engine::Error::Singular { .. }),
+                "{cause:?}"
+            );
+            Ok(())
+        }
+        other => Err(format!("expected AcPoint, got {other:?}").into()),
+    }
+}
+
+#[test]
+fn grid_uses_the_circuit_reltol() -> TestResult {
+    // dec, 1 point per decade, 1 to 9 Hz: the point at 10 Hz is accepted
+    // only when delta * fstop * reltol >= 1, which needs reltol > 0.0111.
+    let netlist = |options: &str| {
+        format!(
+            r#"{{"irVersion":1,"elements":[
+{{"kind":"V","name":"V1","nodes":["in","0"],"ac":{{"mag":1}}}},
+{{"kind":"R","name":"R1","nodes":["in","0"],"value":1000}}],{options}
+"analyses":[{{"type":"ac","sweep":"dec","points":1,"fstart":1,"fstop":9}}]}}"#
+        )
+    };
+    assert_eq!(run_ac(&netlist(""))?.frequencies, vec![1.0]);
+    let wide = run_ac(&netlist(r#""options":{"reltol":0.02},"#))?;
+    assert_eq!(wide.frequencies.len(), 2);
+    Ok(())
 }
 
 #[test]
