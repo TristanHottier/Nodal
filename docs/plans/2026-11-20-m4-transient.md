@@ -38,7 +38,7 @@
 **Interfaces:**
 - Produces:
   - Model param `IS` for `NMOS`/`PMOS`, default 1e-14, `Pos` (same spec as the diode's `IS`).
-  - `mos1::bulk_junction(v: f64, is: f64, gmin: f64) -> (f64, f64)`, `pub(crate)`: port of the `mos1load.c` block. For `v <= -3·Vt`: `(gmin·v − is, gmin)`; else `evb = exp(min(v/Vt, MAX_EXP_ARG))`, `(is·(evb − 1) + gmin·v, is·evb/Vt + gmin)`. `MAX_EXP_ARG` = 709.0 as in ngspice `const.h`/`mos1load.c` (check the source; use its value).
+  - `mos1::bulk_junction(v: f64, is: f64, gmin: f64) -> (f64, f64)`, `pub(crate)`: port of the `mos1load.c` block. For `v <= -3·Vt`: `(gmin·v − is, gmin)`; else `evb = exp(min(v/Vt, MAX_EXP_ARG))`, `(is·(evb − 1) + gmin·v, is·evb/Vt + gmin)`. `MAX_EXP_ARG` = 709.0 as in ngspice `include/ngspice/defines.h` and `mos1load.c`.
   - Bulk voltage limiting as `mos1load.c`: with `vcrit = Vt·ln(Vt/(√2·IS))`, if `vds >= 0` limit `vbs` with `pnjlim` against the stored `vbs` and set `vbd = vbs − vds`, else limit `vbd` against the stored `vbd` and set `vbs = vbd + vds`. Store `vbd` in state (extend `STATE_LEN`; keep existing slot indices).
   - Terminal stamps of the two junctions (`gbd`, `gbs`, `ceqbd`, `ceqbs`) as `mos1load.c`, for NMOS and PMOS (`type` sign). The old drain-bulk/source-bulk `gmin` stamp is removed: the junction carries it.
   - `converged` also tests `cbhat = cbs + cbd` as `mos1conv.c`.

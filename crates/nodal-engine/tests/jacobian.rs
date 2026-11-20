@@ -461,9 +461,11 @@ fn mos1_terminal_currents_with_junctions() {
             1e-5,
         );
         // Oriented (vgs, vds, vbs): vbs = 0.6; and vds = -1, vbs = -0.4
-        // (vbd = 0.6). The last two are channel-off, reverse-biased points
-        // where every junction partial is gmin (1e-12 S) and the currents are
-        // tiny, so the gmin-sized partials can be differenced cleanly.
+        // (vbd = 0.6). The last two have the channel off. At (0.3, 1.0, -0.5)
+        // both junctions are reverse biased, so every junction partial is
+        // gmin (1e-12 S) and the currents are tiny enough to difference it
+        // cleanly. At (0.3, -1.0, -0.5) the drain junction is forward biased
+        // (vbd = 0.5).
         for (vgs, vds, vbs, forward) in [
             (2.0, 1.0, 0.6, true),
             (2.0, -1.0, -0.4, true),
@@ -490,9 +492,10 @@ fn mos1_terminal_currents_with_junctions() {
                 for col in [0usize, 1, 3] {
                     let analytic = sys.a.get(row, col);
                     // At the forward points the currents are about 1e-4 A, so
-                    // the rounding of the load itself (about 1e-19 A) swamps a
-                    // gmin-sized partial whatever the step. Those entries are
-                    // checked at the reverse points instead.
+                    // the rounding of the load itself (about 1e-19 A) gives a
+                    // difference error of a few 1e-15 S even at a 1e-3 Vt
+                    // step, above the 1e-15 S floor. Those entries are checked
+                    // at the reverse-biased point instead.
                     if forward && analytic.abs() < 1e-9 {
                         continue;
                     }
