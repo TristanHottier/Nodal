@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use nodal_engine::analysis::{DcResult, OpResult};
+use nodal_engine::analysis::{AcResult, ComplexSeries, DcResult, OpResult};
 use nodal_engine::{AnalysisResult, simulate};
 
 /// Absolute tolerance floor for voltages, in volts (VALIDATION.md section 3).
@@ -183,6 +183,193 @@ pub fn compare_dc(golden: &DcGolden, result: &DcResult) -> Comparison {
     Comparison { checks }
 }
 
+/// An AC golden: frequencies and, per signal, real and imaginary parts at each frequency.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AcGolden {
+    pub frequencies: Vec<f64>,
+    /// `V(node)` or `I(element)`, in column order.
+    pub signals: Vec<String>,
+    /// `re[k][p]` is the real part of `signals[k]` at point `p`.
+    pub re: Vec<Vec<f64>>,
+    /// `im[k][p]` is the imaginary part of `signals[k]` at point `p`.
+    pub im: Vec<Vec<f64>>,
+}
+
+/// Magnitude tolerance: relative part.
+pub const AC_REL: f64 = 1e-4;
+/// Magnitude tolerance: absolute part, in linear units.
+pub const AC_ABS: f64 = 1e-12;
+/// Phase tolerance in degrees.
+pub const AC_PHASE_DEG: f64 = 0.01;
+
+/// Reads a `frequency,<signal>.re,<signal>.im,...` golden: one row per frequency.
+/// A signal with only one of its two columns is an error.
+pub fn parse_ac_golden(text: &str) -> Result<AcGolden, String> {
+    let mut signals: Option<Vec<String>> = None;
+    let mut frequencies = Vec::new();
+    let mut re: Vec<Vec<f64>> = Vec::new();
+    let mut im: Vec<Vec<f64>> = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let fields: Vec<&str> = line.split(',').collect();
+        let Some(names) = &signals else {
+            if fields.first() != Some(&"frequency") || fields.len() < 3 {
+                return Err(format!(
+                    "line {}: expected `frequency,<signal>.re,<signal>.im,...` header",
+                    index + 1
+                ));
+            }
+            let columns = &fields[1..];
+            if !columns.len().is_multiple_of(2) {
+                return Err(format!(
+                    "line {}: every signal needs both a .re and a .im column",
+                    index + 1
+                ));
+            }
+            let mut names = Vec::new();
+            for pair in columns.chunks(2) {
+                let base = pair[0].strip_suffix(".re");
+                if base.is_none() || pair[1].strip_suffix(".im") != base {
+                    return Err(format!(
+                        "line {}: columns `{}` and `{}` are not a .re/.im pair of one signal",
+                        index + 1,
+                        pair[0],
+                        pair[1]
+                    ));
+                }
+                names.extend(base.map(str::to_string));
+            }
+            re = vec![Vec::new(); names.len()];
+            im = vec![Vec::new(); names.len()];
+            signals = Some(names);
+            continue;
+        };
+        if fields.len() != 1 + 2 * names.len() {
+            return Err(format!(
+                "line {}: expected {} fields, found {}",
+                index + 1,
+                1 + 2 * names.len(),
+                fields.len()
+            ));
+        }
+        let number = |field: &str| -> Result<f64, String> {
+            field
+                .parse()
+                .map_err(|_| format!("line {}: bad number `{field}`", index + 1))
+        };
+        frequencies.push(number(fields[0])?);
+        for k in 0..names.len() {
+            re[k].push(number(fields[1 + 2 * k])?);
+            im[k].push(number(fields[2 + 2 * k])?);
+        }
+    }
+    Ok(AcGolden {
+        frequencies,
+        signals: signals.ok_or("missing `frequency,...` header")?,
+        re,
+        im,
+    })
+}
+
+/// Worst magnitude and phase ratio of one complex series against its reference. The phase
+/// is compared only where the reference magnitude exceeds `AC_ABS`.
+fn ac_series_ratio(re_ref: &[f64], im_ref: &[f64], series: &ComplexSeries) -> f64 {
+    let mut ratio = 0.0;
+    for (((rr, ri), xr), xi) in re_ref.iter().zip(im_ref).zip(&series.re).zip(&series.im) {
+        let mag_ref = rr.hypot(*ri);
+        let mag = xr.hypot(*xi);
+        let mag_ratio = (mag - mag_ref).abs() / (AC_REL * mag_ref + AC_ABS);
+        ratio = worst(ratio, mag_ratio);
+        if mag_ref > AC_ABS {
+            // arg(x * conj(ref)) is the phase difference already wrapped into (-180, 180].
+            let cross = ri * xr - rr * xi;
+            let dot = rr * xr + ri * xi;
+            let phase_ratio = cross.atan2(dot).to_degrees().abs() / AC_PHASE_DEG;
+            ratio = worst(ratio, phase_ratio);
+        }
+    }
+    ratio
+}
+
+/// Compares an AC result with a golden. The returned checks hold `frequency` first, then one
+/// entry per signal with the worst magnitude or phase ratio over all points. Magnitude passes
+/// if `||x| - |x_ref|| <= AC_REL * |x_ref| + AC_ABS`; phase passes if the wrapped difference
+/// is at most `AC_PHASE_DEG` degrees. A different point count fails every check.
+pub fn compare_ac(golden: &AcGolden, result: &AcResult) -> Comparison {
+    let mut checks = Vec::new();
+    let same_length = golden.frequencies.len() == result.frequencies.len();
+    let frequency_ratio = if same_length {
+        golden
+            .frequencies
+            .iter()
+            .zip(&result.frequencies)
+            .map(|(r, x)| (x - r).abs() / sweep_tolerance(*r))
+            .fold(0.0, worst)
+    } else {
+        f64::INFINITY
+    };
+    checks.push(SignalCheck {
+        signal: "frequency".to_string(),
+        status: status_of_ratio(frequency_ratio),
+        ratio: if frequency_ratio.is_nan() {
+            f64::INFINITY
+        } else {
+            frequency_ratio
+        },
+    });
+    let mut seen: BTreeSet<&str> = BTreeSet::new();
+    for (k, signal) in golden.signals.iter().enumerate() {
+        seen.insert(signal);
+        let series = match signal_parts(signal) {
+            Some(('V', name)) => result.node_voltages.get(name),
+            Some(('I', name)) => result.branch_currents.get(name),
+            _ => None,
+        };
+        checks.push(match series {
+            Some(series)
+                if same_length
+                    && series.re.len() == golden.frequencies.len()
+                    && series.im.len() == golden.frequencies.len() =>
+            {
+                let ratio = ac_series_ratio(&golden.re[k], &golden.im[k], series);
+                SignalCheck {
+                    signal: signal.clone(),
+                    status: status_of_ratio(ratio),
+                    ratio: if ratio.is_nan() { f64::INFINITY } else { ratio },
+                }
+            }
+            Some(_) => SignalCheck {
+                signal: signal.clone(),
+                status: Status::Fail,
+                ratio: f64::INFINITY,
+            },
+            None => SignalCheck {
+                signal: signal.clone(),
+                status: Status::Missing,
+                ratio: f64::INFINITY,
+            },
+        });
+    }
+    let produced = result
+        .node_voltages
+        .keys()
+        .map(|n| format!("V({n})"))
+        .chain(result.branch_currents.keys().map(|n| format!("I({n})")));
+    for signal in produced {
+        if !seen.contains(signal.as_str()) {
+            checks.push(SignalCheck {
+                signal,
+                status: Status::Extra,
+                ratio: f64::INFINITY,
+            });
+        }
+    }
+    Comparison { checks }
+}
+
 /// Larger of two ratios, where NaN wins so that it cannot hide.
 fn worst(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
@@ -289,6 +476,7 @@ fn parse_dc_golden(text: &str) -> Result<DcGolden, String> {
 enum Kind {
     Op,
     Dc,
+    Ac,
 }
 
 impl Kind {
@@ -296,6 +484,7 @@ impl Kind {
         match self {
             Kind::Op => "op",
             Kind::Dc => "dc",
+            Kind::Ac => "ac",
         }
     }
 }
@@ -352,6 +541,19 @@ fn check_golden(dir: &Path, id: &str, kind: Kind, golden_path: &Path) -> Result<
             compare_dc(
                 &golden,
                 dc.ok_or_else(|| format!("{id}: circuit has no dc analysis"))?,
+            )
+        }
+        Kind::Ac => {
+            let golden = parse_ac_golden(&golden_text).map_err(in_file)?;
+            let netlist = crate::load(&circuit_path)?;
+            let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
+            let ac = results.iter().find_map(|r| match r {
+                AnalysisResult::Ac(ac) => Some(ac),
+                AnalysisResult::Op(_) | AnalysisResult::Dc(_) => None,
+            });
+            compare_ac(
+                &golden,
+                ac.ok_or_else(|| format!("{id}: circuit has no ac analysis"))?,
             )
         }
     };
@@ -415,7 +617,7 @@ fn render(rows: &[Row]) -> String {
     table
 }
 
-/// Compares every `golden/<id>.op.csv` and `golden/<id>.dc.csv` under `dir` with a fresh run
+/// Compares every `golden/<id>.op.csv`, `.dc.csv` and `.ac.csv` under `dir` with a fresh run
 /// of `circuits/<id>.json`.
 /// Returns the table and whether every row passed. A circuit that fails to load or simulate
 /// becomes an `ERROR` row and fails the run; a missing or empty `golden/` is an `Err`.
@@ -431,6 +633,8 @@ pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
             ids.push((id.to_string(), Kind::Op, path.clone()));
         } else if let Some(id) = name.strip_suffix(".dc.csv") {
             ids.push((id.to_string(), Kind::Dc, path.clone()));
+        } else if let Some(id) = name.strip_suffix(".ac.csv") {
+            ids.push((id.to_string(), Kind::Ac, path.clone()));
         }
     }
     if ids.is_empty() {
@@ -696,6 +900,148 @@ mod tests {
             .ok_or("no Z2 row")?;
         assert!(
             row.contains("| dc | - | - |") && row.ends_with("| ERROR |"),
+            "{row}"
+        );
+        Ok(())
+    }
+
+    fn ac_golden(freqs: &[f64], v: &[(&str, &[f64], &[f64])]) -> AcGolden {
+        AcGolden {
+            frequencies: freqs.to_vec(),
+            signals: v.iter().map(|(k, _, _)| format!("V({k})")).collect(),
+            re: v.iter().map(|(_, r, _)| r.to_vec()).collect(),
+            im: v.iter().map(|(_, _, i)| i.to_vec()).collect(),
+        }
+    }
+
+    fn ac_result(freqs: &[f64], v: &[(&str, &[f64], &[f64])]) -> AcResult {
+        AcResult {
+            frequencies: freqs.to_vec(),
+            node_voltages: v
+                .iter()
+                .map(|(k, r, i)| {
+                    (
+                        (*k).to_string(),
+                        ComplexSeries {
+                            re: r.to_vec(),
+                            im: i.to_vec(),
+                        },
+                    )
+                })
+                .collect(),
+            branch_currents: BTreeMap::new(),
+        }
+    }
+
+    /// Real and imaginary parts of a number of given magnitude and phase in degrees.
+    fn polar(mag: f64, deg: f64) -> (f64, f64) {
+        (mag * deg.to_radians().cos(), mag * deg.to_radians().sin())
+    }
+
+    #[test]
+    fn parse_ac_golden_reads_pairs() -> Result<(), Box<dyn Error>> {
+        let g = super::parse_ac_golden(
+            "# circuit: X\n# analysis: ac\nfrequency,V(out).re,V(out).im,I(V1).re,I(V1).im\n\
+             1e0,1.5,-0.5,2e-3,3e-3\n1e1,2.5,-1.5,4e-3,5e-3\n",
+        )?;
+        assert_eq!(g.frequencies, [1.0, 10.0]);
+        assert_eq!(g.signals, ["V(out)", "I(V1)"]);
+        assert_eq!(g.re, [vec![1.5, 2.5], vec![2e-3, 4e-3]]);
+        assert_eq!(g.im, [vec![-0.5, -1.5], vec![3e-3, 5e-3]]);
+        assert!(super::parse_ac_golden("sweep,V(a).re,V(a).im\n").is_err());
+        assert!(super::parse_ac_golden("frequency,V(a).re,V(a).im\n1,2\n").is_err());
+        assert!(super::parse_ac_golden("# only comments\n").is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn parse_ac_golden_rejects_half_signal() {
+        assert!(super::parse_ac_golden("frequency,V(a).re\n1,2\n").is_err());
+        assert!(super::parse_ac_golden("frequency,V(a).re,V(b).im\n1,2,3\n").is_err());
+        assert!(super::parse_ac_golden("frequency,V(a).im,V(a).re\n1,2,3\n").is_err());
+        assert!(super::parse_ac_golden("frequency,V(a).re,V(a).im,V(b).re\n1,2,3,4\n").is_err());
+    }
+
+    #[test]
+    fn compare_ac_passes() {
+        let (r, i) = polar(2.0, 30.0);
+        let (xr, xi) = polar(2.0 * (1.0 + 5e-5), 30.005);
+        let g = ac_golden(&[1.0, 10.0], &[("out", &[r, r], &[i, i])]);
+        let x = ac_result(&[1.0, 10.0], &[("out", &[xr, r], &[xi, i])]);
+        let c = compare_ac(&g, &x);
+        assert!(c.passed(), "{c:?}");
+        assert_eq!(c.checks.len(), 2);
+    }
+
+    #[test]
+    fn compare_ac_phase_wraps() {
+        let (r, i) = polar(1.0, 179.999);
+        let (xr, xi) = polar(1.0, -179.999);
+        let g = ac_golden(&[1.0], &[("out", &[r], &[i])]);
+        let x = ac_result(&[1.0], &[("out", &[xr], &[xi])]);
+        assert!(compare_ac(&g, &x).passed());
+    }
+
+    #[test]
+    fn compare_ac_phase_failure() {
+        let (r, i) = polar(1.0, 10.0);
+        let (xr, xi) = polar(1.0, 10.02);
+        let g = ac_golden(&[1.0], &[("out", &[r], &[i])]);
+        let x = ac_result(&[1.0], &[("out", &[xr], &[xi])]);
+        let c = compare_ac(&g, &x);
+        assert!(!c.passed());
+        assert_eq!(status_of(&c, "V(out)"), Some(Status::Fail));
+    }
+
+    #[test]
+    fn compare_ac_magnitude_failure() {
+        let (r, i) = polar(1.0, 10.0);
+        let (xr, xi) = polar(1.0 + 2e-4, 10.0);
+        let g = ac_golden(&[1.0], &[("out", &[r], &[i])]);
+        let x = ac_result(&[1.0], &[("out", &[xr], &[xi])]);
+        let c = compare_ac(&g, &x);
+        assert!(!c.passed());
+        assert_eq!(status_of(&c, "V(out)"), Some(Status::Fail));
+    }
+
+    #[test]
+    fn compare_ac_skips_phase_below_floor() {
+        // The reference magnitude is 5e-13, below the phase floor, and the result has the
+        // opposite phase with the same magnitude: only the magnitude is compared.
+        let g = ac_golden(&[1.0], &[("out", &[5e-13], &[0.0])]);
+        let x = ac_result(&[1.0], &[("out", &[-5e-13], &[0.0])]);
+        assert!(compare_ac(&g, &x).passed());
+    }
+
+    #[test]
+    fn compare_ac_frequency_mismatch_fails() {
+        let g = ac_golden(&[1.0, 10.0], &[("out", &[1.0, 1.0], &[0.0, 0.0])]);
+        let shifted = ac_result(&[1.0, 10.0 + 1e-6], &[("out", &[1.0, 1.0], &[0.0, 0.0])]);
+        let c = compare_ac(&g, &shifted);
+        assert_eq!(status_of(&c, "frequency"), Some(Status::Fail));
+        assert_eq!(status_of(&c, "V(out)"), Some(Status::Pass));
+        let short = ac_result(&[1.0], &[("out", &[1.0], &[0.0])]);
+        let c = compare_ac(&g, &short);
+        assert_eq!(status_of(&c, "frequency"), Some(Status::Fail));
+        assert_eq!(status_of(&c, "V(out)"), Some(Status::Fail));
+    }
+
+    #[test]
+    fn ac_error_row_says_ac() -> Result<(), Box<dyn Error>> {
+        let tmp = TempDir::new("ac_error_row")?;
+        std::fs::create_dir_all(tmp.0.join("golden"))?;
+        std::fs::write(
+            tmp.0.join("golden/Z3.ac.csv"),
+            "frequency,V(a).re,V(a).im\n1,1,0\n",
+        )?;
+        let (table, passed) = validate_dir(&tmp.0)?;
+        assert!(!passed);
+        let row = table
+            .lines()
+            .find(|l| l.starts_with("| Z3 |"))
+            .ok_or("no Z3 row")?;
+        assert!(
+            row.contains("| ac | - | - |") && row.ends_with("| ERROR |"),
             "{row}"
         );
         Ok(())

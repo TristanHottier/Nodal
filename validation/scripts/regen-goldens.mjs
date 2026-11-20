@@ -1,6 +1,7 @@
 // Regenerates ngspice goldens: node validation/scripts/regen-goldens.mjs [<id>...]
-// With no ids, every existing validation/golden/*.op.csv and *.dc.csv is regenerated.
-// Each circuit has exactly one analysis (op or dc); a dc golden has one row per sweep point.
+// With no ids, every existing validation/golden/*.op.csv, *.dc.csv and *.ac.csv is regenerated.
+// Each circuit has exactly one analysis (op, dc or ac); a dc golden has one row per sweep point
+// and an ac golden one row per frequency, with .re and .im columns for every signal.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -47,9 +48,12 @@ function ngspiceVersion() {
   return line.replace(/^[\s*]+|[\s*]+$/g, "");
 }
 
+const kinds = ["op", "dc", "ac"];
+
 /**
- * Parses an ASCII real rawfile into `{ names, points }`: the variable names in file order and
- * one array of values per point.
+ * Parses an ASCII rawfile into `{ names, points, complex }`: the variable names in file order
+ * and one array of values per point. In a real plot a value is a number; in a complex plot
+ * (`Flags: complex`) a value is a `[re, im]` pair.
  */
 export function parseRaw(text) {
   const lines = text.split("\n");
@@ -57,7 +61,10 @@ export function parseRaw(text) {
   const valuesAt = lines.findIndex((l) => l.startsWith("Values:"));
   if (varsAt < 0 || valuesAt < 0) fail("rawfile has no Variables:/Values: sections");
   const header = lines.slice(0, varsAt).join("\n");
-  if (!/^Flags:\s*real\s*$/m.test(header)) fail("rawfile is not a real-valued plot");
+  const complex = /^Flags:\s*complex\s*$/m.test(header);
+  if (!complex && !/^Flags:\s*real\s*$/m.test(header)) {
+    fail("rawfile is neither a real nor a complex plot");
+  }
   const count = /^No\. Variables:\s*(\d+)/m.exec(header);
   const points = /^No\. Points:\s*(\d+)/m.exec(header);
   if (!count || !points) fail("rawfile header lacks variable or point counts");
@@ -71,14 +78,21 @@ export function parseRaw(text) {
     .slice(valuesAt + 1)
     .map((l) => l.trim())
     .filter((l) => l !== "")
-    .map((l) => Number(l.split(/\s+/).at(-1)));
+    .map((l) => {
+      const token = l.split(/\s+/).at(-1);
+      if (!complex) return Number(token);
+      const parts = token.split(",");
+      if (parts.length !== 2) fail(`complex rawfile value ${token} is not re,im`);
+      return parts.map(Number);
+    });
   const n = Number(points[1]);
-  if (n < 1 || values.length !== names.length * n || values.some((v) => !Number.isFinite(v))) {
+  const finite = (v) => (complex ? v.every(Number.isFinite) : Number.isFinite(v));
+  if (n < 1 || values.length !== names.length * n || !values.every(finite)) {
     fail("rawfile value count mismatch or non-finite value");
   }
   const rows = [];
   for (let p = 0; p < n; p++) rows.push(values.slice(p * names.length, (p + 1) * names.length));
-  return { names, points: rows };
+  return { names, points: rows, complex };
 }
 
 function irNames(ir) {
@@ -98,6 +112,7 @@ function irNames(ir) {
  * In a dc plot the first vector is the scale (`v(v-sweep)` or `i(i-sweep)` in ngspice-42,
  * possibly the source name in newer versions) and becomes `sweep`. Vectors with a `#` other
  * than `#branch` are device-internal and skipped. Anything else unexpected is fatal.
+ * In an ac plot the first vector must be `frequency`, which keeps that name.
  */
 export function mapSignals(names, ir, analysisType) {
   const { nodes, elements } = irNames(ir);
@@ -115,6 +130,12 @@ export function mapSignals(names, ir, analysisType) {
       );
       if (!scale.test(name)) fail(`unexpected dc scale vector ${name}`);
       mapped.push([column, "sweep"]);
+      return;
+    }
+    if (analysisType === "ac" && column === 0) {
+      if (name !== "frequency")
+        fail(`an ac plot must start with the frequency vector, found ${name}`);
+      mapped.push([column, "frequency"]);
       return;
     }
     if (name.includes("#") && !name.endsWith("#branch")) return;
@@ -140,7 +161,7 @@ function compute(id, version) {
     fail(`${id}: a validation circuit must have exactly one analysis`);
   }
   const analysisType = ir.analyses[0].type;
-  if (analysisType !== "op" && analysisType !== "dc") {
+  if (!kinds.includes(analysisType)) {
     fail(`${id}: unsupported analysis ${analysisType}`);
   }
   const deck = run("cargo", ["run", "-q", "-p", "nodal-cli", "--", "export-spice", irPath]);
@@ -172,6 +193,18 @@ function compute(id, version) {
         "signal,value",
         ...mapped.map(([column, name]) => `${name},${formatValue(raw.points[0][column])}`),
       ];
+    } else if (analysisType === "ac") {
+      if (!raw.complex) fail(`${id}: ac rawfile is not complex`);
+      const signals = mapped.slice(1);
+      body = [
+        ["frequency", ...signals.flatMap(([, name]) => [`${name}.re`, `${name}.im`])].join(","),
+        ...raw.points.map((row) =>
+          [
+            formatValue(row[0][0]),
+            ...signals.flatMap(([column]) => row[column].map(formatValue)),
+          ].join(","),
+        ),
+      ];
     } else {
       body = [
         mapped.map(([, name]) => name).join(","),
@@ -182,11 +215,19 @@ function compute(id, version) {
       id,
       kind: analysisType,
       text: `${[...header, ...body].join("\n")}\n`,
-      count: mapped.length,
+      count: analysisType === "ac" ? mapped.length - 1 : mapped.length,
     };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Golden files of `id` whose kind differs from `kind`. Regenerating under a new kind must not
+ * leave the old file behind, because `validate` would then compare against both.
+ */
+export function staleGoldens(id, kind, files) {
+  return files.filter((f) => kinds.some((k) => k !== kind && f === `${id}.${k}.csv`));
 }
 
 function main() {
@@ -196,7 +237,7 @@ function main() {
       ids = [
         ...new Set(
           readdirSync(goldenDir)
-            .filter((f) => f.endsWith(".op.csv") || f.endsWith(".dc.csv"))
+            .filter((f) => kinds.some((k) => f.endsWith(`.${k}.csv`)))
             .map((f) => f.slice(0, -".op.csv".length)),
         ),
       ];
@@ -209,6 +250,15 @@ function main() {
   // Compute everything first so a failure leaves the committed goldens untouched.
   const results = ids.map((id) => compute(id, version));
   mkdirSync(goldenDir, { recursive: true });
+  const existing = readdirSync(goldenDir);
+  for (const { id, kind } of results) {
+    const stale = staleGoldens(id, kind, existing);
+    if (stale.length > 0) {
+      fail(
+        `${id}: stale golden ${stale.join(", ")} exists next to the new ${id}.${kind}.csv; delete it first`,
+      );
+    }
+  }
   for (const { id, kind, text, count } of results) {
     writeFileSync(join(goldenDir, `${id}.${kind}.csv`), text);
     process.stdout.write(`${id}: ${count} signals\n`);

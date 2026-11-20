@@ -35,6 +35,8 @@ For every compared signal, a sample passes if $|x - x_{\text{ref}}| \le r\,|x_{\
 | AC | phase at every frequency point | — | 0.01° |
 | Transient | Nodal output linearly interpolated onto ngspice time points | — | 1e-3 × signal peak-to-peak |
 
+Phase is not compared where $|x_{\text{ref}}| \le 10^{-12}$, because phase is undefined there.
+
 Transient uses a range-normalized absolute bound because the two simulators choose different time points, so interpolation error is unavoidable.
 
 These are initial values. Each will be tightened to roughly 10× the worst error seen once the suite runs. Loosening one requires an ADR.
