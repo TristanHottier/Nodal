@@ -321,6 +321,9 @@ fn mos_params() -> Mos1Params {
         gamma: 0.4,
         phi: 0.65,
         lambda: 0.02,
+        cgso: 0.0,
+        cgdo: 0.0,
+        cgbo: 0.0,
     }
 }
 

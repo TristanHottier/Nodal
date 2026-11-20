@@ -149,10 +149,14 @@ with $\partial q_b/\partial V_{bc} = q_b^2/V_{AF}$, so the last term is $-T_F I_
 | `GAMMA` | 0 √V | Body-effect coefficient |
 | `PHI` | 0.6 V | Surface potential |
 | `LAMBDA` | 0 1/V | Channel-length modulation |
-| `CGSO`, `CGDO`, `CGBO` | 0 F/m | Overlap capacitances per unit width |
+| `CGSO` | 0 F/m | Gate-source overlap capacitance per unit width |
+| `CGDO` | 0 F/m | Gate-drain overlap capacitance per unit width |
+| `CGBO` | 0 F/m | Gate-bulk overlap capacitance per unit **length** |
 | instance `W`, `L` | 100 µm, 100 µm | Channel width and length (ngspice defaults) |
 
-Without `TOX`, ngspice Level 1 has no intrinsic Meyer capacitances. v1 matches that: `TOX` is rejected, and only the constant overlap capacitances are modelled. Junction diodes to bulk (`CBD`, `CBS`, `IS`, `JS`) are post-v1. This is a known deviation from ngspice (§5).
+Without `TOX`, ngspice Level 1 has no intrinsic Meyer capacitances. v1 matches that: `TOX` is rejected, and only the constant overlap capacitances are modelled.
+
+**Overlap capacitances** (`mos1load.c`, `mos1acld.c`, with $L_D = 0$): $C_{gs} = C_{GSO}\,W$, $C_{gd} = C_{GDO}\,W$ and $C_{gb} = C_{GBO}\,L$. `CGBO` is per unit length, the other two per unit width. They are constant and sit on the physical gate, source, drain and bulk in every operating mode; a PMOS keeps the same signs. The AC stamp adds $j\omega C$ between gate and source, gate and drain, and gate and bulk. The small-signal conductances come from the converged $x$ limited against the stored state, and AC analysis never writes state. The tests compare a common-source stage with its closed form (including the Miller path through $C_{gd}$ and the gate-source loading), a PMOS with its mirrored NMOS, and the scaling of the three capacitances with $W$ and $L$. Junction diodes to bulk (`CBD`, `CBS`, `IS`, `JS`) are post-v1. This is a known deviation from ngspice (§5).
 
 NMOS. If $V_{ds} < 0$, swap drain and source, evaluate, and swap back. With $\beta = K_P\, W / L$:
 

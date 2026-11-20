@@ -26,6 +26,12 @@ pub struct Mos1Params {
     pub phi: f64,
     /// Channel-length modulation `LAMBDA` in 1/V.
     pub lambda: f64,
+    /// Gate-source overlap capacitance per unit width `CGSO` in F/m.
+    pub cgso: f64,
+    /// Gate-drain overlap capacitance per unit width `CGDO` in F/m.
+    pub cgdo: f64,
+    /// Gate-bulk overlap capacitance per unit length `CGBO` in F/m.
+    pub cgbo: f64,
 }
 
 impl Mos1Params {
@@ -36,6 +42,9 @@ impl Mos1Params {
             gamma: param(model, "GAMMA")?,
             phi: param(model, "PHI")?,
             lambda: param(model, "LAMBDA")?,
+            cgso: param(model, "CGSO")?,
+            cgdo: param(model, "CGDO")?,
+            cgbo: param(model, "CGBO")?,
         })
     }
 }
@@ -169,16 +178,24 @@ pub struct Mos1 {
     /// Parameters with `vto` already oriented (`sign * VTO`).
     params: Mos1Params,
     beta: f64,
+    /// Constant overlap capacitances: gate-source `CGSO W`, gate-drain
+    /// `CGDO W` and gate-bulk `CGBO L` (`mos1load.c`, `mos1acld.c`, `LD = 0`).
+    cgs: f64,
+    cgd: f64,
+    cgb: f64,
 }
 
 impl Mos1 {
-    /// `nodes` is drain, gate, source, bulk; `beta = KP W / L`.
+    /// `nodes` is drain, gate, source, bulk; `beta = KP W / L`; `w` and `l`
+    /// are the channel width and length in metres.
     pub fn new(
         name: String,
         nodes: [Option<usize>; 4],
         pmos: bool,
         params: Mos1Params,
         beta: f64,
+        w: f64,
+        l: f64,
     ) -> Self {
         let [drain, gate, source, bulk] = nodes;
         let sign = if pmos { -1.0 } else { 1.0 };
@@ -194,6 +211,9 @@ impl Mos1 {
                 ..params
             },
             beta,
+            cgs: params.cgso * w,
+            cgd: params.cgdo * w,
+            cgb: params.cgbo * l,
         }
     }
 
@@ -316,6 +336,26 @@ impl Device for Mos1 {
         limited
     }
 
+    /// Stamps the constant overlap capacitances (`mos1acld.c`). With no
+    /// `TOX` the Meyer capacitances are zero (`mos1temp.c`, `oxideCapFactor`
+    /// is 0), so only `CGSO W`, `CGDO W` and `CGBO L` remain. They sit on the
+    /// physical gate, source, drain and bulk whatever the operating mode, and
+    /// a PMOS keeps the same signs. The bulk junction capacitances are zero
+    /// because there are no bulk diodes (docs/reference/devices.md section 5).
+    fn load_reactive(&self, _x: &[f64], _state: &[f64], _ctx: &LoadContext, c: &mut RealSystem) {
+        let g = self.gate;
+        for (other, cap) in [
+            (self.source, self.cgs),
+            (self.drain, self.cgd),
+            (self.bulk, self.cgb),
+        ] {
+            c.add_a(g, g, cap);
+            c.add_a(other, other, cap);
+            c.add_a(g, other, -cap);
+            c.add_a(other, g, -cap);
+        }
+    }
+
     /// `mos1conv.c` compares the linear prediction `cdhat` of the drain
     /// current with the stored `cd`, and then the same for the bulk diode
     /// currents. Here the prediction is compared with the drain current
@@ -344,6 +384,9 @@ mod tests {
             gamma: 0.4,
             phi: 0.65,
             lambda: 0.02,
+            cgso: 0.0,
+            cgdo: 0.0,
+            cgbo: 0.0,
         }
     }
 
@@ -358,6 +401,8 @@ mod tests {
             false,
             params(),
             1e-3,
+            1e-5,
+            1e-5,
         );
         for x in [[1.0, 2.0, 0.5, 0.0], [0.0, 2.0, 0.5, 0.0]] {
             let mut sys = RealSystem::new(4);
@@ -388,6 +433,8 @@ mod tests {
             false,
             params(),
             1e-3,
+            1e-5,
+            1e-5,
         );
         let mut ctx = LoadContext::new(LoadMode::Exact);
         let mut with = RealSystem::new(4);
@@ -413,6 +460,8 @@ mod tests {
             false,
             params(),
             1e-3,
+            1e-5,
+            1e-5,
         );
         let ctx = LoadContext::new(LoadMode::Float);
         let mut state = [0.0; STATE_LEN];

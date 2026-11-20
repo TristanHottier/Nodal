@@ -231,6 +231,8 @@ pub(crate) fn instantiate(
             model.kind == ModelKind::PMOS,
             Mos1Params::from_model(model)?,
             param(model, "KP")? * w / l,
+            w,
+            l,
         )));
     }
     let (p, n) = match element.nodes() {

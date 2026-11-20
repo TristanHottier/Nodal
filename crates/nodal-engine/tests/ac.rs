@@ -11,7 +11,10 @@ use nodal_engine::analysis::{AcResult, AnalysisResult, ComplexSeries};
 use nodal_engine::devices::bjt::{BjtParams, charges, eval as bjt_eval};
 use nodal_engine::devices::constants::VT;
 use nodal_engine::devices::diode::{DiodeParams, charge, eval};
+use nodal_engine::devices::mos1::{Mos1, Mos1Params, eval as mos_eval};
+use nodal_engine::devices::{Device, LoadContext, LoadMode};
 use nodal_engine::linalg::C64;
+use nodal_engine::mna::RealSystem;
 use nodal_engine::{parse_netlist, simulate};
 
 type TestResult = Result<(), Box<dyn Error>>;
@@ -559,4 +562,139 @@ fn pnp_ac_matches_mirrored_npn() -> TestResult {
         }
     }
     Ok(())
+}
+
+/// Common-source stage with an ideal gate drive. `pmos` mirrors every DC
+/// source and the model, with the same AC excitation.
+fn mos_stage_netlist(pmos: bool) -> String {
+    let (kind, vdd, vg, vto) = if pmos {
+        ("PMOS", -5.0, -1.5, -0.7)
+    } else {
+        ("NMOS", 5.0, 1.5, 0.7)
+    };
+    let (kp, w) = (1e-4, 100e-6);
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"V","name":"VDD","nodes":["vdd","0"],"dc":{vdd}}},
+{{"kind":"V","name":"VG","nodes":["g","0"],"dc":{vg},"ac":{{"mag":1}}}},
+{{"kind":"R","name":"RD","nodes":["vdd","d"],"value":10000}},
+{{"kind":"M","name":"M1","nodes":["d","g","0","0"],"model":"MM","w":{w},"l":1e-6}}],
+"models":[{{"name":"MM","type":"{kind}","params":{{"VTO":{vto},"KP":{kp},"LAMBDA":0.02,"CGSO":4e-10,"CGDO":4e-10,"CGBO":2e-10}}}}],
+"options":{{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}},
+"analyses":[{{"type":"ac","sweep":"dec","points":5,"fstart":1e3,"fstop":1e11}}]}}"#
+    )
+}
+
+fn mos_stage_params() -> Mos1Params {
+    Mos1Params {
+        vto: 0.7,
+        gamma: 0.0,
+        phi: 0.6,
+        lambda: 0.02,
+        cgso: 4e-10,
+        cgdo: 4e-10,
+        cgbo: 2e-10,
+    }
+}
+
+/// The overlap capacitances, the Miller path through Cgd and the loading of
+/// the ideal gate source, against a closed form built from `mos1::eval` and
+/// the capacitance definitions Cgs = CGSO W, Cgd = CGDO W, Cgb = CGBO L.
+#[test]
+fn nmos_common_source_analytic() -> TestResult {
+    let r = run_ac(&mos_stage_netlist(false))?;
+    let p = mos_stage_params();
+    let (w, l, rd, gmin) = (100e-6, 1e-6, 1e4, 1e-12);
+    let beta = 1e-4 * w / l;
+    // Operating drain voltage: KCL at d, (vd - 5) / RD + Id(vd) + gmin vd = 0
+    // (bulk and source are ground, so gmin from drain to bulk is gmin vd).
+    let f = |vd: f64| (vd - 5.0) / rd + mos_eval(1.5, vd, 0.0, &p, beta).id + gmin * vd;
+    let (mut lo, mut hi) = (0.0_f64, 5.0_f64);
+    for _ in 0..200 {
+        let mid = 0.5 * (lo + hi);
+        if f(mid) > 0.0 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let e = mos_eval(1.5, lo, 0.0, &p, beta);
+    let (cgs, cgd, cgb) = (p.cgso * w, p.cgdo * w, p.cgbo * l);
+    // vg = 1. KCL at d: (gds + 1/RD + gmin + jw Cgd) vd = -(gm - jw Cgd) vg.
+    let vd = |freq: f64| {
+        let y = add(real(e.gds + 1.0 / rd + gmin), mul(jw(freq), real(cgd)));
+        let i = add(real(-e.gm), mul(jw(freq), real(cgd)));
+        div(i, y)
+    };
+    assert_ac(&r, "V(d)", vd)?;
+    // The gate current leaving node g is jw (Cgs + Cgb) + jw Cgd (1 - vd);
+    // the source branch current is its negative.
+    assert_ac(&r, "I(VG)", |freq| {
+        let miller = mul(
+            jw(freq),
+            mul(real(cgd), add(real(1.0), mul(real(-1.0), vd(freq)))),
+        );
+        let out = add(mul(jw(freq), real(cgs + cgb)), miller);
+        mul(real(-1.0), out)
+    })
+}
+
+#[test]
+fn pmos_small_signal_mirrors_nmos() -> TestResult {
+    let n = run_ac(&mos_stage_netlist(false))?;
+    let p = run_ac(&mos_stage_netlist(true))?;
+    let (x, y) = (series(&n, "V(d)")?, series(&p, "V(d)")?);
+    assert_eq!(x.re.len(), y.re.len());
+    for k in 0..x.re.len() {
+        let diff = (x.re[k] - y.re[k]).hypot(x.im[k] - y.im[k]);
+        assert!(
+            diff <= 1e-12 * x.re[k].hypot(x.im[k]),
+            "point {k}: ({}, {}) vs ({}, {})",
+            x.re[k],
+            x.im[k],
+            y.re[k],
+            y.im[k]
+        );
+    }
+    Ok(())
+}
+
+/// Capacitance stamped between two unknowns, read from `c.a`.
+fn stamped_caps(w: f64, l: f64) -> (f64, f64, f64) {
+    // Unknowns: 0 drain, 1 gate, 2 source, 3 bulk.
+    let m = Mos1::new(
+        "M1".into(),
+        [Some(0), Some(1), Some(2), Some(3)],
+        false,
+        mos_stage_params(),
+        1e-4 * w / l,
+        w,
+        l,
+    );
+    let ctx = LoadContext::new(LoadMode::SmallSignal);
+    let mut c = RealSystem::new(4);
+    m.load_reactive(&[0.0; 4], &[0.0; 8], &ctx, &mut c);
+    // Off-diagonals are minus the capacitance; diagonals sum their caps.
+    assert_eq!(c.a.get(1, 0), c.a.get(0, 1));
+    assert_eq!(c.a.get(1, 2), c.a.get(2, 1));
+    assert_eq!(c.a.get(1, 3), c.a.get(3, 1));
+    assert_eq!(c.a.get(0, 0), -c.a.get(0, 1));
+    assert_eq!(c.a.get(2, 2), -c.a.get(2, 1));
+    assert_eq!(c.a.get(3, 3), -c.a.get(3, 1));
+    assert_eq!(
+        c.a.get(1, 1),
+        -(c.a.get(1, 0) + c.a.get(1, 2) + c.a.get(1, 3))
+    );
+    (-c.a.get(1, 2), -c.a.get(1, 0), -c.a.get(1, 3))
+}
+
+#[test]
+fn overlap_caps_scale_with_w_and_l() {
+    let (gs, gd, gb) = stamped_caps(100e-6, 1e-6);
+    assert!((gs - 4e-14).abs() < 1e-26 && (gd - 4e-14).abs() < 1e-26);
+    assert!((gb - 2e-16).abs() < 1e-28);
+    let (gs2, gd2, gb2) = stamped_caps(200e-6, 1e-6);
+    assert_eq!((gs2, gd2, gb2), (2.0 * gs, 2.0 * gd, gb));
+    let (gs3, gd3, gb3) = stamped_caps(100e-6, 2e-6);
+    assert_eq!((gs3, gd3, gb3), (gs, gd, 2.0 * gb));
 }
