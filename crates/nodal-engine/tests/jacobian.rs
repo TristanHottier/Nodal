@@ -273,6 +273,36 @@ fn bjt_charge_continuous_at_fc() {
     assert!((lo.cbc - hi.cbc).abs() <= 1e-15 * lo.cbc);
 }
 
+/// Large transcapacitance (VAF 5, TF 1e-8): `cbe_vbc` is checked against the
+/// central difference of `qbe` with a relative-only criterion, so the 1e-15
+/// absolute floor cannot hide an error.
+fn transcap_case(vbe: f64, vbc: f64) {
+    let p = BjtParams {
+        tf: 1e-8,
+        ..bjt_params(5.0)
+    };
+    let c = charges(vbe, vbc, &p);
+    let h = 1e-6 * VT;
+    let numeric = (charges(vbe, vbc + h, &p).qbe - charges(vbe, vbc - h, &p).qbe) / (2.0 * h);
+    assert!(c.cbe_vbc.abs() > 1e-15, "transcapacitance {:e}", c.cbe_vbc);
+    let rel = (numeric - c.cbe_vbc).abs() / numeric.abs().max(c.cbe_vbc.abs());
+    assert!(
+        rel <= 1e-5,
+        "analytic {:e}, numeric {numeric:e}, rel {rel:e}",
+        c.cbe_vbc
+    );
+}
+
+#[test]
+fn bjt_transcapacitance_active() {
+    transcap_case(0.7, -3.0);
+}
+
+#[test]
+fn bjt_transcapacitance_saturation() {
+    transcap_case(0.75, 0.6);
+}
+
 #[test]
 fn pnp_small_signal_mirrors_npn() {
     let p = bjt_params(50.0);

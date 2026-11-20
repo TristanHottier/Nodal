@@ -415,12 +415,135 @@ fn bjt_hybrid_pi_analytic() -> TestResult {
     })
 }
 
-/// A PNP biased as the mirror of the NPN has the same small-signal circuit.
+/// Common-emitter stage with emitter and collector resistors, a finite Early
+/// voltage and large transit times, so the transcapacitance is large and all
+/// four `xcmcb` entries matter. `pnp` mirrors every DC source and the bias.
+fn bjt_stage_netlist(model_type: &str, pnp: bool) -> String {
+    let (bias, vcc) = if pnp {
+        (r#"["b","0"]"#, -10.0)
+    } else {
+        (r#"["0","b"]"#, 10.0)
+    };
+    format!(
+        r#"{{"irVersion":1,"elements":[
+{{"kind":"V","name":"VCC","nodes":["v","0"],"dc":{vcc}}},
+{{"kind":"R","name":"RC","nodes":["v","c"],"value":1000}},
+{{"kind":"R","name":"RE","nodes":["e","0"],"value":100}},
+{{"kind":"I","name":"I1","nodes":{bias},"dc":1e-5}},
+{{"kind":"I","name":"I2","nodes":["0","b"],"ac":{{"mag":1e-6}}}},
+{{"kind":"Q","name":"Q1","nodes":["c","b","e"],"model":"QM"}}],
+"models":[{{"name":"QM","type":"{model_type}","params":{{"IS":1e-16,"BF":100,"VAF":5,"TF":1e-8,"TR":1e-9,"CJE":1e-12,"CJC":5e-13}}}}],
+"options":{{"reltol":1e-6,"vntol":1e-9,"abstol":1e-15}},
+"analyses":[{{"type":"ac","sweep":"dec","points":5,"fstart":1e3,"fstop":1e9}}]}}"#
+    )
+}
+
+fn bjt_stage_params() -> BjtParams {
+    BjtParams {
+        vaf: 5.0,
+        cjc: 5e-13,
+        tf: 1e-8,
+        tr: 1e-9,
+        ..bjt_ac_params()
+    }
+}
+
+/// 3x3 complex determinant.
+fn det3(m: [[C64; 3]; 3]) -> C64 {
+    let minor = |a: usize, b: usize, c: usize, d: usize| {
+        add(
+            mul(m[1][a], m[2][b]),
+            mul(real(-1.0), mul(m[1][c], m[2][d])),
+        )
+    };
+    let t0 = mul(m[0][0], minor(1, 2, 2, 1));
+    let t1 = mul(m[0][1], minor(0, 2, 2, 0));
+    let t2 = mul(m[0][2], minor(0, 1, 1, 0));
+    add(add(t0, mul(real(-1.0), t1)), t2)
+}
+
+#[test]
+fn bjt_finite_early_transcap_analytic() -> TestResult {
+    let r = run_ac(&bjt_stage_netlist("NPN", false))?;
+    let p = bjt_stage_params();
+    let (gmin, rc, re) = (1e-12, 1000.0, 100.0);
+    // Operating point by bisection on vbe: ve = RE (Ib + Ic), vc = 10 - RC Ic
+    // (with the substrate gmin to ground at the collector), Ib = 1e-5.
+    let solve_vbe = |vbe: f64| -> (f64, f64, f64) {
+        // Inner fixed-point on (ve, vc): both are monotone contractions here.
+        let (mut ve, mut vc) = (0.0_f64, 5.0_f64);
+        for _ in 0..500 {
+            let e = bjt_eval(vbe, vbe + ve - vc, &p, gmin);
+            ve = re * (e.ib + e.ic);
+            vc = (10.0 - rc * e.ic) / (1.0 + rc * gmin);
+        }
+        (ve, vc, bjt_eval(vbe, vbe + ve - vc, &p, gmin).ib)
+    };
+    let (mut lo, mut hi) = (0.3_f64, 0.8_f64);
+    for _ in 0..100 {
+        let mid = 0.5 * (lo + hi);
+        if solve_vbe(mid).2 > 1e-5 {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    let vbe = 0.5 * (lo + hi);
+    let (ve, vc, _) = solve_vbe(vbe);
+    let vbc = vbe + ve - vc;
+    let e = bjt_eval(vbe, vbc, &p, gmin);
+    // Capacitances from finite differences of the charges.
+    let h = 1e-6 * VT;
+    let q = |x: f64, y: f64| charges(x, y, &p);
+    let cbe = (q(vbe + h, vbc).qbe - q(vbe - h, vbc).qbe) / (2.0 * h);
+    let cx = (q(vbe, vbc + h).qbe - q(vbe, vbc - h).qbe) / (2.0 * h);
+    let cbc = (q(vbe, vbc + h).qbc - q(vbe, vbc - h).qbc) / (2.0 * h);
+    assert!(cx.abs() > 1e-14, "transcapacitance {cx:e} should be large");
+    // Phasor KCL at b, c, e from the physical definitions: base current into
+    // the device is Ib = g.v + jw (dQbe + dQbc), collector current is
+    // Ic = g.v - jw dQbc, Ie = -(Ib + Ic), with vbe = vb - ve, vbc = vb - vc.
+    let solve = |f: f64| {
+        let w = 2.0 * PI * f;
+        // Row coefficients on (vb, vc, ve) of the device currents.
+        let (ybe, ybc) = (
+            C64::new(e.dib_dvbe, w * cbe),
+            C64::new(e.dib_dvbc, w * (cx + cbc)),
+        );
+        let (zbe, zbc) = (C64::new(e.dic_dvbe, 0.0), C64::new(e.dic_dvbc, -w * cbc));
+        let ib = [add(ybe, ybc), mul(real(-1.0), ybc), mul(real(-1.0), ybe)];
+        let ic = [add(zbe, zbc), mul(real(-1.0), zbc), mul(real(-1.0), zbe)];
+        let mut m = [[real(0.0); 3]; 3];
+        for k in 0..3 {
+            m[0][k] = ib[k];
+            m[1][k] = ic[k];
+            m[2][k] = mul(real(-1.0), add(ib[k], ic[k]));
+        }
+        m[1][1] = add(m[1][1], real(1.0 / rc + gmin));
+        m[2][2] = add(m[2][2], real(1.0 / re));
+        let rhs = [real(1e-6), real(0.0), real(0.0)];
+        let d = det3(m);
+        let mut x = [real(0.0); 3];
+        for (k, xk) in x.iter_mut().enumerate() {
+            let mut mk = m;
+            for row in 0..3 {
+                mk[row][k] = rhs[row];
+            }
+            *xk = div(det3(mk), d);
+        }
+        x
+    };
+    assert_ac(&r, "V(b)", |f| solve(f)[0])?;
+    assert_ac(&r, "V(c)", |f| solve(f)[1])?;
+    assert_ac(&r, "V(e)", |f| solve(f)[2])
+}
+
+/// A PNP biased as the mirror of the NPN has the same small-signal circuit,
+/// here with a finite Early voltage and a large transcapacitance.
 #[test]
 fn pnp_ac_matches_mirrored_npn() -> TestResult {
-    let n = run_ac(&bjt_ac_netlist("NPN", false))?;
-    let q = run_ac(&bjt_ac_netlist("PNP", true))?;
-    for signal in ["V(b)", "I(VC)"] {
+    let n = run_ac(&bjt_stage_netlist("NPN", false))?;
+    let q = run_ac(&bjt_stage_netlist("PNP", true))?;
+    for signal in ["V(b)", "V(c)", "V(e)"] {
         let (x, y) = (series(&n, signal)?, series(&q, signal)?);
         assert_eq!(x.re.len(), y.re.len());
         for k in 0..x.re.len() {
