@@ -1,7 +1,9 @@
 // Netlist IR (version 1). Mirrors crates/nodal-engine/src/ir; both validate
-// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V15 are
+// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V17 are
 // listed in the engine's validate.rs and models.rs.
 import { z } from "zod";
+import type { AcSweep } from "./ac";
+import { acFrequencyCount } from "./ac";
 import { IR_VERSION } from "./constants";
 import type { ModelKind } from "./models";
 import { MODEL_KINDS, PARAM_SPECS, describeRange, inRange } from "./models";
@@ -21,6 +23,9 @@ const nodeTriple = z.tuple([nodeName, nodeName, nodeName]);
 const nodeQuad = z.tuple([nodeName, nodeName, nodeName, nodeName]);
 const elementName = z.string();
 
+/** Small-signal source value: magnitude and phase in degrees. */
+const acSpec = z.strictObject({ mag: finite, phase: finite.default(0) });
+
 const element = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("R"), name: elementName, nodes: nodePair, value: finite }),
   z.strictObject({ kind: z.literal("L"), name: elementName, nodes: nodePair, value: finite }),
@@ -30,12 +35,14 @@ const element = z.discriminatedUnion("kind", [
     name: elementName,
     nodes: nodePair,
     dc: finite.default(0),
+    ac: optional(acSpec),
   }),
   z.strictObject({
     kind: z.literal("I"),
     name: elementName,
     nodes: nodePair,
     dc: finite.default(0),
+    ac: optional(acSpec),
   }),
   z.strictObject({
     kind: z.literal("E"),
@@ -99,9 +106,19 @@ const analysis = z.discriminatedUnion("type", [
     stop: z.number(),
     step: z.number(),
   }),
+  z.strictObject({
+    type: z.literal("ac"),
+    sweep: z.enum(["lin", "dec", "oct"]),
+    points: z.number().int().min(0).max(4_294_967_295),
+    fstart: z.number(),
+    fstop: z.number(),
+  }),
 ]);
 
-/** Largest allowed number of points in a DC sweep. */
+/** Default relative tolerance, as in the engine; it bounds the last ac frequency. */
+const DEFAULT_RELTOL = 1e-3;
+
+/** Largest allowed number of points in a DC or AC sweep. */
 const MAX_SWEEP_POINTS = 1_000_000;
 
 const options = z.strictObject({
@@ -229,6 +246,30 @@ function checkDc(elements: NetlistElement[], a: DcAnalysis): string | undefined 
   }
   if (k < 0 || Math.abs(k - roundHalfAway(k)) > 1e-9 * Math.max(Math.abs(k), 1)) {
     return `analysis dc: step ${String(step)} does not reach stop ${String(stop)} from start ${String(start)}`;
+  }
+  return undefined;
+}
+
+/** V17: an ac sweep has a valid range and at most MAX_SWEEP_POINTS frequencies. */
+function checkAc(a: AcAnalysis, reltol: number): string | undefined {
+  const { sweep, points, fstart, fstop } = a;
+  if (!(Number.isFinite(fstart) && Number.isFinite(fstop))) {
+    return "analysis ac: fstart and fstop must be finite";
+  }
+  if (points < 1) return "analysis ac: points must be at least 1";
+  if (fstop < fstart) {
+    return `analysis ac: fstop ${String(fstop)} is below fstart ${String(fstart)}`;
+  }
+  if (sweep === "lin") {
+    if (fstart < 0) return `analysis ac: fstart must be >= 0 for lin, got ${String(fstart)}`;
+    if (points === 1 && fstart !== fstop) {
+      return "analysis ac: lin with one point needs fstart equal to fstop";
+    }
+  } else if (fstart <= 0) {
+    return `analysis ac: fstart must be > 0 for ${sweep}, got ${String(fstart)}`;
+  }
+  if (acFrequencyCount(sweep, points, fstart, fstop, reltol, MAX_SWEEP_POINTS) === null) {
+    return `analysis ac: sweep has more than ${String(MAX_SWEEP_POINTS)} points`;
   }
   return undefined;
 }
@@ -375,6 +416,14 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
       }
     }
   }
+  // V17
+  const reltol = o?.reltol ?? DEFAULT_RELTOL;
+  for (const [i, a] of n.analyses.entries()) {
+    if (a.type === "ac") {
+      const issue = checkAc(a, reltol);
+      if (issue) return fail(issue, ["analyses", i]);
+    }
+  }
   return true;
 }
 
@@ -386,6 +435,9 @@ export type Netlist = z.infer<typeof netlistSchema>;
 export type NetlistElement = Netlist["elements"][number];
 export type Analysis = Netlist["analyses"][number];
 export type DcAnalysis = Extract<Analysis, { type: "dc" }>;
+export type AcAnalysis = Extract<Analysis, { type: "ac" }>;
+export type AcSpec = z.infer<typeof acSpec>;
+export type { AcSweep };
 export type NetlistModel = Netlist["models"][number];
 export type { ModelKind };
 export type SimOptions = NonNullable<Netlist["options"]>;

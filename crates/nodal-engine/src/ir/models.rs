@@ -247,14 +247,25 @@ mod tests {
     /// One entry of packages/schema/fixtures/param-specs.json. A default
     /// that is not a finite number is `null` plus `defaultKind`: "inf" for
     /// Infinity, "1/gmin" for NaN.
-    #[derive(Debug, PartialEq, Deserialize)]
+    #[derive(Debug, PartialEq, Deserialize, Serialize)]
     #[serde(rename_all = "camelCase", deny_unknown_fields)]
     struct Entry {
         key: String,
+        #[serde(serialize_with = "as_js_number")]
         default: Option<f64>,
-        #[serde(default)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         default_kind: Option<String>,
         range: String,
+    }
+
+    /// JSON text the way `JSON.stringify` writes it: whole numbers without a
+    /// fraction, so the regenerated file matches the committed one.
+    fn as_js_number<S: serde::Serializer>(v: &Option<f64>, s: S) -> Result<S::Ok, S::Error> {
+        match v {
+            Some(x) if x.fract() == 0.0 && x.abs() < 1e15 => s.serialize_i64(*x as i64),
+            Some(x) => s.serialize_f64(*x),
+            None => s.serialize_none(),
+        }
     }
 
     fn range_name(r: Range) -> &'static str {
@@ -288,10 +299,35 @@ mod tests {
     }
 
     /// Compares the committed JSON table of `@nodal/schema` with `param_spec`.
-    /// It only reads: regenerate the file from `encodeParamSpecs()` in
-    /// packages/schema/src/models.ts when the table changes on purpose.
+    /// With `NODAL_REGEN_PARAM_SPECS=1` it writes the file from `param_spec`
+    /// instead (`pnpm regen:param-specs`); the TS test then checks that
+    /// `encodeParamSpecs()` agrees with it.
     #[test]
     fn spec_matches_ts() -> TestResult {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../packages/schema/fixtures/param-specs.json"
+        );
+        if std::env::var_os("NODAL_REGEN_PARAM_SPECS").is_some_and(|v| v == "1") {
+            // Same key order as `MODEL_KINDS` in models.ts.
+            let kinds = [
+                ModelKind::D,
+                ModelKind::NPN,
+                ModelKind::PNP,
+                ModelKind::NMOS,
+                ModelKind::PMOS,
+                ModelKind::SW,
+            ];
+            let mut text = String::from("{\n");
+            for (i, kind) in kinds.into_iter().enumerate() {
+                let body = serde_json::to_string_pretty(&encoded(kind))?.replace('\n', "\n  ");
+                let comma = if i + 1 < kinds.len() { "," } else { "" };
+                text.push_str(&format!("  \"{}\": {body}{comma}\n", kind.as_str()));
+            }
+            text.push_str("}\n");
+            std::fs::write(path, text)?;
+            return Ok(());
+        }
         let text = include_str!("../../../../packages/schema/fixtures/param-specs.json");
         let file: BTreeMap<String, Vec<Entry>> = serde_json::from_str(text)?;
         let kinds = [

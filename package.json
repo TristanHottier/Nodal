@@ -11,6 +11,7 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "regen:param-specs": "NODAL_REGEN_PARAM_SPECS=1 cargo test -p nodal-engine spec_matches_ts",
     "build:wasm": "node scripts/build-wasm.mjs",
     "dev": "pnpm --filter @nodal/web dev"
   },

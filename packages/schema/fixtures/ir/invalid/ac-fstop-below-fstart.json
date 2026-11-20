@@ -15,7 +15,5 @@
       "value": 1000
     }
   ],
-  "analyses": [
-    { "type": "ac", "sweep": "lin", "points": 10, "fstart": 1000, "fstop": 10 }
-  ]
+  "analyses": [{ "type": "ac", "sweep": "lin", "points": 10, "fstart": 1000, "fstop": 10 }]
 }

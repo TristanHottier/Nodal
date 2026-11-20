@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { describe, expect, test } from "vitest";
+import { acFrequencyCount } from "./ac";
 import { parseNetlist } from "./ir";
 import { PARAM_SPECS, encodeParamSpecs } from "./models";
 
@@ -31,7 +32,7 @@ describe("fixtures shared with the Rust engine", () => {
 
   test("fixture folders are populated", () => {
     expect(valid.length).toBeGreaterThan(0);
-    expect(invalid.length).toBeGreaterThanOrEqual(34);
+    expect(invalid.length).toBeGreaterThanOrEqual(41);
   });
 
   test.each(valid)("valid: %s", (path) => {
@@ -105,6 +106,12 @@ const NEEDLES: [string, string][] = [
   ["dc-source-not-independent", "analysis dc: source R1 is not an independent source"],
   ["dc-zero-step", "analysis dc: step must not be zero"],
   ["dc-step-misses-stop", "analysis dc: step 0.3 does not reach stop 1 from start 0"],
+  ["ac-mag-infinite", "must be a finite number"],
+  ["ac-dec-zero-fstart", "analysis ac: fstart must be > 0 for dec"],
+  ["ac-fstop-below-fstart", "analysis ac: fstop 10 is below fstart 1000"],
+  ["ac-zero-points", "analysis ac: points must be at least 1"],
+  ["ac-lin-one-point-range", "analysis ac: lin with one point needs fstart equal to fstop"],
+  ["ac-too-many-points", "analysis ac: sweep has more than 1000000 points"],
   ["nodeset-unknown-node", "nodeset: unknown node zz"],
   ["temp-not-27", "option temp must be 27 (temperature is fixed in v1)"],
   ["bad-option", "option reltol must be finite and > 0"],
@@ -123,9 +130,92 @@ describe("message needles from the Rust tests", () => {
       "unsupported-analysis",
       "analysis-extra-field",
       "infinite-value",
+      "ac-unknown-sweep",
     ];
     const onDisk = jsonFiles(join(fixtures, "invalid")).map((p) => basename(p, ".json"));
     expect(onDisk.filter((n) => !listed.has(n) && !serdeOnly.includes(n))).toEqual([]);
+  });
+});
+
+describe("acFrequencyCount mirrors ac_frequencies in the engine", () => {
+  const LIMIT = 1_000_000;
+  const cases: [string, Parameters<typeof acFrequencyCount>, number | null][] = [
+    ["dec whole decades", ["dec", 10, 1, 1e7, 1e-3, LIMIT], 71],
+    ["dec partial decade", ["dec", 10, 1, 5e6, 1e-3, LIMIT], 67],
+    ["dec single frequency", ["dec", 10, 1e3, 1e3, 1e-3, LIMIT], 1],
+    ["oct", ["oct", 4, 1, 16, 1e-3, LIMIT], 17],
+    ["lin", ["lin", 11, 0, 100, 1e-3, LIMIT], 11],
+    ["lin two points", ["lin", 2, 1, 2, 1e-3, LIMIT], 2],
+    ["lin empty range", ["lin", 5, 50, 50, 1e-3, LIMIT], 1],
+    ["dec reltol tight", ["dec", 10, 1, 1e3, 1e-3, LIMIT], 31],
+    ["dec reltol loose", ["dec", 10, 1, 1e3, 0.3, LIMIT], 32],
+    ["dec over limit", ["dec", 1000, 1, 1e9, 1e-3, 5000], null],
+    ["lin over limit", ["lin", 100, 0, 1, 1e-3, 99], null],
+    ["lin at limit", ["lin", 100, 0, 1, 1e-3, 100], 100],
+  ];
+  test.each(cases)("%s", (_name, args, expected) => {
+    expect(acFrequencyCount(...args)).toBe(expected);
+  });
+});
+
+describe("dc sweep boundaries", () => {
+  const dc = (start: number, stop: number, step: number) =>
+    parseNetlist({
+      irVersion: 1,
+      elements: [
+        { kind: "V", name: "V1", nodes: ["a", "0"], dc: 0 },
+        { kind: "R", name: "R1", nodes: ["a", "0"], value: 1 },
+      ],
+      analyses: [{ type: "dc", source: "V1", start, stop, step }],
+    });
+  test("step landing on stop within 1e-9 passes", () => {
+    expect(dc(0, 1, 0.1).ok).toBe(true);
+  });
+  test("step just outside the tolerance fails", () => {
+    const r = dc(0, 1, 0.1000001);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues.join("\n")).toContain("does not reach stop");
+  });
+  test("1_000_000 points pass and 1_000_001 fail", () => {
+    expect(dc(0, 999_999, 1).ok).toBe(true);
+    const r = dc(0, 1_000_000, 1);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues.join("\n")).toContain("more than 1000000 points");
+  });
+});
+
+describe("ac parsed values", () => {
+  test("ac phase defaults to 0 and the analysis keeps its fields", () => {
+    const raw = {
+      irVersion: 1,
+      elements: [
+        { kind: "V", name: "V1", nodes: ["a", "0"], ac: { mag: 2 } },
+        { kind: "R", name: "R1", nodes: ["a", "0"], value: 1 },
+      ],
+      analyses: [{ type: "ac", sweep: "oct", points: 3, fstart: 1, fstop: 8 }],
+    };
+    const r = parseNetlist(raw);
+    if (!r.ok) throw new Error(r.issues.join("; "));
+    expect(r.value.elements[0]).toMatchObject({ ac: { mag: 2, phase: 0 } });
+    expect(r.value.analyses[0]).toEqual(raw.analyses[0]);
+  });
+  test("unknown field inside ac is rejected", () => {
+    const r = parseNetlist({
+      irVersion: 1,
+      elements: [{ kind: "V", name: "V1", nodes: ["a", "0"], ac: { mag: 1, bogus: 1 } }],
+      analyses: [{ type: "op" }],
+    });
+    expect(r.ok).toBe(false);
+  });
+  test("a bad reltol is reported before the ac sweep", () => {
+    const r = parseNetlist({
+      irVersion: 1,
+      elements: [{ kind: "V", name: "V1", nodes: ["a", "0"], ac: { mag: 1 } }],
+      analyses: [{ type: "ac", sweep: "dec", points: 111_111, fstart: 1, fstop: 1e9 }],
+      options: { reltol: -1 },
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.issues.join("\n")).toContain("option reltol must be finite and > 0");
   });
 });
 
