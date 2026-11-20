@@ -1,10 +1,13 @@
-//! Validation rules V1 to V15 (see the Task 2 briefs; the model rules V10
+//! Validation rules V1 to V17 (see the Task 2 briefs; the model rules V10
 //! and V12 live in `models.rs`). The TypeScript
 //! validator in `@nodal/schema` implements the same rules.
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{Analysis, Element, ModelKind, Netlist, Options, models};
+use super::{
+    AcSweep, Analysis, DEFAULT_RELTOL, Element, MAX_AC_POINTS, ModelKind, Netlist, Options,
+    ac_frequencies, models,
+};
 use crate::error::Error;
 
 /// Largest allowed number of points in a DC sweep.
@@ -114,6 +117,12 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             Element::V { dc, .. } | Element::I { dc, .. } if !dc.is_finite() => {
                 return invalid(format!("element {name}: dc must be finite"));
             }
+            // V16
+            Element::V { ac: Some(ac), .. } | Element::I { ac: Some(ac), .. }
+                if !(ac.mag.is_finite() && ac.phase.is_finite()) =>
+            {
+                return invalid(format!("element {name}: ac mag and phase must be finite"));
+            }
             Element::E { gain, .. }
             | Element::G { gain, .. }
             | Element::H { gain, .. }
@@ -174,6 +183,23 @@ pub(super) fn validate(n: &Netlist) -> Result<(), Error> {
             validate_dc(n, source, *start, *stop, *step)?;
         }
     }
+    // V17
+    let reltol = n
+        .options
+        .as_ref()
+        .and_then(|o| o.reltol)
+        .unwrap_or(DEFAULT_RELTOL);
+    for a in &n.analyses {
+        if let Analysis::Ac {
+            sweep,
+            points,
+            fstart,
+            fstop,
+        } = a
+        {
+            validate_ac(*sweep, *points, *fstart, *fstop, reltol)?;
+        }
+    }
     // V15
     if let Some(set) = &n.nodeset {
         for (node, value) in set {
@@ -216,6 +242,47 @@ fn validate_model_ref(n: &Netlist, name: &str, e: &Element, model: &str) -> Resu
         return invalid(format!(
             "element {name}: model {model} has type {}, expected {expected}",
             m.kind.as_str()
+        ));
+    }
+    Ok(())
+}
+
+fn validate_ac(
+    sweep: AcSweep,
+    points: u32,
+    fstart: f64,
+    fstop: f64,
+    reltol: f64,
+) -> Result<(), Error> {
+    if !(fstart.is_finite() && fstop.is_finite()) {
+        return invalid("analysis ac: fstart and fstop must be finite".into());
+    }
+    if points < 1 {
+        return invalid("analysis ac: points must be at least 1".into());
+    }
+    if fstop < fstart {
+        return invalid(format!(
+            "analysis ac: fstop {fstop} is below fstart {fstart}"
+        ));
+    }
+    let kind = sweep.as_str();
+    if sweep == AcSweep::Lin {
+        if fstart < 0.0 {
+            return invalid(format!(
+                "analysis ac: fstart must be >= 0 for {kind}, got {fstart}"
+            ));
+        }
+        if points == 1 && fstart != fstop {
+            return invalid("analysis ac: lin with one point needs fstart equal to fstop".into());
+        }
+    } else if fstart <= 0.0 {
+        return invalid(format!(
+            "analysis ac: fstart must be > 0 for {kind}, got {fstart}"
+        ));
+    }
+    if ac_frequencies(sweep, points, fstart, fstop, reltol, MAX_AC_POINTS).is_none() {
+        return invalid(format!(
+            "analysis ac: sweep has more than {MAX_AC_POINTS} points"
         ));
     }
     Ok(())
@@ -297,6 +364,7 @@ mod tests {
                     name: "V1".into(),
                     nodes: nodes("in", "0"),
                     dc: 1.0,
+                    ac: None,
                 },
                 extra,
             ],
@@ -353,10 +421,48 @@ mod tests {
                 name: "I1".into(),
                 nodes: nodes("in", "0"),
                 dc: v,
+                ac: None,
             };
             let msg = message(&base(i))?;
             assert!(msg.contains("element I1: dc must be finite"), "{msg}");
         }
+        Ok(())
+    }
+
+    #[test]
+    fn non_finite_ac_is_rejected() -> TestResult {
+        for (mag, phase) in [(f64::INFINITY, 0.0), (1.0, f64::NAN)] {
+            let i = Element::I {
+                name: "I1".into(),
+                nodes: nodes("in", "0"),
+                dc: 0.0,
+                ac: Some(crate::ir::AcSpec { mag, phase }),
+            };
+            let msg = message(&base(i))?;
+            assert!(
+                msg.contains("element I1: ac mag and phase must be finite"),
+                "{msg}"
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn ac_limit_uses_option_reltol() -> TestResult {
+        // The grid is valid for any reltol here; the option only moves the
+        // tolerance on the last point.
+        let mut n = base(resistor(1.0));
+        n.analyses = vec![Analysis::Ac {
+            sweep: AcSweep::Dec,
+            points: 10,
+            fstart: 1.0,
+            fstop: 1e3,
+        }];
+        n.options = Some(Options {
+            reltol: Some(1e-6),
+            ..Options::default()
+        });
+        validate(&n)?;
         Ok(())
     }
 

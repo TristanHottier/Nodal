@@ -36,6 +36,7 @@ pub fn simulate(netlist: &Netlist) -> Result<Vec<AnalysisResult>, Error> {
                 let values = ir::sweep_values(*start, *stop, *step);
                 analysis::solve_dc_sweep(&mut circuit, source, &values).map(AnalysisResult::Dc)
             }
+            Analysis::Ac { .. } => Err(Error::Invalid("ac analysis is not simulated yet".into())),
         })
         .collect()
 }

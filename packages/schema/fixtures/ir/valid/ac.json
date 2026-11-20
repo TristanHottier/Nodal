@@ -1,0 +1,41 @@
+{
+  "irVersion": 1,
+  "title": "RC low-pass with AC sources",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "ac": { "mag": 1, "phase": 0 }
+    },
+    {
+      "kind": "R",
+      "name": "R1",
+      "nodes": ["in", "out"],
+      "value": 1000
+    },
+    {
+      "kind": "C",
+      "name": "C1",
+      "nodes": ["out", "0"],
+      "value": 1e-6
+    },
+    {
+      "kind": "I",
+      "name": "I1",
+      "nodes": ["0", "out"],
+      "dc": 0,
+      "ac": { "mag": 0.001, "phase": 90 }
+    }
+  ],
+  "analyses": [
+    {
+      "type": "ac",
+      "sweep": "dec",
+      "points": 10,
+      "fstart": 1,
+      "fstop": 1e7
+    }
+  ]
+}

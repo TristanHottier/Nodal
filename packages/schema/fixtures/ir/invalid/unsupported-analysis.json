@@ -22,7 +22,7 @@
   ],
   "analyses": [
     {
-      "type": "ac"
+      "type": "tran"
     }
   ]
 }

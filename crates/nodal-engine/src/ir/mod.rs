@@ -55,12 +55,18 @@ pub enum Element {
         nodes: [String; 2],
         #[serde(default)]
         dc: f64,
+        /// Small-signal value for the `ac` analysis.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        ac: Option<AcSpec>,
     },
     I {
         name: String,
         nodes: [String; 2],
         #[serde(default)]
         dc: f64,
+        /// Small-signal value for the `ac` analysis.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        ac: Option<AcSpec>,
     },
     E {
         name: String,
@@ -236,6 +242,36 @@ impl Element {
     }
 }
 
+/// Small-signal value of an independent source: magnitude in volts or
+/// amperes, phase in degrees.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AcSpec {
+    pub mag: f64,
+    #[serde(default)]
+    pub phase: f64,
+}
+
+/// Frequency spacing of an `ac` analysis.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AcSweep {
+    Lin,
+    Dec,
+    Oct,
+}
+
+impl AcSweep {
+    /// The SPICE keyword, for example `dec`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AcSweep::Lin => "lin",
+            AcSweep::Dec => "dec",
+            AcSweep::Oct => "oct",
+        }
+    }
+}
+
 /// An analysis to run.
 ///
 /// `Op` is a struct variant (`Analysis::Op {}`) so that serde enforces
@@ -251,6 +287,92 @@ pub enum Analysis {
         stop: f64,
         step: f64,
     },
+    /// Small-signal frequency sweep. `points` is the count per decade or
+    /// octave for `dec` and `oct`, and the total count for `lin`.
+    Ac {
+        sweep: AcSweep,
+        points: u32,
+        fstart: f64,
+        fstop: f64,
+    },
+}
+
+/// Default relative tolerance, as in ngspice.
+pub const DEFAULT_RELTOL: f64 = 1e-3;
+
+/// Largest allowed number of frequencies in an `ac` analysis.
+pub const MAX_AC_POINTS: usize = 1_000_000;
+
+/// The frequencies of an `ac` analysis, or `None` when there would be more
+/// than `limit` of them or the arguments do not describe a sweep.
+///
+/// Port of the grid setup and loop of `ACan` in ngspice
+/// `src/spicelib/analysis/acan.c`. One deviation: ngspice treats `lin` with
+/// two points as a single point (its step is set to 0 unless
+/// `points - 1 > 1`); here two points give `fstart` and `fstop`.
+pub fn ac_frequencies(
+    sweep: AcSweep,
+    points: u32,
+    fstart: f64,
+    fstop: f64,
+    reltol: f64,
+    limit: usize,
+) -> Option<Vec<f64>> {
+    if points < 1 || !fstart.is_finite() || !fstop.is_finite() || !reltol.is_finite() {
+        return None;
+    }
+    let n = f64::from(points);
+    let delta = match sweep {
+        AcSweep::Lin => {
+            if points == 1 {
+                return Some(vec![fstart]);
+            }
+            let count = usize::try_from(points).ok()?;
+            if count > limit {
+                return None;
+            }
+            let step = (fstop - fstart) / (n - 1.0);
+            return Some((0..count).map(|i| fstart + i as f64 * step).collect());
+        }
+        AcSweep::Dec => {
+            if fstart <= 0.0 || fstop <= 0.0 {
+                return None;
+            }
+            if fstop / 10.0 < fstart {
+                if fstop == fstart {
+                    1.0
+                } else {
+                    (10.0_f64.ln() / n).exp()
+                }
+            } else {
+                let steps = ((fstop / fstart).log10().abs() * n).floor();
+                ((fstop / fstart).ln() / steps).exp()
+            }
+        }
+        AcSweep::Oct => {
+            if fstart <= 0.0 {
+                return None;
+            }
+            (2.0_f64.ln() / n).exp()
+        }
+    };
+    if !delta.is_finite() {
+        return None;
+    }
+    let tol = delta * fstop * reltol;
+    let mut out = Vec::new();
+    let mut f = fstart;
+    while f <= fstop + tol {
+        if out.len() >= limit {
+            return None;
+        }
+        out.push(f);
+        if delta == 1.0 {
+            break;
+        }
+        f *= delta;
+    }
+    Some(out)
 }
 
 /// The values of a DC sweep: `start + i * step` for `i` in `0..n`, where
@@ -299,7 +421,7 @@ pub fn parse_netlist(json: &str) -> Result<Netlist, Error> {
 
 #[cfg(test)]
 mod tests {
-    use super::sweep_values;
+    use super::{AcSweep, MAX_AC_POINTS, ac_frequencies, sweep_values};
 
     #[test]
     fn sweep_values_hit_stop() {
@@ -320,5 +442,76 @@ mod tests {
     #[test]
     fn sweep_values_descend() {
         assert_eq!(sweep_values(1.0, 0.0, -0.25), [1.0, 0.75, 0.5, 0.25, 0.0]);
+    }
+
+    fn close(a: f64, b: f64) -> bool {
+        (a - b).abs() <= 1e-12 * b.abs()
+    }
+
+    #[test]
+    fn ac_frequencies_dec_whole_decades() {
+        let f = ac_frequencies(AcSweep::Dec, 10, 1.0, 1e7, 1e-3, MAX_AC_POINTS).unwrap_or_default();
+        assert_eq!(f.len(), 71);
+        assert_eq!(f[0], 1.0);
+        assert!(close(f[70], 1e7), "{}", f[70]);
+    }
+
+    #[test]
+    fn ac_frequencies_dec_partial_decade_count() {
+        // m = floor(log10(5e6) * 10) = 66, so 67 points.
+        let f = ac_frequencies(AcSweep::Dec, 10, 1.0, 5e6, 1e-3, MAX_AC_POINTS).unwrap_or_default();
+        assert_eq!(f.len(), 67);
+        assert!(close(f[66], 5e6), "{}", f[66]);
+    }
+
+    #[test]
+    fn ac_frequencies_dec_less_than_decade() {
+        let f =
+            ac_frequencies(AcSweep::Dec, 10, 100.0, 500.0, 1e-3, MAX_AC_POINTS).unwrap_or_default();
+        let delta = 10.0_f64.powf(0.1);
+        let tol = delta * 500.0 * 1e-3;
+        let mut expected = 0;
+        while 100.0 * delta.powi(expected) <= 500.0 + tol {
+            expected += 1;
+        }
+        assert_eq!(f.len(), usize::try_from(expected).unwrap_or(0));
+        assert!(close(f[1] / f[0], delta));
+        assert!(f.last().copied().unwrap_or(f64::INFINITY) <= 500.0 + tol);
+    }
+
+    #[test]
+    fn ac_frequencies_dec_single() {
+        let f = ac_frequencies(AcSweep::Dec, 10, 1e3, 1e3, 1e-3, MAX_AC_POINTS);
+        assert_eq!(f, Some(vec![1e3]));
+    }
+
+    #[test]
+    fn ac_frequencies_oct() {
+        let f = ac_frequencies(AcSweep::Oct, 4, 1.0, 16.0, 1e-3, MAX_AC_POINTS).unwrap_or_default();
+        assert_eq!(f.len(), 17);
+        assert!(close(f[16], 16.0), "{}", f[16]);
+    }
+
+    #[test]
+    fn ac_frequencies_lin() {
+        let f =
+            ac_frequencies(AcSweep::Lin, 11, 0.0, 100.0, 1e-3, MAX_AC_POINTS).unwrap_or_default();
+        assert_eq!(f.len(), 11);
+        for (i, v) in f.iter().enumerate() {
+            assert!(close(*v, 10.0 * i as f64) || (i == 0 && *v == 0.0), "{f:?}");
+        }
+    }
+
+    #[test]
+    fn ac_frequencies_lin_two_points() {
+        let f = ac_frequencies(AcSweep::Lin, 2, 1.0, 2.0, 1e-3, MAX_AC_POINTS);
+        assert_eq!(f, Some(vec![1.0, 2.0]));
+    }
+
+    #[test]
+    fn ac_frequencies_limit() {
+        assert!(ac_frequencies(AcSweep::Dec, 1000, 1.0, 1e9, 1e-3, 5000).is_none());
+        assert!(ac_frequencies(AcSweep::Lin, 100, 0.0, 1.0, 1e-3, 99).is_none());
+        assert!(ac_frequencies(AcSweep::Lin, 100, 0.0, 1.0, 1e-3, 100).is_some());
     }
 }

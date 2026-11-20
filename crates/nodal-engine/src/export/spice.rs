@@ -26,8 +26,23 @@ pub fn to_spice_deck(netlist: &Netlist) -> String {
             | Element::C { name, nodes, value } => {
                 writeln!(deck, "{name} {} {} {value:e}", nodes[0], nodes[1])
             }
-            Element::V { name, nodes, dc } | Element::I { name, nodes, dc } => {
-                writeln!(deck, "{name} {} {} DC {dc:e}", nodes[0], nodes[1])
+            Element::V {
+                name,
+                nodes,
+                dc,
+                ac,
+            }
+            | Element::I {
+                name,
+                nodes,
+                dc,
+                ac,
+            } => {
+                let _ = write!(deck, "{name} {} {} DC {dc:e}", nodes[0], nodes[1]);
+                if let Some(ac) = ac {
+                    let _ = write!(deck, " AC {:e} {:e}", ac.mag, ac.phase);
+                }
+                writeln!(deck)
             }
             Element::E {
                 name,
@@ -153,6 +168,12 @@ pub fn to_spice_deck(netlist: &Netlist) -> String {
                 stop,
                 step,
             } => writeln!(deck, ".dc {source} {start:e} {stop:e} {step:e}"),
+            Analysis::Ac {
+                sweep,
+                points,
+                fstart,
+                fstop,
+            } => writeln!(deck, ".ac {} {points} {fstart:e} {fstop:e}", sweep.as_str()),
         };
     }
     deck.push_str(".end\n");
@@ -187,6 +208,24 @@ H1 h 0 V1 1e2
 F1 f 0 V1 3e0
 .options temp=2.7e1 reltol=1e-3 vntol=1e-6 abstol=1e-12 chgtol=1e-14 gmin=1e-12
 .op
+.end
+";
+        assert_eq!(to_spice_deck(&netlist), expected);
+        Ok(())
+    }
+
+    #[test]
+    fn deck_for_ac() -> Result<(), Box<dyn Error>> {
+        let netlist = parse_netlist(include_str!(
+            "../../../../packages/schema/fixtures/ir/valid/ac.json"
+        ))?;
+        let expected = "\
+RC low-pass with AC sources
+V1 in 0 DC 0e0 AC 1e0 0e0
+R1 in out 1e3
+C1 out 0 1e-6
+I1 0 out DC 0e0 AC 1e-3 9e1
+.ac dec 10 1e0 1e7
 .end
 ";
         assert_eq!(to_spice_deck(&netlist), expected);

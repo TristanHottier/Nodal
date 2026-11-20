@@ -80,7 +80,7 @@ const NEEDLES: &[(&str, &str)] = &[
     ("ir-version-2", "irVersion must be 1"),
     ("unknown-field", "unknown field `bogus`"),
     ("unknown-kind", "unknown variant `X`"),
-    ("unsupported-analysis", "unknown variant `ac`"),
+    ("unsupported-analysis", "unknown variant `tran`"),
     ("analysis-extra-field", "unknown field `x`"),
     ("empty-elements", "elements must not be empty"),
     ("empty-analyses", "analyses must not be empty"),
@@ -156,6 +156,25 @@ const NEEDLES: &[(&str, &str)] = &[
         "dc-step-misses-stop",
         "analysis dc: step 0.3 does not reach stop 1 from start 0",
     ),
+    ("ac-mag-infinite", "number out of range"),
+    (
+        "ac-dec-zero-fstart",
+        "analysis ac: fstart must be > 0 for dec",
+    ),
+    (
+        "ac-fstop-below-fstart",
+        "analysis ac: fstop 10 is below fstart 1000",
+    ),
+    ("ac-zero-points", "analysis ac: points must be at least 1"),
+    (
+        "ac-lin-one-point-range",
+        "analysis ac: lin with one point needs fstart equal to fstop",
+    ),
+    (
+        "ac-too-many-points",
+        "analysis ac: sweep has more than 1000000 points",
+    ),
+    ("ac-unknown-sweep", "unknown variant `log`"),
     ("nodeset-unknown-node", "nodeset: unknown node zz"),
     (
         "temp-not-27",
