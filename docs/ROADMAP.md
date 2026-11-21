@@ -4,7 +4,7 @@ Status legend: **done** · **in progress** · **not started**
 
 A milestone is done only when every exit criterion is met and CI is green. Status changes in the same commit that meets the last criterion.
 
-The engine comes first: the editor is only useful once the numbers it shows can be trusted. M5 (editor) has no engine dependency and may start in parallel with M3 or M4.
+The engine comes first: the editor is only useful once the numbers it shows can be trusted. M5a and M5b (the editor) have no engine dependency and may run in parallel with the engine milestones.
 
 ## v1 milestones
 
@@ -48,17 +48,23 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4482628599
 - LTE-based step control (ported from ngspice `cktterr.c`); `uic`; switch hysteresis, with step rejection and crossing location at each threshold crossing.
 - MOSFET bulk junction diodes with saturation current (IS) and forward-biased bulk, as in ngspice `mos1load.c`. The DC, AC and transient loading is done (devices.md §3); bulk junction capacitances are not supported.
 
-
 **Exit:** circuits T1–T6 pass with both `trap` and `gear`.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44867024382 at 9ddee70 (rust job green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/44867024382/job/136732857420) runs the transient closed-form tests and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/44867024382/artifacts/14692261605) shows T1–T6 passing against ngspice-42 with `trap` and `gear`. The T4 and T6 circuits differ from their first drafts (a gate resistor, `tmax`, `RON`); the reasons are in [VALIDATION.md](VALIDATION.md) §4.
 
-### M5 — Schematic editor · not started
+M5 is split in two. M5a draws schematics; M5b turns them into circuits that can be saved and netlisted.
+
+### M5a — Schematic canvas · not started
 - SVG canvas: grid, zoom, pan, selection, move, rotate, mirror, delete, copy/paste.
 - IEC symbols for every v1 device, plus ground and net label.
-- Orthogonal wire drawing; junction dots; connectivity rules from ARCHITECTURE §6.1.
+- Orthogonal wire drawing with junction dots, following the drawing rules of ARCHITECTURE §6.1 (a dot at every T-junction, none at a plain crossing).
+- Undo/redo for every edit.
+
+**Exit:** every v1 device, ground and net label can be placed, moved, rotated, mirrored, copied and deleted, and wired on the grid; component tests cover each edit and its undo/redo; junction-dot tests cover T-junctions and crossings; the Pages build shows the editor.
+
+### M5b — Schematic data and netlister · not started
 - Parameter inspector with value-notation parsing ([ADR 0009](adr/0009-value-notation.md)).
-- Undo/redo; IndexedDB autosave; `.nodal.json` import/export.
-- Netlister with diagnostics.
+- Netlister with diagnostics, using the connectivity rules of ARCHITECTURE §6.1.
+- IndexedDB autosave; `.nodal.json` import/export.
 
 **Exit:** every reference circuit in `validation/circuits/` can be drawn in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires.
 
