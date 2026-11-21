@@ -1,0 +1,201 @@
+import type { Part, Schematic } from "@nodal/schema";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { EditorProvider } from "../EditorContext";
+import { createEditorStore } from "../store";
+import { Canvas } from "./Canvas";
+
+const R1: Part = {
+  id: "R1",
+  type: "resistor",
+  name: "R1",
+  x: 10,
+  y: 10,
+  rotation: 0,
+  mirror: false,
+  params: { value: "1k" },
+};
+
+// R1 pins at (10,7) and (10,13); three wires end on the (10,13) pin: a junction.
+const DOC: Schematic = {
+  parts: [R1],
+  wires: [
+    {
+      id: "wA",
+      points: [
+        { x: 10, y: 13 },
+        { x: 20, y: 13 },
+      ],
+    },
+    {
+      id: "wB",
+      points: [
+        { x: 10, y: 13 },
+        { x: 10, y: 20 },
+      ],
+    },
+    {
+      id: "wC",
+      points: [
+        { x: 0, y: 13 },
+        { x: 10, y: 13 },
+      ],
+    },
+  ],
+  labels: [{ id: "L1", text: "VDD", x: 30, y: 30, rotation: 0 }],
+};
+
+let store: ReturnType<typeof createEditorStore>;
+
+function setup() {
+  store = createEditorStore({ doc: DOC });
+  render(
+    <EditorProvider store={store}>
+      <Canvas />
+    </EditorProvider>,
+  );
+  return screen.getByTestId("schematic-canvas");
+}
+
+const at = (wx: number, wy: number) => ({ clientX: wx * 10, clientY: wy * 10 });
+const ptr = { pointerId: 1, button: 0 };
+
+let svg: HTMLElement;
+beforeEach(() => {
+  svg = setup();
+});
+afterEach(cleanup);
+
+describe("Canvas", () => {
+  it("renders_parts_wires_dots", () => {
+    expect(screen.getByTestId("part-R1")).toBeTruthy();
+    expect(screen.getByTestId("wire-wA")).toBeTruthy();
+    expect(screen.getByTestId("label-L1").textContent).toContain("VDD");
+    const dots = screen.getAllByTestId("junction");
+    expect(dots).toHaveLength(1);
+    expect(dots[0]?.getAttribute("data-x")).toBe("10");
+    expect(dots[0]?.getAttribute("data-y")).toBe("13");
+  });
+
+  it("click_selects", () => {
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(10, 10) });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(10, 10) });
+    expect(store.getState().selection).toEqual(["R1"]);
+    expect(screen.getByTestId("part-R1").getAttribute("data-selected")).toBe("true");
+    expect(screen.getByTestId("part-R1").classList.contains("selected")).toBe(true);
+  });
+
+  it("shift_click_toggles", () => {
+    store.getState().select(["wA"]);
+    const part = screen.getByTestId("part-R1");
+    fireEvent.pointerDown(part, { ...ptr, ...at(10, 10), shiftKey: true });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(10, 10), shiftKey: true });
+    expect([...store.getState().selection].sort()).toEqual(["R1", "wA"]);
+    fireEvent.pointerDown(part, { ...ptr, ...at(10, 10), shiftKey: true });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(10, 10), shiftKey: true });
+    expect(store.getState().selection).toEqual(["wA"]);
+  });
+
+  it("click_empty_clears", () => {
+    store.getState().select(["R1"]);
+    fireEvent.pointerDown(svg, { ...ptr, ...at(50, 50) });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(50, 50) });
+    expect(store.getState().selection).toEqual([]);
+  });
+
+  it("box_select", () => {
+    fireEvent.pointerDown(svg, { ...ptr, ...at(8, 6) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(12, 14) });
+    expect(screen.getByTestId("selection-box")).toBeTruthy();
+    fireEvent.pointerUp(svg, { ...ptr, ...at(12, 14) });
+    expect(store.getState().selection).toEqual(["R1"]);
+    expect(screen.queryByTestId("selection-box")).toBeNull();
+    // Shift adds: a box around the label.
+    fireEvent.pointerDown(svg, { ...ptr, ...at(29, 28), shiftKey: true });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(36, 32), shiftKey: true });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(36, 32), shiftKey: true });
+    expect([...store.getState().selection].sort()).toEqual(["L1", "R1"]);
+  });
+
+  it("drag_moves_and_commits_once", () => {
+    const part = screen.getByTestId("part-R1");
+    fireEvent.pointerDown(part, { ...ptr, ...at(10, 10) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(12, 11) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(13, 12) });
+    // Live preview, nothing committed yet.
+    expect(part.getAttribute("transform")).toContain("translate(13 12)");
+    expect(store.getState().past).toHaveLength(0);
+    fireEvent.pointerUp(svg, { ...ptr, ...at(13, 12) });
+    expect(store.getState().past).toHaveLength(1);
+    expect(store.getState().doc.parts[0]).toMatchObject({ x: 13, y: 12 });
+    expect(store.getState().selection).toEqual(["R1"]);
+  });
+
+  it("zero_drag_adds_no_history", () => {
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(10, 10) });
+    fireEvent.pointerMove(svg, { clientX: 102, clientY: 101, ...ptr });
+    fireEvent.pointerUp(svg, { clientX: 102, clientY: 101, ...ptr });
+    expect(store.getState().past).toHaveLength(0);
+    expect(store.getState().doc).toBe(DOC);
+  });
+
+  it("escape_cancels_drag", () => {
+    const part = screen.getByTestId("part-R1");
+    fireEvent.pointerDown(part, { ...ptr, ...at(10, 10) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(15, 15) });
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(15, 15) });
+    expect(store.getState().past).toHaveLength(0);
+    expect(store.getState().doc).toBe(DOC);
+    expect(screen.getByTestId("part-R1").getAttribute("transform")).toContain("translate(10 10)");
+  });
+
+  it("escape_cancels_box_select", () => {
+    fireEvent.pointerDown(svg, { ...ptr, ...at(8, 6) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(12, 14) });
+    fireEvent.keyDown(window, { key: "Escape" });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(12, 14) });
+    expect(store.getState().selection).toEqual([]);
+    expect(screen.queryByTestId("selection-box")).toBeNull();
+  });
+
+  it("wheel_zooms_about_cursor", () => {
+    fireEvent.wheel(svg, { deltaY: -100, ...at(10, 10) });
+    const v = store.getState().view;
+    expect(v.zoom).toBeCloseTo(1.1, 9);
+    expect(v.x + 10 * 10 * v.zoom).toBeCloseTo(100, 9);
+    expect(v.y + 10 * 10 * v.zoom).toBeCloseTo(100, 9);
+    fireEvent.wheel(svg, { deltaY: 100, ...at(10, 10) });
+    expect(store.getState().view.zoom).toBeCloseTo(1, 9);
+  });
+
+  it("space_drag_pans", () => {
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.pointerDown(svg, { ...ptr, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(svg, { ...ptr, clientX: 80, clientY: 70 });
+    fireEvent.pointerUp(svg, { ...ptr, clientX: 80, clientY: 70 });
+    fireEvent.keyUp(window, { key: " " });
+    expect(store.getState().view).toMatchObject({ x: 30, y: 20, zoom: 1 });
+    expect(store.getState().selection).toEqual([]);
+  });
+
+  it("middle_drag_pans", () => {
+    fireEvent.pointerDown(svg, { pointerId: 1, button: 1, clientX: 50, clientY: 50 });
+    fireEvent.pointerMove(svg, { pointerId: 1, clientX: 40, clientY: 45 });
+    fireEvent.pointerUp(svg, { pointerId: 1, button: 1, clientX: 40, clientY: 45 });
+    expect(store.getState().view).toMatchObject({ x: -10, y: -5 });
+  });
+
+  it("click_after_pan_at_zoom_extremes_hits_grid_point", () => {
+    store.getState().setView({ x: 37, y: -53, zoom: 8 });
+    // Drag preview uses the snapped world delta: move by exactly (1,1) grid = 80 px.
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), {
+      ...ptr,
+      clientX: 37 + 800,
+      clientY: -53 + 800,
+    });
+    fireEvent.pointerMove(svg, { ...ptr, clientX: 37 + 880, clientY: -53 + 880 });
+    fireEvent.pointerUp(svg, { ...ptr, clientX: 37 + 880, clientY: -53 + 880 });
+    expect(store.getState().doc.parts[0]).toMatchObject({ x: 11, y: 11 });
+  });
+});
