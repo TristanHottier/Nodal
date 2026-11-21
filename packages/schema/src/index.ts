@@ -11,8 +11,14 @@ export type {
   Netlist,
   NetlistElement,
   NetlistModel,
+  IntegrationMethod,
   ParseResult,
+  PulseWaveform,
+  PwlWaveform,
   SimOptions,
+  SinWaveform,
+  TranAnalysis,
+  Waveform,
 } from "./ir";
 export { PARAM_SPECS } from "./models";
 export type { ParamRange, ParamSpec } from "./models";

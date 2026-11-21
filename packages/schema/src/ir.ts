@@ -1,5 +1,5 @@
 // Netlist IR (version 1). Mirrors crates/nodal-engine/src/ir; both validate
-// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V17 are
+// the same fixtures in packages/schema/fixtures/ir. Rules V1 to V21 are
 // listed in the engine's validate.rs and models.rs.
 import { z } from "zod";
 import type { AcSweep } from "./ac";
@@ -26,16 +26,56 @@ const elementName = z.string();
 /** Small-signal source value: magnitude and phase in degrees. */
 const acSpec = z.strictObject({ mag: finite, phase: finite.default(0) });
 
+/** Time-domain waveform of an independent source, used by the `tran` analysis. */
+const waveform = z.discriminatedUnion("type", [
+  z.strictObject({
+    type: z.literal("pulse"),
+    v1: z.number(),
+    v2: z.number(),
+    td: z.number().default(0),
+    tr: z.number(),
+    tf: z.number(),
+    pw: z.number(),
+    per: z.number(),
+  }),
+  z.strictObject({
+    type: z.literal("sin"),
+    vo: z.number(),
+    va: z.number(),
+    freq: z.number(),
+    td: z.number().default(0),
+    theta: z.number().default(0),
+    phase: z.number().default(0),
+  }),
+  /** `[time, value]` pairs. */
+  z.strictObject({ type: z.literal("pwl"), points: z.array(z.tuple([z.number(), z.number()])) }),
+]);
+
+const integrationMethod = z.enum(["trap", "gear"]);
+
 const element = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("R"), name: elementName, nodes: nodePair, value: finite }),
-  z.strictObject({ kind: z.literal("L"), name: elementName, nodes: nodePair, value: finite }),
-  z.strictObject({ kind: z.literal("C"), name: elementName, nodes: nodePair, value: finite }),
+  z.strictObject({
+    kind: z.literal("L"),
+    name: elementName,
+    nodes: nodePair,
+    value: finite,
+    ic: optional(finite),
+  }),
+  z.strictObject({
+    kind: z.literal("C"),
+    name: elementName,
+    nodes: nodePair,
+    value: finite,
+    ic: optional(finite),
+  }),
   z.strictObject({
     kind: z.literal("V"),
     name: elementName,
     nodes: nodePair,
     dc: finite.default(0),
     ac: optional(acSpec),
+    tran: optional(waveform),
   }),
   z.strictObject({
     kind: z.literal("I"),
@@ -43,6 +83,7 @@ const element = z.discriminatedUnion("kind", [
     nodes: nodePair,
     dc: finite.default(0),
     ac: optional(acSpec),
+    tran: optional(waveform),
   }),
   z.strictObject({
     kind: z.literal("E"),
@@ -113,6 +154,14 @@ const analysis = z.discriminatedUnion("type", [
     fstart: z.number(),
     fstop: z.number(),
   }),
+  z.strictObject({
+    type: z.literal("tran"),
+    tstep: z.number(),
+    tstop: z.number(),
+    tstart: z.number().default(0),
+    tmax: optional(z.number()),
+    uic: z.boolean().default(false),
+  }),
 ]);
 
 /** Largest allowed number of points in a DC or AC sweep. */
@@ -125,6 +174,8 @@ const options = z.strictObject({
   abstol: optional(finite),
   chgtol: optional(finite),
   gmin: optional(finite),
+  method: optional(integrationMethod),
+  trtol: optional(finite),
 });
 
 const ELEMENT_NAME = /^[RLCVIEGHFDQMS][A-Za-z0-9_]*$/;
@@ -271,6 +322,64 @@ function checkAc(a: AcAnalysis, reltol: number): string | undefined {
   return undefined;
 }
 
+/** V18: a source waveform has finite, in-range parameters. */
+function checkWaveform(name: string, w: Waveform): string | undefined {
+  const bad = (kind: string, key: string, v: number, ok: boolean, rel: string) =>
+    Number.isFinite(v) && ok
+      ? undefined
+      : `element ${name}: ${kind} ${key} must be finite and ${rel}, got ${String(v)}`;
+  if (w.type === "pulse") {
+    return (
+      bad("pulse", "v1", w.v1, true, "any") ??
+      bad("pulse", "v2", w.v2, true, "any") ??
+      bad("pulse", "td", w.td, w.td >= 0, ">= 0") ??
+      bad("pulse", "tr", w.tr, w.tr > 0, "> 0") ??
+      bad("pulse", "tf", w.tf, w.tf > 0, "> 0") ??
+      bad("pulse", "pw", w.pw, w.pw >= 0, ">= 0") ??
+      bad("pulse", "per", w.per, w.per > 0, "> 0")
+    );
+  }
+  if (w.type === "sin") {
+    return (
+      bad("sin", "vo", w.vo, true, "any") ??
+      bad("sin", "va", w.va, true, "any") ??
+      bad("sin", "freq", w.freq, w.freq > 0, "> 0") ??
+      bad("sin", "td", w.td, w.td >= 0, ">= 0") ??
+      bad("sin", "theta", w.theta, w.theta >= 0, ">= 0") ??
+      bad("sin", "phase", w.phase, true, "any")
+    );
+  }
+  if (w.points.length === 0) return `element ${name}: pwl needs at least one point`;
+  let last = Number.NEGATIVE_INFINITY;
+  for (const [t, v] of w.points) {
+    if (!(Number.isFinite(t) && Number.isFinite(v))) {
+      return `element ${name}: pwl points must be finite`;
+    }
+    if (t < 0) return `element ${name}: pwl times must be >= 0, got ${String(t)}`;
+    if (t <= last) return `element ${name}: pwl times must be strictly increasing`;
+    last = t;
+  }
+  return undefined;
+}
+
+/** V20: a tran analysis has a positive step and a stop above the start. */
+function checkTran(a: TranAnalysis): string | undefined {
+  const { tstep, tstop, tstart, tmax } = a;
+  if (!(Number.isFinite(tstep) && tstep > 0)) {
+    return `analysis tran: tstep must be finite and > 0, got ${String(tstep)}`;
+  }
+  if (!(Number.isFinite(tstart) && tstart >= 0)) {
+    return `analysis tran: tstart must be finite and >= 0, got ${String(tstart)}`;
+  }
+  if (!(Number.isFinite(tstop) && tstop > tstart)) {
+    return `analysis tran: tstop ${String(tstop)} must be above tstart ${String(tstart)}`;
+  }
+  if (tmax !== undefined && !(Number.isFinite(tmax) && tmax > 0)) {
+    return `analysis tran: tmax must be finite and > 0, got ${String(tmax)}`;
+  }
+  return undefined;
+}
+
 /** Cross-field rules. Stops at the first violated rule, like the Rust validator. */
 function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
   const fail = (message: string, path: (string | number)[] = []): false => {
@@ -343,6 +452,15 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
     if (e.kind === "V" || e.kind === "I") {
       if (!Number.isFinite(e.dc)) return fail(`element ${e.name}: dc must be finite`, at);
     }
+    // V18
+    if ((e.kind === "V" || e.kind === "I") && e.tran) {
+      const issue = checkWaveform(e.name, e.tran);
+      if (issue) return fail(issue, at);
+    }
+    // V19
+    if ((e.kind === "L" || e.kind === "C") && e.ic !== undefined && !Number.isFinite(e.ic)) {
+      return fail(`element ${e.name}: ic must be finite`, at);
+    }
     if (e.kind === "M") {
       for (const [key, v] of [
         ["w", e.w],
@@ -413,11 +531,22 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
       }
     }
   }
+  // V21
+  if (o?.trtol !== undefined && !(Number.isFinite(o.trtol) && o.trtol > 0)) {
+    return fail(`option trtol must be finite and > 0, got ${String(o.trtol)}`, ["options"]);
+  }
   // V17
   const reltol = o?.reltol ?? DEFAULT_RELTOL;
   for (const [i, a] of n.analyses.entries()) {
     if (a.type === "ac") {
       const issue = checkAc(a, reltol);
+      if (issue) return fail(issue, ["analyses", i]);
+    }
+  }
+  // V20
+  for (const [i, a] of n.analyses.entries()) {
+    if (a.type === "tran") {
+      const issue = checkTran(a);
       if (issue) return fail(issue, ["analyses", i]);
     }
   }
@@ -433,6 +562,12 @@ export type NetlistElement = Netlist["elements"][number];
 export type Analysis = Netlist["analyses"][number];
 export type DcAnalysis = Extract<Analysis, { type: "dc" }>;
 export type AcAnalysis = Extract<Analysis, { type: "ac" }>;
+export type TranAnalysis = Extract<Analysis, { type: "tran" }>;
+export type Waveform = z.infer<typeof waveform>;
+export type PulseWaveform = Extract<Waveform, { type: "pulse" }>;
+export type SinWaveform = Extract<Waveform, { type: "sin" }>;
+export type PwlWaveform = Extract<Waveform, { type: "pwl" }>;
+export type IntegrationMethod = z.infer<typeof integrationMethod>;
 export type AcSpec = z.infer<typeof acSpec>;
 export type { AcSweep };
 export type NetlistModel = Netlist["models"][number];

@@ -113,6 +113,15 @@ const NEEDLES: [string, string][] = [
   ["ac-zero-points", "analysis ac: points must be at least 1"],
   ["ac-lin-one-point-range", "analysis ac: lin with one point needs fstart equal to fstop"],
   ["ac-too-many-points", "analysis ac: sweep has more than 1000000 points"],
+  ["tran-pulse-zero-rise", "element V1: pulse tr must be finite and > 0, got 0"],
+  ["tran-sin-zero-freq", "element V1: sin freq must be finite and > 0, got 0"],
+  ["tran-pwl-decreasing", "element V1: pwl times must be strictly increasing"],
+  ["tran-pwl-empty", "element V1: pwl needs at least one point"],
+  // 1e999 parses to Infinity, which the finite-number check rejects.
+  ["tran-ic-infinite", "must be a finite number"],
+  ["tran-tstop-before-tstart", "analysis tran: tstop 0.001 must be above tstart 0.002"],
+  ["tran-zero-tstep", "analysis tran: tstep must be finite and > 0, got 0"],
+  ["tran-trtol-zero", "option trtol must be finite and > 0, got 0"],
   ["nodeset-unknown-node", "nodeset: unknown node zz"],
   ["temp-not-27", "option temp must be 27 (temperature is fixed in v1)"],
   ["bad-option", "option reltol must be finite and > 0"],
@@ -132,6 +141,8 @@ describe("message needles from the Rust tests", () => {
       "analysis-extra-field",
       "infinite-value",
       "ac-unknown-sweep",
+      "tran-unknown-method",
+      "tran-unknown-waveform",
     ];
     const onDisk = jsonFiles(join(fixtures, "invalid")).map((p) => basename(p, ".json"));
     expect(onDisk.filter((n) => !listed.has(n) && !serdeOnly.includes(n))).toEqual([]);
