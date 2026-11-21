@@ -464,3 +464,35 @@ fn no_equalising_step_before_a_breakpoint() -> TestResult {
     }
     Ok(())
 }
+
+/// A saturating NPN switch driven through 10 kOhm by a 5 V edge of 10 ns at
+/// 1 us. The edge forces steps of a few 1e-13 s, where the charge current
+/// `a0 (q - q_n)` is only known to within the rounding of the charges times
+/// `a0`; the convergence test of the junction devices must allow for that
+/// or Newton never converges ("time step too small").
+#[test]
+fn bjt_switch_edge_runs_to_tstop() -> TestResult {
+    for method in METHODS {
+        let text = format!(
+            r#"{{"irVersion":1,"elements":[
+            {{"kind":"V","name":"VIN","nodes":["in","0"],"dc":0,"tran":{{"type":"pwl","points":[[0,0],[1e-6,0],[1.01e-6,5],[5e-6,5],[5.01e-6,0],[1e-5,0]]}}}},
+            {{"kind":"R","name":"RB","nodes":["in","b"],"value":10000}},
+            {{"kind":"Q","name":"Q1","nodes":["c","b","0"],"model":"QN"}},
+            {{"kind":"R","name":"RC","nodes":["vcc","c"],"value":1000}},
+            {{"kind":"V","name":"VCC","nodes":["vcc","0"],"dc":5}}],
+            "models":[{{"name":"QN","type":"NPN","params":{{"BF":100,"TF":3e-10,"TR":1e-8,"CJE":2e-12,"CJC":1e-12}}}}],
+            "analyses":[{{"type":"tran","tstep":1e-8,"tstop":1e-5}}],
+            "options":{{"temp":27,{OPTIONS},"method":"{method}"}}}}"#
+        );
+        let r = run_tran(&text)?;
+        assert_eq!(r.time.last().copied(), Some(1e-5), "{method}");
+        // Saturated while the input is high, cut off after the falling edge.
+        let at = |t: f64| -> Result<f64, Box<dyn Error>> {
+            let k = r.time.iter().position(|&x| x >= t).ok_or("no point")?;
+            Ok(series(&r, "c")?[k])
+        };
+        assert!(at(4e-6)? < 0.3, "{method}: collector {}", at(4e-6)?);
+        assert!(at(9e-6)? > 4.9, "{method}: collector {}", at(9e-6)?);
+    }
+    Ok(())
+}

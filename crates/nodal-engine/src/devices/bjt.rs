@@ -246,6 +246,16 @@ impl Bjt {
     }
 }
 
+/// Rounding allowance of a charge current `a0 (q - q_n) - ...` (see
+/// `Diode::converged`): `a0` times the rounding of the charges, enlarged by
+/// the evaluation of the junction exponential.
+fn charge_noise(c: &crate::analysis::integrate::Coeffs, q: f64, q_n: f64) -> f64 {
+    CHARGE_NOISE * f64::EPSILON * c.ag()[0].abs() * (q.abs() + q_n.abs())
+}
+
+/// Number of machine epsilons of relative error assumed in a junction charge.
+const CHARGE_NOISE: f64 = 32.0;
+
 impl Bjt {
     /// Transient charge block of `bjtload.c`: integrates `Qbe` and `Qbc` at
     /// the physical junction voltages `(vbe, vbc)`, writing the charges and
@@ -264,7 +274,7 @@ impl Bjt {
         vbc: f64,
         state: &mut [f64],
         e: &mut BjtEval,
-    ) -> Result<(), Error> {
+    ) -> Result<(f64, f64), Error> {
         let s = self.sign;
         let q = charges(s * vbe, s * vbc, &self.params);
         match state.get_mut(S_QBE..S_QBE + 4) {
@@ -284,7 +294,11 @@ impl Bjt {
         e.dib_dvbe += geq_be;
         e.dib_dvbc += geq_bc + geqcb;
         e.dic_dvbc -= geq_bc;
-        Ok(())
+        let hist = |slot: usize| tran.hist[0].get(slot).copied().unwrap_or(0.0);
+        Ok((
+            charge_noise(&tran.coeffs, q.qbe, hist(S_QBE)),
+            charge_noise(&tran.coeffs, q.qbc, hist(S_QBC)),
+        ))
     }
 }
 
@@ -442,21 +456,25 @@ impl Device for Bjt {
         // the recomputed currents include the charge currents at the new
         // voltages. The integrator writes the charge current slots, hence a
         // scratch copy of the state.
+        // The charge current `a0 (q - q_n)` cannot be resolved below the
+        // rounding of the charges times `a0`, which grows as 1 / h. Without
+        // this allowance a step of a few 1e-13 s (after a sharp edge) never
+        // passes, because the junction voltages jitter by an ulp between
+        // iterations.
+        let (mut noise_be, mut noise_bc) = (0.0, 0.0);
         if let Some(tran) = &ctx.tran {
             let mut scratch = [0.0; STATE_LEN];
             let Some(src) = state.get(..STATE_LEN) else {
                 return true;
             };
             scratch.copy_from_slice(src);
-            if self
-                .add_charges(tran, new_be, new_bc, &mut scratch, &mut e)
-                .is_err()
-            {
-                return false;
+            match self.add_charges(tran, new_be, new_bc, &mut scratch, &mut e) {
+                Ok((nbe, nbc)) => (noise_be, noise_bc) = (nbe, nbc),
+                Err(_) => return false,
             }
         }
-        let tol_c = ctx.reltol * cc_hat.abs().max(e.ic.abs()) + ctx.abstol;
-        let tol_b = ctx.reltol * cb_hat.abs().max(e.ib.abs()) + ctx.abstol;
+        let tol_c = ctx.reltol * cc_hat.abs().max(e.ic.abs()) + ctx.abstol + noise_bc;
+        let tol_b = ctx.reltol * cb_hat.abs().max(e.ib.abs()) + ctx.abstol + noise_be + noise_bc;
         (cc_hat - e.ic).abs() <= tol_c && (cb_hat - e.ib).abs() <= tol_b
     }
 }

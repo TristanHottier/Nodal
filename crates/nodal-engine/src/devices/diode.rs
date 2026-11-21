@@ -118,6 +118,10 @@ pub(crate) fn depletion(v: f64, cj: f64, vj: f64, m: f64, fc: f64) -> (f64, f64)
     }
 }
 
+/// Number of machine epsilons of relative error assumed in a junction charge,
+/// for the convergence allowance of the charge current.
+const CHARGE_NOISE: f64 = 32.0;
+
 /// State layout: junction voltage, current, conductance (in a transient step
 /// the totals including the charge terms, as `dioload.c`), then the charge `Q_d` and its current.
 const STATE_V: usize = 0;
@@ -173,14 +177,16 @@ impl Diode {
         vd: f64,
         gmin: f64,
         state: &mut [f64],
-    ) -> Result<(f64, f64), Error> {
+    ) -> Result<(f64, f64, f64), Error> {
         let (q, cap) = charge(vd, &self.params, gmin);
         match state.get_mut(STATE_Q) {
             Some(slot) => *slot = q,
             None => return Err(Error::Internal(format!("{}: empty state", self.name))),
         }
         let (geq, _) = integrate(&tran.coeffs, state, tran.hist, STATE_Q, cap)?;
-        Ok((geq, state.get(STATE_Q + 1).copied().unwrap_or(0.0)))
+        let q_n = tran.hist[0].get(STATE_Q).copied().unwrap_or(0.0);
+        let noise = CHARGE_NOISE * f64::EPSILON * tran.coeffs.ag()[0].abs() * (q.abs() + q_n.abs());
+        Ok((geq, state.get(STATE_Q + 1).copied().unwrap_or(0.0), noise))
     }
 }
 
@@ -233,7 +239,7 @@ impl Device for Diode {
         // first step.
         if let Some(tran) = &ctx.tran {
             match self.add_charge(tran, vd, ctx.gmin, state) {
-                Ok((geq, i_q)) => {
+                Ok((geq, i_q, _)) => {
                     gd += geq;
                     id += i_q;
                 }
@@ -296,6 +302,11 @@ impl Device for Diode {
         let vnew = volt(x, self.prime) - volt(x, self.cathode);
         let predicted = id + gd * (vnew - vd);
         let (mut recomputed, _) = eval(vnew, &self.params, ctx.gmin);
+        // Rounding allowance of the charge current: `a0` times the rounding
+        // of the charge, which grows as 1 / h. Without it a step of a few
+        // 1e-13 s after a sharp edge never passes, because the junction
+        // voltage jitters by an ulp between iterations.
+        let mut noise = 0.0;
         // In a transient step the stored values are totals (see `load`), so
         // the recomputed current includes the charge current at the new
         // voltage, integrated on a scratch copy of the state.
@@ -306,11 +317,14 @@ impl Device for Diode {
             };
             scratch.copy_from_slice(src);
             match self.add_charge(tran, vnew, ctx.gmin, &mut scratch) {
-                Ok((_, i_q)) => recomputed += i_q,
+                Ok((_, i_q, n)) => {
+                    recomputed += i_q;
+                    noise = n;
+                }
                 Err(_) => return false,
             }
         }
-        let tol = ctx.reltol * predicted.abs().max(recomputed.abs()) + ctx.abstol;
+        let tol = ctx.reltol * predicted.abs().max(recomputed.abs()) + ctx.abstol + noise;
         (predicted - recomputed).abs() <= tol
     }
 }
