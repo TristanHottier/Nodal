@@ -173,6 +173,34 @@ describe("rotate and mirror", () => {
     }
   });
 
+  it("rotate_selected_wire_follows", () => {
+    const d: Schematic = {
+      parts: [part({})],
+      wires: [wire("w", p(4, 13), p(10, 13))],
+      labels: [],
+    };
+    const r = rotateItems(d, ["r1", "w"]);
+    const pin = pinPositions(r.parts[0] as Part)[1]?.at;
+    expect(r.wires[0]?.points.at(-1)).toEqual(pin);
+    expectOrthogonal(r);
+  });
+
+  it("rotate_wire_between_two_pins_of_same_part", () => {
+    const part1 = part({});
+    const [top, bottom] = pinPositions(part1).map((q) => q.at);
+    if (!top || !bottom) throw new Error("pins");
+    const d: Schematic = {
+      parts: [part1],
+      wires: [wire("w", top, p(top.x - 4, top.y), p(bottom.x - 4, bottom.y), bottom)],
+      labels: [],
+    };
+    const r = rotateItems(d, ["r1", "w"]);
+    const pins = pinPositions(r.parts[0] as Part).map((q) => q.at);
+    expect(r.wires[0]?.points[0]).toEqual(pins[0]);
+    expect(r.wires[0]?.points.at(-1)).toEqual(pins[1]);
+    expectOrthogonal(r);
+  });
+
   it("mirror_toggles", () => {
     const d: Schematic = {
       parts: [part({})],

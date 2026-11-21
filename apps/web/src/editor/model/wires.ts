@@ -1,7 +1,8 @@
 // Wire polyline helpers. Wires stay orthogonal: following a moved end adds a bend.
 import type { Point } from "@nodal/schema";
 
-const same = (a: Point, b: Point): boolean => a.x === b.x && a.y === b.y;
+export const samePoint = (a: Point, b: Point): boolean => a.x === b.x && a.y === b.y;
+export const copyPoint = (p: Point): Point => ({ x: p.x, y: p.y });
 
 function cross(a: Point, b: Point, c: Point): number {
   return (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
@@ -9,12 +10,12 @@ function cross(a: Point, b: Point, c: Point): number {
 
 /** Drops repeated and collinear middle points; `null` if fewer than two points remain. */
 export function normalizeWire(points: readonly Point[]): Point[] | null {
-  let cur = points.map((p) => ({ x: p.x, y: p.y }));
+  let cur = points.map(copyPoint);
   for (;;) {
     const next: Point[] = [];
     for (const p of cur) {
       const last = next[next.length - 1];
-      if (last && same(last, p)) continue;
+      if (last && samePoint(last, p)) continue;
       const prev = next[next.length - 2];
       if (prev && last && cross(prev, last, p) === 0) next.pop();
       next.push(p);

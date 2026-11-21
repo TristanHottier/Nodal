@@ -13,7 +13,7 @@ import { produce } from "immer";
 import { SYMBOLS } from "../../symbols/catalog";
 import { pinPositions, rotateCw } from "../geometry";
 import { nextLabelText, nextName } from "./naming";
-import { followEnd, normalizeWire } from "./wires";
+import { copyPoint, followEnd, normalizeWire, samePoint } from "./wires";
 
 export interface Clip {
   parts: Part[];
@@ -25,9 +25,6 @@ interface Displacement {
   from: Point;
   to: Point;
 }
-
-const same = (a: Point, b: Point): boolean => a.x === b.x && a.y === b.y;
-const plain = (p: Point): Point => ({ x: p.x, y: p.y });
 
 export function addPart(
   doc: Schematic,
@@ -72,11 +69,12 @@ export function addWire(doc: Schematic, id: string, points: Point[]): Schematic 
  */
 function followWires(d: Schematic, selected: ReadonlySet<string>, moves: Displacement[]): void {
   if (moves.length === 0) return;
-  const find = (at: Point | undefined) => (at ? moves.find((m) => same(m.from, at)) : undefined);
+  const find = (at: Point | undefined) =>
+    at ? moves.find((m) => samePoint(m.from, at)) : undefined;
   const removed = new Set<string>();
   for (const w of d.wires) {
     if (selected.has(w.id)) continue;
-    const pts = w.points.map(plain);
+    const pts = w.points.map(copyPoint);
     const first = pts[0];
     const last = pts[pts.length - 1];
     const ms = find(first);
@@ -99,13 +97,14 @@ function followWires(d: Schematic, selected: ReadonlySet<string>, moves: Displac
   if (removed.size > 0) d.wires = d.wires.filter((w) => !removed.has(w.id));
 }
 
+// Relies on pinPositions returning pins in stable catalog order for both parts.
 function pinMoves(before: Part, after: Part): Displacement[] {
   const a = pinPositions(before);
   const b = pinPositions(after);
   const out: Displacement[] = [];
   a.forEach((pin, i) => {
     const to = b[i]?.at;
-    if (to && !same(pin.at, to)) out.push({ from: pin.at, to });
+    if (to && !samePoint(pin.at, to)) out.push({ from: pin.at, to });
   });
   return out;
 }
@@ -165,7 +164,8 @@ function reshapeParts(
         if (sel.has(l.id)) Object.assign(l, mapLabel(l));
       }
     }
-    followWires(d, sel, moves);
+    // Selected wires follow too; only moveItems translates them.
+    followWires(d, new Set(), moves);
   });
 }
 
@@ -204,7 +204,7 @@ export function copyItems(doc: Schematic, ids: readonly string[]): Clip | null {
     parts: doc.parts.filter((p) => sel.has(p.id)).map((p) => ({ ...p, params: { ...p.params } })),
     wires: doc.wires
       .filter((w) => sel.has(w.id))
-      .map((w) => ({ id: w.id, points: w.points.map(plain) })),
+      .map((w) => ({ id: w.id, points: w.points.map(copyPoint) })),
     labels: doc.labels.filter((l) => sel.has(l.id)).map((l) => ({ ...l })),
   };
   return clip.parts.length + clip.wires.length + clip.labels.length === 0 ? null : clip;
