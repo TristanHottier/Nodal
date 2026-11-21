@@ -1,6 +1,6 @@
 // Place tool: a ghost symbol follows the snapped cursor; a click commits it.
 import type { Point } from "@nodal/schema";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LABEL_SYMBOL, SYMBOLS } from "../../symbols/catalog";
 import type { CanvasToolHandlers } from "../canvas/Canvas";
 import { useEditor, useEditorStore } from "../EditorContext";
@@ -30,9 +30,18 @@ export function usePlaceTool(): { handlers: CanvasToolHandlers; overlay: React.R
       onPointerMove(world) {
         setCursor(world);
       },
+      onPointerLeave() {
+        setCursor(null);
+      },
     }),
     [store],
   );
+
+  // A new item has no cursor until the pointer moves over the canvas.
+  const item = tool.kind === "place" ? tool.item : null;
+  useEffect(() => {
+    setCursor(null);
+  }, [item]);
 
   let overlay: React.ReactNode = null;
   if (tool.kind === "place" && cursor) {

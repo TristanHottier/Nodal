@@ -25,6 +25,13 @@ export interface EditorState {
   pasteCount: number;
   tool: Tool;
   view: View;
+  /**
+   * True from the start of a drag or box select until the pointer is released.
+   * Not part of history. Esc that cancels the gesture must not also clear the
+   * selection: see `useCanvasPointer` and `useShortcuts`.
+   */
+  gestureActive: boolean;
+  setGestureActive(active: boolean): void;
   commit(next: Schematic, select?: readonly string[]): void;
   undo(): void;
   redo(): void;
@@ -68,6 +75,7 @@ export function createEditorStore(opts?: {
     pasteCount: 0,
     tool: { kind: "select" },
     view: { x: 0, y: 0, zoom: 1 },
+    gestureActive: false,
     newId,
 
     commit(next, select) {
@@ -107,6 +115,9 @@ export function createEditorStore(opts?: {
     },
     setTool: (tool) => {
       set({ tool });
+    },
+    setGestureActive: (gestureActive) => {
+      if (get().gestureActive !== gestureActive) set({ gestureActive });
     },
     setView: (v) => {
       set({ view: { ...v, zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom)) } });

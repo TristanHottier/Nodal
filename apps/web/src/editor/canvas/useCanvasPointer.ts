@@ -23,6 +23,8 @@ export interface CanvasToolHandlers {
   onPointerDown(world: Point, e: RPointerEvent): void;
   onPointerMove(world: Point, e: RPointerEvent): void;
   onDoubleClick?(world: Point): void;
+  /** The pointer left the canvas without a button held. */
+  onPointerLeave?(): void;
 }
 
 export type Preview = { kind: "drag"; delta: Point } | { kind: "box"; box: Box } | null;
@@ -82,6 +84,8 @@ export function useCanvasPointer(
       } else if (e.key === "Escape") {
         const g = gesture.current;
         if (g && (g.kind === "drag" || g.kind === "box")) {
+          // `gestureActive` stays true on purpose: useShortcuts sees it, treats
+          // this Esc as consumed and resets it, whatever the listener order.
           gesture.current = null;
           setPreview(null);
         }
@@ -134,6 +138,7 @@ export function useCanvasPointer(
       }
       if (!selected) s.select([id]);
       gesture.current = { kind: "drag", start: snap(world), delta: { x: 0, y: 0 } };
+      s.setGestureActive(true);
       return;
     }
     gesture.current = {
@@ -143,6 +148,7 @@ export function useCanvasPointer(
       shift: e.shiftKey,
       moved: false,
     };
+    s.setGestureActive(true);
   };
 
   const onPointerMove = (e: RPointerEvent<SVGSVGElement>) => {
@@ -174,8 +180,9 @@ export function useCanvasPointer(
     const g = gesture.current;
     gesture.current = null;
     setPreview(null);
-    if (!g || g.kind === "pan") return;
     const s = store.getState();
+    s.setGestureActive(false);
+    if (!g || g.kind === "pan") return;
     if (g.kind === "drag") {
       s.commit(moveItems(s.doc, s.selection, g.delta));
       return;
@@ -193,6 +200,7 @@ export function useCanvasPointer(
   const cancel = () => {
     gesture.current = null;
     setPreview(null);
+    store.getState().setGestureActive(false);
   };
 
   const onDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -208,6 +216,9 @@ export function useCanvasPointer(
       onPointerCancel: cancel,
       onLostPointerCapture: cancel,
       onDoubleClick,
+      onPointerLeave: () => {
+        tool?.onPointerLeave?.();
+      },
     },
   };
 }

@@ -58,7 +58,11 @@ export function useShortcuts(wire?: WireControl): void {
 
       if (k === "escape") {
         handled();
-        if (active) cancel?.();
+        if (s.gestureActive) {
+          // The canvas cancels the drag or box select on this same Esc; do not
+          // also clear the selection. Consume the flag so the next Esc works.
+          s.setGestureActive(false);
+        } else if (active) cancel?.();
         else if (s.tool.kind !== "select") s.setTool({ kind: "select" });
         else s.select([]);
       } else if (k === "w") {

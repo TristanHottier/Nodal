@@ -24,6 +24,13 @@ function Preview({ item }: { item: Item }) {
 
 const itemName = (item: Item) => (item === "label" ? "net label" : SYMBOLS[item].label);
 
+// Mouse down must not focus a button: the canvas ignores Space aimed at a
+// focused button (so Space+drag would stop panning), and releasing Space would
+// click it again. Keyboard focus with Tab is unaffected.
+const keepFocus = (e: React.MouseEvent) => {
+  e.preventDefault();
+};
+
 export function Palette() {
   const store = useEditorStore();
   const tool = useEditor((s) => s.tool);
@@ -34,6 +41,7 @@ export function Palette() {
     <nav className="nodal-palette" aria-label="Palette">
       <button
         type="button"
+        onMouseDown={keepFocus}
         aria-label="Select"
         aria-pressed={tool.kind === "select"}
         onClick={() => {
@@ -44,6 +52,7 @@ export function Palette() {
       </button>
       <button
         type="button"
+        onMouseDown={keepFocus}
         aria-label="Wire"
         aria-pressed={tool.kind === "wire"}
         onClick={() => {
@@ -56,6 +65,7 @@ export function Palette() {
       {PALETTE.map((item) => (
         <button
           type="button"
+          onMouseDown={keepFocus}
           key={item}
           aria-label={`Place ${itemName(item)}`}
           aria-pressed={tool.kind === "place" && tool.item === item}

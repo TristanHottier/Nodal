@@ -19,7 +19,8 @@ export function EditorProvider({
 
 export function useEditorStore(): StoreApi<EditorState> {
   const store = useContext(EditorContext);
-  if (!store) throw new Error("useEditor must be used inside an <EditorProvider>");
+  if (!store)
+    throw new Error("useEditorStore and useEditor must be used inside an <EditorProvider>");
   return store;
 }
 
