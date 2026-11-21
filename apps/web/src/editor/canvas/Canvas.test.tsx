@@ -131,23 +131,37 @@ describe("Canvas", () => {
     expect(store.getState().selection).toEqual(["R1"]);
   });
 
-  it("zero_drag_adds_no_history", () => {
+  /** Commits one real move (R1 to 13,12) so later checks see a non-empty history. */
+  function commitOneMove() {
     fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(10, 10) });
-    fireEvent.pointerMove(svg, { clientX: 102, clientY: 101, ...ptr });
-    fireEvent.pointerUp(svg, { clientX: 102, clientY: 101, ...ptr });
-    expect(store.getState().past).toHaveLength(0);
+    fireEvent.pointerMove(svg, { ...ptr, ...at(13, 12) });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(13, 12) });
+    expect(store.getState().past).toHaveLength(1);
+    return store.getState().doc;
+  }
+
+  it("zero_drag_adds_no_history", () => {
+    const moved = commitOneMove();
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(13, 12) });
+    fireEvent.pointerMove(svg, { clientX: 132, clientY: 121, ...ptr });
+    fireEvent.pointerUp(svg, { clientX: 132, clientY: 121, ...ptr });
+    expect(store.getState().past).toHaveLength(1);
+    expect(store.getState().doc).toBe(moved);
+    store.getState().undo();
     expect(store.getState().doc).toBe(DOC);
   });
 
   it("escape_cancels_drag", () => {
-    const part = screen.getByTestId("part-R1");
-    fireEvent.pointerDown(part, { ...ptr, ...at(10, 10) });
-    fireEvent.pointerMove(svg, { ...ptr, ...at(15, 15) });
+    const moved = commitOneMove();
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(13, 12) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(18, 17) });
     fireEvent.keyDown(window, { key: "Escape" });
-    fireEvent.pointerUp(svg, { ...ptr, ...at(15, 15) });
-    expect(store.getState().past).toHaveLength(0);
+    fireEvent.pointerUp(svg, { ...ptr, ...at(18, 17) });
+    expect(store.getState().past).toHaveLength(1);
+    expect(store.getState().doc).toBe(moved);
+    expect(screen.getByTestId("part-R1").getAttribute("transform")).toContain("translate(13 12)");
+    store.getState().undo();
     expect(store.getState().doc).toBe(DOC);
-    expect(screen.getByTestId("part-R1").getAttribute("transform")).toContain("translate(10 10)");
   });
 
   it("escape_cancels_box_select", () => {
@@ -186,8 +200,9 @@ describe("Canvas", () => {
     fireEvent.keyDown(window, { key: " " });
     fireEvent.blur(window);
     fireEvent.pointerDown(svg, { ...ptr, clientX: 50, clientY: 50 });
-    fireEvent.pointerUp(svg, { ...ptr, clientX: 50, clientY: 50 });
-    expect(store.getState().view).toMatchObject({ x: 0, y: 0 });
+    fireEvent.pointerMove(svg, { ...ptr, clientX: 90, clientY: 80 });
+    fireEvent.pointerUp(svg, { ...ptr, clientX: 90, clientY: 80 });
+    expect(store.getState().view).toEqual({ x: 0, y: 0, zoom: 1 });
   });
 
   it("wheel_zooms_about_cursor", () => {

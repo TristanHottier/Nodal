@@ -23,12 +23,13 @@ function counter(): () => string {
 describe("editor store", () => {
   it("commit_pushes_history", () => {
     const store = createEditorStore({ newId: counter() });
+    const initial = store.getState().doc;
     const a = docWith("a");
     store.getState().commit(a, ["a"]);
     const s = store.getState();
     expect(s.doc).toBe(a);
     expect(s.past).toHaveLength(1);
-    expect(s.past[0]).toBe(store.getState().past[0]);
+    expect(s.past[0]).toBe(initial);
     expect(s.selection).toEqual(["a"]);
   });
 
@@ -70,6 +71,8 @@ describe("editor store", () => {
     const { past } = store.getState();
     expect(past).toHaveLength(500);
     expect(past[0]).not.toBe(first);
+    // Commit k pushes the doc before it: past[0] is the doc before commit 10.
+    expect(past[0]).toEqual(docWith("w9"));
     expect(past[499]).toEqual(docWith("w508"));
   });
 
