@@ -1,0 +1,62 @@
+{
+  "irVersion": 1,
+  "title": "T4 CMOS inverter with gate resistor and load capacitor (gear)",
+  "elements": [
+    { "kind": "V", "name": "VDD", "nodes": ["vdd", "0"], "dc": 5 },
+    {
+      "kind": "V",
+      "name": "VIN",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "tran": {
+        "type": "pulse",
+        "v1": 0,
+        "v2": 5,
+        "td": 1e-9,
+        "tr": 1e-9,
+        "tf": 1e-9,
+        "pw": 2e-8,
+        "per": 4e-8
+      }
+    },
+    { "kind": "R", "name": "RG", "nodes": ["in", "g"], "value": 1000 },
+    {
+      "kind": "M",
+      "name": "MN",
+      "nodes": ["out", "g", "0", "0"],
+      "model": "NM",
+      "w": 1e-5,
+      "l": 1e-6
+    },
+    {
+      "kind": "M",
+      "name": "MP",
+      "nodes": ["out", "g", "vdd", "vdd"],
+      "model": "PM",
+      "w": 1e-5,
+      "l": 1e-6
+    },
+    { "kind": "C", "name": "CL", "nodes": ["out", "0"], "value": 1e-13 }
+  ],
+  "models": [
+    {
+      "name": "NM",
+      "type": "NMOS",
+      "params": { "VTO": 1, "KP": 0.0001, "CGSO": 1e-10, "CGDO": 1e-10 }
+    },
+    {
+      "name": "PM",
+      "type": "PMOS",
+      "params": { "VTO": -1, "KP": 5e-5, "CGSO": 1e-10, "CGDO": 1e-10 }
+    }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 1e-10, "tstop": 8e-8, "tmax": 1e-11 }],
+  "options": {
+    "temp": 27,
+    "reltol": 1e-6,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18,
+    "method": "gear"
+  }
+}
