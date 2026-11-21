@@ -18,10 +18,15 @@ export const vccs: SymbolDef = {
       <g {...STROKE}>
         <path d="M0 -3 V-2 M0 2 V3" />
         <path d="M0 -2 L2 0 L0 2 L-2 0 Z" />
-        <path d="M-4 -2 H-2 M-4 2 H-2" />
+        <path d="M-4 -2 H-2.25 M-4 2 H-2.25" />
+        <circle cx={-2} cy={-2} r={0.25} />
+        <circle cx={-2} cy={2} r={0.25} />
       </g>
       <text {...TEXT} x={-3.6} y={-2.8}>
         +
+      </text>
+      <text {...TEXT} x={-3.6} y={2.8}>
+        −
       </text>
       <path d="M0 -1.2 V0.7" {...STROKE} />
       <path d="M0 1.3 L-0.4 0.5 L0.4 0.5 Z" fill="currentColor" />

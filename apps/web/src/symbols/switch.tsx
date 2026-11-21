@@ -26,6 +26,9 @@ export const switchSymbol: SymbolDef = {
       <text {...TEXT} x={-2.25} y={-1.1}>
         +
       </text>
+      <text {...TEXT} x={-2.25} y={1.1}>
+        −
+      </text>
     </g>
   ),
 };
