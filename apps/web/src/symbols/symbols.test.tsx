@@ -13,12 +13,30 @@ const PREFIX: Record<string, string> = {
   vccs: "G",
   ccvs: "H",
   cccs: "F",
+  diode: "D",
+  npn: "Q",
+  pnp: "Q",
+  nmos: "M",
+  pmos: "M",
+  switch: "S",
+  opamp: "U",
   ground: "GND",
 };
 
 const TWO = (a: string, b: string) => [
   { name: a, x: 0, y: -3 },
   { name: b, x: 0, y: 3 },
+];
+const BJT = [
+  { name: "c", x: 2, y: -3 },
+  { name: "b", x: -3, y: 0 },
+  { name: "e", x: 2, y: 3 },
+];
+const MOS = [
+  { name: "d", x: 2, y: -3 },
+  { name: "g", x: -3, y: 0 },
+  { name: "s", x: 2, y: 3 },
+  { name: "b", x: 4, y: 0 },
 ];
 const PINS: Record<string, { name: string; x: number; y: number }[]> = {
   resistor: TWO("1", "2"),
@@ -30,6 +48,17 @@ const PINS: Record<string, { name: string; x: number; y: number }[]> = {
   vccs: [...TWO("p", "n"), { name: "cp", x: -4, y: -2 }, { name: "cn", x: -4, y: 2 }],
   ccvs: TWO("p", "n"),
   cccs: TWO("p", "n"),
+  diode: TWO("a", "k"),
+  npn: BJT,
+  pnp: BJT,
+  nmos: MOS,
+  pmos: MOS,
+  switch: [...TWO("p", "n"), { name: "cp", x: -4, y: -2 }, { name: "cn", x: -4, y: 2 }],
+  opamp: [
+    { name: "inn", x: -4, y: -2 },
+    { name: "inp", x: -4, y: 2 },
+    { name: "out", x: 4, y: 0 },
+  ],
   ground: [{ name: "gnd", x: 0, y: 0 }],
 };
 
@@ -40,7 +69,7 @@ describe("pins_match_table", () => {
 });
 
 describe("palette", () => {
-  it("lists every part type then label", () => {
+  it("palette_order", () => {
     expect(PALETTE).toEqual([...PART_TYPES, "label"]);
   });
 });
@@ -82,8 +111,9 @@ describe.each(Object.entries(SYMBOLS))("symbol %s", (type, def) => {
 });
 
 describe("catalog coverage", () => {
-  it("has the ten two-terminal and source types", () => {
-    expect(Object.keys(SYMBOLS).sort()).toEqual(Object.keys(PREFIX).sort());
+  it("catalog_covers_all_part_types", () => {
+    expect(Object.keys(SYMBOLS).sort()).toEqual([...PART_TYPES].sort());
+    expect(Object.keys(PREFIX).sort()).toEqual([...PART_TYPES].sort());
   });
 });
 

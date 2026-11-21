@@ -64,10 +64,4 @@ describe("geometry", () => {
     expect(b.x0).toBeLessThanOrEqual(2);
     expect(b.x1).toBeGreaterThanOrEqual(8);
   });
-
-  it("unknown_type_has_no_pins_and_zero_bounds", () => {
-    const p = part({ type: "opamp", x: 3, y: 4 });
-    expect(pinPositions(p)).toEqual([]);
-    expect(partBounds(p)).toEqual({ x0: 3, y0: 4, x1: 3, y1: 4 });
-  });
 });

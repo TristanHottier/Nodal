@@ -42,20 +42,18 @@ export function rotateCw(r: Rotation): Rotation {
   }
 }
 
-/** Pin positions in world grid units, in catalog order. Unknown types have no pins. */
+/** Pin positions in world grid units, in catalog order. */
 export function pinPositions(part: Part): { name: string; at: Point }[] {
   const def = SYMBOLS[part.type];
-  if (!def) return [];
   return def.pins.map((pin) => {
     const t = transformPoint(pin, part.rotation, part.mirror);
     return { name: pin.name, at: { x: part.x + t.x, y: part.y + t.y } };
   });
 }
 
-/** Normalized world bounds. Unknown types get a zero box at the part position. */
+/** Normalized world bounds. */
 export function partBounds(part: Part): Box {
   const def = SYMBOLS[part.type];
-  if (!def) return { x0: part.x, y0: part.y, x1: part.x, y1: part.y };
   const { x0, y0, x1, y1 } = def.bounds;
   const a = transformPoint({ x: x0, y: y0 }, part.rotation, part.mirror);
   const b = transformPoint({ x: x1, y: y1 }, part.rotation, part.mirror);
