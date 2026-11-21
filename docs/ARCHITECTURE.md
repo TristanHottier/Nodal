@@ -201,6 +201,8 @@ Detected while solving:
 - A part instance holds: `id`, `type`, `name` (R1…), position, rotation (0/90/180/270), mirror flag, parameters.
 - A wire is a list of orthogonal segments between grid points.
 - **Connectivity rule:** two items connect if a pin or wire endpoint lies on another pin, wire endpoint, or wire segment interior. A wire endpoint landing on a segment interior creates a junction dot. Crossing wires without a dot do not connect.
+- **Junction dots:** only points where a wire ends or a pin sits are examined. At such a point `P`, the degree is the number of wire ends at `P`, plus the number of pins at `P`, plus 2 for each wire that passes through `P` (at an inner vertex or strictly inside a segment). Each wire counts at most once per point, and a wire with an end at `P` adds only its ends. `P` gets a dot when the degree is 3 or more. Wires that only cross get no dot, and label anchors do not count.
+- **Symbol transform:** a symbol-local point `p` of a part at `(x, y)` is mirrored first (`(px, py) → (−px, py)` when `mirror` is set), then rotated clockwise on screen (`90: (px, py) → (−py, px)`, `180: → (−px, −py)`, `270: → (py, −px)`), then translated by `(x, y)`. All coordinates are integers in grid units.
 - Nets get names from net labels; unlabeled nets get generated names (`N001`…). The ground symbol forces net `0`.
 - Undo/redo: every edit produces a new immutable document (Immer); history keeps snapshots with structural sharing.
 
