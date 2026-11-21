@@ -118,8 +118,8 @@ pub(crate) fn depletion(v: f64, cj: f64, vj: f64, m: f64, fc: f64) -> (f64, f64)
     }
 }
 
-/// State layout: junction voltage, current, conductance (the DC values, the
-/// charge current is not included), then the charge `Q_d` and its current.
+/// State layout: junction voltage, current, conductance (in a transient step
+/// the totals including the charge terms, as `dioload.c`), then the charge `Q_d` and its current.
 const STATE_V: usize = 0;
 const STATE_I: usize = 1;
 const STATE_G: usize = 2;
@@ -165,6 +165,25 @@ impl Diode {
     }
 }
 
+impl Diode {
+    /// Integrates `Q_d` at `vd` into `state` and returns `(geq, i_q)`.
+    fn add_charge(
+        &self,
+        tran: &super::TranLoad,
+        vd: f64,
+        gmin: f64,
+        state: &mut [f64],
+    ) -> Result<(f64, f64), Error> {
+        let (q, cap) = charge(vd, &self.params, gmin);
+        match state.get_mut(STATE_Q) {
+            Some(slot) => *slot = q,
+            None => return Err(Error::Internal(format!("{}: empty state", self.name))),
+        }
+        let (geq, _) = integrate(&tran.coeffs, state, tran.hist, STATE_Q, cap)?;
+        Ok((geq, state.get(STATE_Q + 1).copied().unwrap_or(0.0)))
+    }
+}
+
 impl Device for Diode {
     fn name(&self) -> &str {
         &self.name
@@ -182,6 +201,9 @@ impl Device for Diode {
     /// no device `ic`, so `uic` changes nothing.
     fn init_charges(&self, x: &[f64], state: &mut [f64], _uic: bool) {
         let vd = volt(x, self.prime) - volt(x, self.cathode);
+        // `self.gmin` is the circuit's `options.gmin` (set in `instantiate`),
+        // the value `load` receives in `ctx.gmin`; `init_charges` has no
+        // context, and the diffusion charge `TT cd` must use the same one.
         let (q, _) = charge(vd, &self.params, self.gmin);
         if let Some([q_slot, i_slot]) = state.get_mut(STATE_Q..STATE_Q + 2) {
             *q_slot = q;
@@ -203,13 +225,6 @@ impl Device for Diode {
             LoadMode::SmallSignal => (state.get(STATE_V).copied().unwrap_or(0.0), false),
         };
         let (mut id, mut gd) = eval(vd, p, ctx.gmin);
-        if ctx.mode.writes_state()
-            && let [v, i, g, ..] = state
-        {
-            *v = vd;
-            *i = id;
-            *g = gd;
-        }
         // Transient charge block of dioload.c: Q_d at the limited voltage,
         // integrated, with `gd += geq` and `cd += i_q`. The first-iteration
         // MODEINITTRAN special case (state1 = state0, so no charge current)
@@ -217,24 +232,25 @@ impl Device for Diode {
         // `init_charges` (Q_d at the operating point), which gives the same
         // first step.
         if let Some(tran) = &ctx.tran {
-            let (q, cap) = charge(vd, p, ctx.gmin);
-            match state.get_mut(STATE_Q) {
-                Some(slot) => *slot = q,
-                None => {
-                    sys.fault(Error::Internal(format!("{}: empty state", self.name)));
-                    return false;
-                }
-            }
-            match integrate(&tran.coeffs, state, tran.hist, STATE_Q, cap) {
-                Ok((geq, _)) => {
+            match self.add_charge(tran, vd, ctx.gmin, state) {
+                Ok((geq, i_q)) => {
                     gd += geq;
-                    id += state.get(STATE_Q + 1).copied().unwrap_or(0.0);
+                    id += i_q;
                 }
                 Err(e) => {
                     sys.fault(e);
                     return false;
                 }
             }
+        }
+        // dioload.c stores cd and gd after the charge block, so in a
+        // transient step they are totals, which `converged` predicts from.
+        if ctx.mode.writes_state()
+            && let [v, i, g, ..] = state
+        {
+            *v = vd;
+            *i = id;
+            *g = gd;
         }
         if p.rs > 0.0 {
             let grs = 1.0 / p.rs;
@@ -264,6 +280,9 @@ impl Device for Diode {
         c.add_a(self.cathode, self.cathode, cap);
     }
 
+    /// In a transient step the stored current and conductance include the
+    /// charge terms, as in `dioload.c`, and so does the recomputed current.
+    ///
     /// Deliberately differs from `dioconv.c`, which compares the prediction
     /// with the stored current. Here the prediction is compared with the
     /// current recomputed at the new junction voltage, as docs/reference/
@@ -276,7 +295,21 @@ impl Device for Diode {
         };
         let vnew = volt(x, self.prime) - volt(x, self.cathode);
         let predicted = id + gd * (vnew - vd);
-        let (recomputed, _) = eval(vnew, &self.params, ctx.gmin);
+        let (mut recomputed, _) = eval(vnew, &self.params, ctx.gmin);
+        // In a transient step the stored values are totals (see `load`), so
+        // the recomputed current includes the charge current at the new
+        // voltage, integrated on a scratch copy of the state.
+        if let Some(tran) = &ctx.tran {
+            let mut scratch = [0.0; STATE_LEN];
+            let Some(src) = state.get(..STATE_LEN) else {
+                return true;
+            };
+            scratch.copy_from_slice(src);
+            match self.add_charge(tran, vnew, ctx.gmin, &mut scratch) {
+                Ok((_, i_q)) => recomputed += i_q,
+                Err(_) => return false,
+            }
+        }
         let tol = ctx.reltol * predicted.abs().max(recomputed.abs()) + ctx.abstol;
         (predicted - recomputed).abs() <= tol
     }

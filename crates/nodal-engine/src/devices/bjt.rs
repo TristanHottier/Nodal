@@ -207,8 +207,8 @@ pub fn eval_signed(sign: f64, vbe: f64, vbc: f64, p: &BjtParams, gmin: f64) -> B
 }
 
 /// State layout: physical `vbe`, `vbc`, terminal currents `ic`, `ib`, then
-/// `dic/dvbe`, `dic/dvbc`, `dib/dvbe`, `dib/dvbc` (the DC values, charge
-/// currents not included), then the NPN-oriented charges `Q_be` and `Q_bc`,
+/// `dic/dvbe`, `dic/dvbc`, `dib/dvbe`, `dib/dvbc` (in a transient step the
+/// totals including the charge terms, as `bjtload.c`), then the NPN-oriented charges `Q_be` and `Q_bc`,
 /// each followed by its current.
 const S_VBE: usize = 0;
 const S_VBC: usize = 1;
@@ -243,6 +243,48 @@ impl Bjt {
     fn junction_voltages(&self, x: &[f64]) -> (f64, f64) {
         let vb = volt(x, self.base);
         (vb - volt(x, self.emitter), vb - volt(x, self.collector))
+    }
+}
+
+impl Bjt {
+    /// Transient charge block of `bjtload.c`: integrates `Qbe` and `Qbc` at
+    /// the physical junction voltages `(vbe, vbc)`, writing the charges and
+    /// their currents into `state`, then
+    ///   gpi += geq_be, gmu += geq_bc, geqcb *= ag[0],
+    ///   cb += cq_be + cq_bc, cc -= cq_bc
+    /// on the DC evaluation `e`. The base row gains dIb/dvbe += geq_be and
+    /// dIb/dvbc += geq_bc + geqcb, the collector row dIc/dvbc -= geq_bc, as
+    /// the matrix loads of `bjtload.c` imply. The charges are NPN-oriented,
+    /// so the physical currents carry the factor `sign` like Ic and Ib,
+    /// while the partials (two sign flips) do not.
+    fn add_charges(
+        &self,
+        tran: &super::TranLoad,
+        vbe: f64,
+        vbc: f64,
+        state: &mut [f64],
+        e: &mut BjtEval,
+    ) -> Result<(), Error> {
+        let s = self.sign;
+        let q = charges(s * vbe, s * vbc, &self.params);
+        match state.get_mut(S_QBE..S_QBE + 4) {
+            Some([qbe, _, qbc, _]) => {
+                *qbe = q.qbe;
+                *qbc = q.qbc;
+            }
+            _ => return Err(Error::Internal(format!("{}: short state", self.name))),
+        }
+        let (geq_be, _) = integrate(&tran.coeffs, state, tran.hist, S_QBE, q.cbe)?;
+        let (geq_bc, _) = integrate(&tran.coeffs, state, tran.hist, S_QBC, q.cbc)?;
+        let cq_be = state.get(S_QBE + 1).copied().unwrap_or(0.0);
+        let cq_bc = state.get(S_QBC + 1).copied().unwrap_or(0.0);
+        let geqcb = q.cbe_vbc * tran.coeffs.ag()[0];
+        e.ib += s * (cq_be + cq_bc);
+        e.ic -= s * cq_bc;
+        e.dib_dvbe += geq_be;
+        e.dib_dvbc += geq_bc + geqcb;
+        e.dic_dvbc -= geq_bc;
+        Ok(())
     }
 }
 
@@ -314,54 +356,25 @@ impl Device for Bjt {
             ),
         };
         let mut e = eval_signed(s, vbe, vbc, p, ctx.gmin);
+        // Transient charge block of bjtload.c (XCJC = 1, CJS = 0, PTF = 0),
+        // see `add_charges`. The MODEINITTRAN first-iteration copy of state0
+        // into state1 has no counterpart: the driver seeds the history from
+        // `init_charges`.
+        if let Some(tran) = &ctx.tran
+            && let Err(err) = self.add_charges(tran, vbe, vbc, state, &mut e)
+        {
+            sys.fault(err);
+            return false;
+        }
+        // bjtload.c stores cc, cb, gpi, gmu after the charge block, so in a
+        // transient step the stored currents and partials are the totals
+        // that `converged` (bjtconv.c) predicts from.
         if ctx.mode.writes_state()
             && let Some(slots) = state.first_chunk_mut::<8>()
         {
             *slots = [
                 vbe, vbc, e.ic, e.ib, e.dic_dvbe, e.dic_dvbc, e.dib_dvbe, e.dib_dvbc,
             ];
-        }
-        // Transient charge block of bjtload.c (XCJC = 1, CJS = 0, PTF = 0):
-        // integrate Qbe and Qbc at the limited voltages, then
-        //   gpi += geq_be, gmu += geq_bc, geqcb *= ag[0],
-        //   cb += cq_be + cq_bc, cc -= cq_bc.
-        // The base row gains dIb/dvbe += geq_be and dIb/dvbc += geq_bc + geqcb,
-        // the collector row dIc/dvbc -= geq_bc, as the matrix loads of
-        // bjtload.c imply. The charges are NPN-oriented, so the physical
-        // currents carry the factor `sign` like Ic and Ib, while the partials
-        // (two sign flips) do not. The MODEINITTRAN first-iteration copy of
-        // state0 into state1 has no counterpart: the driver seeds the history
-        // from `init_charges`.
-        if let Some(tran) = &ctx.tran {
-            let q = charges(s * vbe, s * vbc, p);
-            match state.get_mut(S_QBE..S_QBE + 4) {
-                Some([qbe, _, qbc, _]) => {
-                    *qbe = q.qbe;
-                    *qbc = q.qbc;
-                }
-                _ => {
-                    sys.fault(Error::Internal(format!("{}: short state", self.name)));
-                    return false;
-                }
-            }
-            let be = integrate(&tran.coeffs, state, tran.hist, S_QBE, q.cbe);
-            let bc = integrate(&tran.coeffs, state, tran.hist, S_QBC, q.cbc);
-            match (be, bc) {
-                (Ok((geq_be, _)), Ok((geq_bc, _))) => {
-                    let cq_be = state.get(S_QBE + 1).copied().unwrap_or(0.0);
-                    let cq_bc = state.get(S_QBC + 1).copied().unwrap_or(0.0);
-                    let geqcb = q.cbe_vbc * tran.coeffs.ag()[0];
-                    e.ib += s * (cq_be + cq_bc);
-                    e.ic -= s * cq_bc;
-                    e.dib_dvbe += geq_be;
-                    e.dib_dvbc += geq_bc + geqcb;
-                    e.dic_dvbc -= geq_bc;
-                }
-                (Err(err), _) | (_, Err(err)) => {
-                    sys.fault(err);
-                    return false;
-                }
-            }
         }
         let ic_eq = e.ic - e.dic_dvbe * vbe - e.dic_dvbc * vbc;
         let ib_eq = e.ib - e.dib_dvbe * vbe - e.dib_dvbc * vbc;
@@ -406,6 +419,9 @@ impl Device for Bjt {
         c.add_a(e, b, -cpi - cmcb);
     }
 
+    /// In a transient step the stored currents and partials include the
+    /// charge terms, as in `bjtload.c`, and so do the recomputed currents.
+    ///
     /// Deliberately differs from `bjtconv.c`, which compares the linear
     /// prediction of `Ic` and `Ib` with the stored currents. Here the
     /// prediction is compared with the currents recomputed at the new
@@ -421,7 +437,24 @@ impl Device for Bjt {
         let (dbe, dbc) = (new_be - vbe, new_bc - vbc);
         let cc_hat = ic + dic_dvbe * dbe + dic_dvbc * dbc;
         let cb_hat = ib + dib_dvbe * dbe + dib_dvbc * dbc;
-        let e = eval_signed(self.sign, new_be, new_bc, &self.params, ctx.gmin);
+        let mut e = eval_signed(self.sign, new_be, new_bc, &self.params, ctx.gmin);
+        // In a transient step the stored values are totals (see `load`), so
+        // the recomputed currents include the charge currents at the new
+        // voltages. The integrator writes the charge current slots, hence a
+        // scratch copy of the state.
+        if let Some(tran) = &ctx.tran {
+            let mut scratch = [0.0; STATE_LEN];
+            let Some(src) = state.get(..STATE_LEN) else {
+                return true;
+            };
+            scratch.copy_from_slice(src);
+            if self
+                .add_charges(tran, new_be, new_bc, &mut scratch, &mut e)
+                .is_err()
+            {
+                return false;
+            }
+        }
         let tol_c = ctx.reltol * cc_hat.abs().max(e.ic.abs()) + ctx.abstol;
         let tol_b = ctx.reltol * cb_hat.abs().max(e.ib.abs()) + ctx.abstol;
         (cc_hat - e.ic).abs() <= tol_c && (cb_hat - e.ib).abs() <= tol_b

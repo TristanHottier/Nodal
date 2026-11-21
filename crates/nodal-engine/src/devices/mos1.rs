@@ -354,10 +354,17 @@ impl Device for Mos1 {
         &[S_QGS, S_QGD, S_QGB]
     }
 
-    /// Stores `q = C v` for the three overlap capacitances at the oriented
-    /// voltages of `x`. A MOSFET has no device `ic`, so `uic` changes nothing.
-    fn init_charges(&self, x: &[f64], state: &mut [f64], _uic: bool) {
-        let (vgs, vds, vbs) = self.oriented(x);
+    /// Stores `q = C v` for the three overlap capacitances, with `v` the
+    /// limited oriented voltages left in `state` by the operating point
+    /// load, so that `v_prev` and `q_prev` of the first step agree as in
+    /// ngspice's `state1`. A MOSFET has no device `ic`, so `uic` changes
+    /// nothing.
+    fn init_charges(&self, _x: &[f64], state: &mut [f64], _uic: bool) {
+        let (Some(&vgs), Some(&vds), Some(&vbs)) =
+            (state.get(S_VGS), state.get(S_VDS), state.get(S_VBS))
+        else {
+            return;
+        };
         for (slot, cap, v) in [
             (S_QGS, self.cgs, vgs),
             (S_QGD, self.cgd, vgs - vds),

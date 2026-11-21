@@ -711,13 +711,56 @@ mod tran_companion_matches_charge {
             let iq_gb = want(cgb, 2.0, vgs1 - vbs1, i_gb);
             // The gate carries only the overlap currents.
             close(r[1], s * (iq_gs + iq_gd + iq_gb));
-            check_jacobian(&m, cf, &x, &hist, &[1], 1e-3);
+            check_jacobian(&m, cf, &x, &hist, &[0, 1, 2, 3], 1e-6);
             // Stamped geq equals ag0 times the capacitance.
             let (_, sys) = resid(&m, cf, &x, &hist);
             close(sys.a.get(1, 2), -ag0 * cgs);
             close(sys.a.get(1, 0), -ag0 * cgd);
             close(sys.a.get(1, 3), -ag0 * cgb);
         }
+        Ok(())
+    }
+
+    /// bjtconv.c / dioconv.c test the prediction against totals that include
+    /// the charge current. A capacitance-dominated reverse diode: a 0.5 V
+    /// step changes the DC current by less than `abstol` (so a DC-only test
+    /// accepts) but the charge current by far more than its tolerance.
+    #[test]
+    fn diode_convergence_includes_charge_current() -> TestResult {
+        let p = DiodeParams {
+            cjo: 1e-9,
+            tt: 0.0,
+            ..charge_params()
+        };
+        let d = Diode::new("D1".into(), Some(0), None, Some(1), p);
+        let cf = coeffs()?;
+        let z = vec![0.0; d.state_len()];
+        let mut hist = vec![0.0; d.state_len()];
+        hist[3] = charge(-2.0, &p, GMIN).0;
+        let x0 = [-2.0, 0.0];
+        let run = |tran: bool| {
+            let mut ctx = LoadContext::new(LoadMode::Float);
+            ctx.gmin = GMIN;
+            if tran {
+                ctx.tran = Some(TranLoad {
+                    time: 1e-6,
+                    coeffs: cf,
+                    hist: [&hist, &z, &z],
+                });
+            }
+            let mut state = vec![0.0; d.state_len()];
+            state[0] = -2.0;
+            let mut sys = RealSystem::new(2);
+            d.load(&x0, &mut state, &ctx, &mut sys);
+            (ctx, state)
+        };
+        let (ctx_t, state_t) = run(true);
+        let (ctx_d, state_d) = run(false);
+        let (near, far) = ([-2.0 + 1e-9, 0.0], [-1.5, 0.0]);
+        assert!(d.converged(&near, &state_t, &ctx_t));
+        assert!(!d.converged(&far, &state_t, &ctx_t));
+        // The same step, DC only: accepted.
+        assert!(d.converged(&far, &state_d, &ctx_d));
         Ok(())
     }
 }
