@@ -59,6 +59,8 @@ impl Device for VoltageSource {
         stamp_branch_kcl(sys, self.p, self.n, self.k);
         sys.add_a(Some(self.k), self.p, 1.0);
         sys.add_a(Some(self.k), self.n, -1.0);
+        // vsrcload.c: the DC value in a DC analysis, the waveform at the
+        // current time in a transient step.
         let value = match (&ctx.tran, &self.tran) {
             (Some(t), Some(w)) => waveform::value(w, t.time),
             (Some(_), None) => self.dc,
@@ -66,6 +68,14 @@ impl Device for VoltageSource {
         };
         sys.add_b(Some(self.k), value);
         false
+    }
+
+    fn tran_value(&self, t: f64) -> Option<f64> {
+        Some(
+            self.tran
+                .as_ref()
+                .map_or(self.dc, |w| waveform::value(w, t)),
+        )
     }
 
     fn next_breakpoint(&self, t: f64) -> Option<f64> {

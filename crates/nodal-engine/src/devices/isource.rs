@@ -53,6 +53,8 @@ impl Device for CurrentSource {
         ctx: &LoadContext,
         sys: &mut RealSystem,
     ) -> bool {
+        // isrcload.c: the DC value in a DC analysis, the waveform at the
+        // current time in a transient step.
         let value = match (&ctx.tran, &self.tran) {
             (Some(t), Some(w)) => waveform::value(w, t.time),
             (Some(_), None) => self.dc,
@@ -61,6 +63,14 @@ impl Device for CurrentSource {
         sys.add_b(self.p, -value);
         sys.add_b(self.n, value);
         false
+    }
+
+    fn tran_value(&self, t: f64) -> Option<f64> {
+        Some(
+            self.tran
+                .as_ref()
+                .map_or(self.dc, |w| waveform::value(w, t)),
+        )
     }
 
     fn next_breakpoint(&self, t: f64) -> Option<f64> {

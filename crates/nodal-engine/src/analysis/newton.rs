@@ -4,8 +4,9 @@
 //! previous iterate and solves `A x = b` for the next. The convergence test
 //! follows ngspice `niconv.c` plus each device's own test (`dioconv.c`, ...).
 
+use super::integrate::Coeffs;
 use crate::circuit::Circuit;
-use crate::devices::{LoadContext, LoadMode};
+use crate::devices::{LoadContext, LoadMode, TranLoad};
 use crate::error::Error;
 use crate::linalg::{DenseLu, LinearSolver, SolveError};
 use crate::mna::RealSystem;
@@ -21,6 +22,17 @@ pub(crate) struct NewtonConfig {
     /// circuit this also starts the nodeset hold (see `newton_counted`).
     pub init_junction: bool,
     pub max_iter: usize,
+    /// Transient point: the time being solved for and the integration
+    /// coefficients. Takes effect only together with a `History`.
+    pub tran: Option<(f64, Coeffs)>,
+}
+
+/// The state vectors accepted at t_n, t_{n-1} and t_{n-2}, newest first, each
+/// `circuit.state_len()` long. A transient Newton run hands every device its
+/// own slice of each.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct History {
+    pub levels: [Vec<f64>; 3],
 }
 
 /// Conductance of the nodeset hold, cktload.c.
@@ -36,6 +48,7 @@ impl Default for NewtonConfig {
             source_factor: 1.0,
             init_junction: true,
             max_iter: ITL1,
+            tran: None,
         }
     }
 }
@@ -69,15 +82,17 @@ pub(crate) fn newton(
     state: &mut [f64],
     cfg: &NewtonConfig,
 ) -> Result<Vec<f64>, NewtonFailure> {
-    newton_counted(circuit, x0, state, cfg).0
+    newton_counted(circuit, x0, state, cfg, None).0
 }
 
-/// Like `newton`, also returning the number of iterations performed.
+/// Like `newton`, also returning the number of iterations performed. With
+/// `cfg.tran` and `history` both set, every device loads a transient point.
 pub(crate) fn newton_counted(
     circuit: &Circuit,
     x0: &[f64],
     state: &mut [f64],
     cfg: &NewtonConfig,
+    history: Option<&History>,
 ) -> (Result<Vec<f64>, NewtonFailure>, usize) {
     let n = circuit.unknown_count();
     let voltages = circuit.voltage_count();
@@ -85,6 +100,16 @@ pub(crate) fn newton_counted(
     let mut x = x0.to_vec();
     if x.len() != n || state.len() != circuit.state_len() {
         let e = Error::Internal("newton: vector length mismatch".into());
+        return (Err(fatal(&x, e)), 0);
+    }
+    let tran = match (cfg.tran, history) {
+        (Some(t), Some(h)) => Some((t, h)),
+        _ => None,
+    };
+    if let Some((_, h)) = tran
+        && h.levels.iter().any(|l| l.len() != state.len())
+    {
+        let e = Error::Internal("newton: history length mismatch".into());
         return (Err(fatal(&x, e)), 0);
     }
     let mut solver = DenseLu::new();
@@ -110,11 +135,26 @@ pub(crate) fn newton_counted(
             abstol: opts.abstol,
             tran: None,
         };
+        // The context of one device: in a transient run it carries the
+        // device's own slice of each accepted level.
+        let device_ctx = |offset: usize, len: usize| LoadContext {
+            tran: tran.map(|((time, coeffs), h)| TranLoad {
+                time,
+                coeffs,
+                hist: [
+                    &h.levels[0][offset..offset + len],
+                    &h.levels[1][offset..offset + len],
+                    &h.levels[2][offset..offset + len],
+                ],
+            }),
+            ..ctx
+        };
         let mut sys = RealSystem::new(n);
         let mut limited = false;
         for (device, &offset) in circuit.devices.iter().zip(&circuit.state_offsets) {
-            let slice = &mut state[offset..offset + device.state_len()];
-            limited |= device.load(&x, slice, &ctx, &mut sys);
+            let len = device.state_len();
+            let slice = &mut state[offset..offset + len];
+            limited |= device.load(&x, slice, &device_ctx(offset, len), &mut sys);
         }
         if holding {
             // cktload.c, "original CIDER fix" form: 1e10 S from the node to
@@ -168,8 +208,9 @@ pub(crate) fn newton_counted(
                 .iter()
                 .zip(&circuit.state_offsets)
                 .all(|(device, &offset)| {
-                    let slice = &state[offset..offset + device.state_len()];
-                    device.converged(&x_new, slice, &ctx)
+                    let len = device.state_len();
+                    let slice = &state[offset..offset + len];
+                    device.converged(&x_new, slice, &device_ctx(offset, len))
                 });
         x = x_new;
         if holding {
@@ -242,7 +283,7 @@ fn attempt(
     iters: &mut usize,
 ) -> Result<Vec<f64>, Box<StageFailure>> {
     let saved = state.to_vec();
-    let (outcome, n) = newton_counted(circuit, x, state, cfg);
+    let (outcome, n) = newton_counted(circuit, x, state, cfg, None);
     *iters += n;
     outcome.map_err(|failure| {
         state.copy_from_slice(&saved);
@@ -278,6 +319,7 @@ fn gmin_stepping(
             source_factor: 1.0,
             init_junction: !have_good,
             max_iter: ITL1,
+            tran: None,
         };
         let before = *iters;
         match attempt(circuit, &x, state, &cfg, iters) {

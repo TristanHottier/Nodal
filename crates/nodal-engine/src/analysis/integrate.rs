@@ -27,7 +27,7 @@ fn slot(level: &[f64], idx: usize, who: &str) -> Result<f64, Error> {
 
 /// Integration coefficients: `i_{n+1} = ag[0] q_{n+1} + ag[1] q_n + ag[2] q_{n-1}`
 /// (trapezoidal order 2 adds the `-ag[1] i_n` term instead, see [`integrate`]).
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Coeffs {
     method: Method,
     order: usize,
@@ -144,7 +144,6 @@ pub(crate) fn integrate(
 }
 
 /// Tolerances for [`truncation`].
-#[allow(dead_code)] // used by the transient driver (task 7)
 #[derive(Debug, Clone, Copy)]
 pub struct TruncOpts {
     pub reltol: f64,
@@ -153,9 +152,7 @@ pub struct TruncOpts {
     pub trtol: f64,
 }
 
-#[allow(dead_code)] // used by the transient driver (task 7)
 const GEAR_COEFF: [f64; 2] = [0.5, 0.2222222222];
-#[allow(dead_code)] // used by the transient driver (task 7)
 const TRAP_COEFF: [f64; 2] = [0.5, 0.08333333333];
 
 /// Port of `CKTterr` for one charge slot `q`: the largest step the local
@@ -163,7 +160,6 @@ const TRAP_COEFF: [f64; 2] = [0.5, 0.08333333333];
 /// accepted levels at t_n, t_{n-1}, t_{n-2}; `h = [h_n, h_{n-1}, h_{n-2}]`.
 /// The caller takes the minimum with the current step, as ngspice does.
 /// A level too short for the slots it needs is an `Error::Internal`.
-#[allow(dead_code)] // used by the transient driver (task 7)
 pub(crate) fn truncation(
     c: &Coeffs,
     q: usize,

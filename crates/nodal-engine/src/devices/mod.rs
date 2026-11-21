@@ -149,6 +149,12 @@ pub trait Device: std::fmt::Debug {
         None
     }
 
+    /// The transient value of an independent source at time `t` (its
+    /// waveform, or the DC value without one), `None` for any other device.
+    fn tran_value(&self, _t: f64) -> Option<f64> {
+        None
+    }
+
     /// Offsets in the device state of each charge or flux `q`. The slot
     /// `q + 1` holds the matching current (or voltage, for a flux).
     fn charge_slots(&self) -> &'static [usize] {

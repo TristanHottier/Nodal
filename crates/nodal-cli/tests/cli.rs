@@ -225,3 +225,39 @@ fn run_dc_sweep_json() -> Result<(), Box<dyn Error>> {
     );
     Ok(())
 }
+
+#[test]
+fn run_tran_prints_time() -> Result<(), Box<dyn Error>> {
+    let path = std::env::temp_dir().join(format!("nodal-cli-tran-{}.json", std::process::id()));
+    std::fs::write(
+        &path,
+        r#"{"irVersion":1,"elements":[
+            {"kind":"V","name":"V1","nodes":["in","0"],"dc":1},
+            {"kind":"R","name":"R1","nodes":["in","out"],"value":1000},
+            {"kind":"C","name":"C1","nodes":["out","0"],"value":1e-6,"ic":0}],
+            "analyses":[{"type":"tran","tstep":1e-5,"tstop":1e-3,"uic":true}]}"#,
+    )?;
+    let out = run(&["run", path.to_str().ok_or("path")?]);
+    std::fs::remove_file(&path)?;
+    let out = out?;
+    assert_eq!(out.status.code(), Some(0));
+    let json: serde_json::Value = serde_json::from_slice(&out.stdout)?;
+    let result = &json["results"][0];
+    assert_eq!(result["type"], "tran");
+    let time = result["time"].as_array().ok_or("no time")?;
+    assert_eq!(time[0].as_f64(), Some(0.0));
+    assert_eq!(time.last().and_then(|t| t.as_f64()), Some(1e-3));
+    let outs = result["nodeVoltages"]["out"].as_array().ok_or("no out")?;
+    assert_eq!(outs.len(), time.len());
+    // v(out) = 1 - exp(-t / RC) with RC = 1 ms.
+    let last = outs[outs.len() - 1].as_f64().ok_or("number")?;
+    assert!((last - (1.0 - (-1.0_f64).exp())).abs() < 1e-3, "{last}");
+    assert_eq!(
+        result["branchCurrents"]["V1"]
+            .as_array()
+            .ok_or("no V1")?
+            .len(),
+        time.len()
+    );
+    Ok(())
+}

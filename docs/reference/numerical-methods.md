@@ -122,6 +122,10 @@ Independent sources report the times where their waveform has a corner: pulse ed
 
 Switch threshold crossings are not breakpoints, because their time isn't known in advance. They are handled by step rejection ([devices.md](devices.md) §4).
 
+### 3.3a Start of the run
+
+Without `uic`, the run starts from the operating point with every source with a waveform at its value at $t = 0$ (ngspice `vsrcload.c` does the same in `MODETRANOP`). With `uic`, the unknowns start at zero and the capacitor and inductor initial conditions fill the charge history. Nodal then solves one backward Euler step of length $h_{min}$ at $t = 0$, so the first reported point shows the initial voltages and currents. ngspice does not report $t = 0$ with `uic`. The first step is $\min(t_{stop}/100,\, t_{step})/10$, cut by the post-breakpoint rule and divided by 10 again, and it is accepted without a truncation check.
+
 ### 3.4 Output points
 
 Accepted points are returned as computed, with irregular spacing. The waveform viewer plots them directly. The validation comparator interpolates onto the reference grid ([VALIDATION.md](../VALIDATION.md) §3).

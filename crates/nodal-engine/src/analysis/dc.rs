@@ -118,7 +118,7 @@ fn solve_point(
             init_junction: false,
             ..NewtonConfig::default()
         };
-        match newton_counted(circuit, x_prev, &mut state, &cfg).0 {
+        match newton_counted(circuit, x_prev, &mut state, &cfg, None).0 {
             Ok(x) => return Ok((x, state)),
             Err(failure) => {
                 if let Some(error) = failure.error {

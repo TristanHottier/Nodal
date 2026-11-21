@@ -35,6 +35,9 @@ pub enum Error {
     },
     /// An AC analysis failed at one frequency. `cause` is the original error.
     AcPoint { frequency: f64, cause: Box<Error> },
+    /// A transient step shrank below the minimum step size. `device` names
+    /// the device (or unknown) that forced the smallest step.
+    TimestepTooSmall { time: f64, device: String },
     /// A bug in the engine, not a problem with the netlist.
     Internal(String),
 }
@@ -82,6 +85,10 @@ impl fmt::Display for Error {
             Error::AcPoint { frequency, cause } => {
                 write!(f, "ac analysis failed at {frequency:e} Hz: {cause}")
             }
+            Error::TimestepTooSmall { time, device } => write!(
+                f,
+                "time step too small at t = {time:e} s (smallest proposed step: {device})"
+            ),
             Error::Internal(msg) => write!(f, "internal error: {msg}"),
         }
     }
@@ -92,6 +99,18 @@ impl std::error::Error for Error {}
 #[cfg(test)]
 mod tests {
     use super::Error;
+
+    #[test]
+    fn timestep_too_small_display_names_time_and_device() {
+        let e = Error::TimestepTooSmall {
+            time: 1.5e-6,
+            device: "C1".into(),
+        };
+        assert_eq!(
+            e.to_string(),
+            "time step too small at t = 1.5e-6 s (smallest proposed step: C1)"
+        );
+    }
 
     #[test]
     fn ac_point_display_names_frequency_and_cause() {

@@ -325,6 +325,14 @@ R4 w 0 1e3
     }
 
     #[test]
+    fn tran_card_prints_tstart_without_tmax() -> Result<(), Box<dyn Error>> {
+        let json = r#"{"irVersion":1,"elements":[{"kind":"V","name":"V1","nodes":["a","0"]},{"kind":"R","name":"R1","nodes":["a","0"],"value":1}],"analyses":[{"type":"tran","tstep":1e-6,"tstop":1e-3,"tstart":1e-4}]}"#;
+        let deck = to_spice_deck(&parse_netlist(json)?);
+        assert!(deck.contains(".tran 1e-6 1e-3 1e-4\n"), "{deck}");
+        Ok(())
+    }
+
+    #[test]
     fn tran_card_prints_tstart_with_tmax() -> Result<(), Box<dyn Error>> {
         let json = r#"{"irVersion":1,"elements":[{"kind":"V","name":"V1","nodes":["a","0"]},{"kind":"R","name":"R1","nodes":["a","0"],"value":1}],"analyses":[{"type":"tran","tstep":1e-6,"tstop":1e-3,"tstart":1e-4,"tmax":2e-6}],"options":{"trtol":5}}"#;
         let deck = to_spice_deck(&parse_netlist(json)?);
