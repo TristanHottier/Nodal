@@ -11,6 +11,7 @@ pub mod export;
 pub mod ir;
 pub mod linalg;
 pub mod mna;
+pub mod waveform;
 
 pub use analysis::AnalysisResult;
 pub use error::Error;
