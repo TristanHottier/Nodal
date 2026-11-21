@@ -37,3 +37,30 @@ test("editor_draws_and_undoes", async ({ page }) => {
   await expect(page.getByTestId("junction")).toHaveCount(0);
   await expect(page.locator('[data-testid^="wire-"]')).toHaveCount(1);
 });
+
+test("symbol_strokes_are_thin_and_non_scaling", async ({ page }) => {
+  await page.goto("./");
+  const canvas = page.getByTestId("schematic-canvas");
+  const box = await canvas.boundingBox();
+  if (box === null) throw new Error("canvas has no bounding box");
+  await page.getByRole("button", { name: "Place Resistor" }).click();
+  await page.mouse.move(box.x + 200, box.y + 200);
+  await page.mouse.click(box.x + 200, box.y + 200);
+  const part = page.locator('[data-testid^="part-"]').first();
+  await expect(part).toBeVisible();
+  const styles = await part.locator("path, rect[fill='none']").evaluateAll((els) =>
+    els.map((el) => {
+      const cs = getComputedStyle(el);
+      const w = parseFloat(cs.strokeWidth);
+      const scale = (el as SVGGraphicsElement).getScreenCTM()?.a ?? 1;
+      const rendered = cs.vectorEffect === "non-scaling-stroke" ? w : w * scale;
+      return { effect: cs.vectorEffect, width: rendered };
+    }),
+  );
+  expect(styles.length).toBeGreaterThan(0);
+  for (const s of styles) {
+    expect(s.effect).toBe("non-scaling-stroke");
+    // Rendered stroke width in screen px at zoom 1.
+    expect(s.width).toBeLessThanOrEqual(2);
+  }
+});

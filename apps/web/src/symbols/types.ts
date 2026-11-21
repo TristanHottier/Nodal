@@ -16,7 +16,8 @@ export interface SymbolBounds {
 
 /**
  * A schematic symbol. `Body` draws in grid units (the caller scales by GRID),
- * with `currentColor` strokes and `vector-effect="non-scaling-stroke"`.
+ * with `currentColor` strokes. Strokes use the `STROKE` props, whose
+ * `nodal-symbol` class makes every shape non-scaling (see Editor.tsx).
  */
 export interface SymbolDef {
   type: PartType;

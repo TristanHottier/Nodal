@@ -10,6 +10,7 @@ import { useWireTool } from "./tools/wire";
 import { useShortcuts } from "./useShortcuts";
 
 const CSS = `
+.nodal-symbol, .nodal-symbol :is(path, line, circle, rect, polyline, polygon, ellipse) { vector-effect: non-scaling-stroke; }
 .nodal-editor { display: grid; grid-template-columns: 180px 1fr; grid-template-rows: 1fr auto; width: 100%; height: 100%; }
 .nodal-palette { grid-row: 1; grid-column: 1; display: flex; flex-direction: column; gap: 2px; padding: 6px; overflow-y: auto; border-right: 1px solid #e5e7eb; background: #f8fafc; }
 .nodal-palette button { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font: inherit; text-align: left; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
