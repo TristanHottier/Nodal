@@ -283,13 +283,16 @@ pub(crate) fn instantiate(
                 .iter()
                 .find(|m| m.name == *model && m.kind == ModelKind::D)
                 .ok_or_else(|| Error::Invalid(format!("{name}: unknown diode model {model}")))?;
-            Box::new(Diode::new(
-                name.clone(),
-                p,
-                circuit.internal(&name),
-                n,
-                DiodeParams::from_model(model)?,
-            ))
+            Box::new(
+                Diode::new(
+                    name.clone(),
+                    p,
+                    circuit.internal(&name),
+                    n,
+                    DiodeParams::from_model(model)?,
+                )
+                .with_gmin(circuit.options.gmin),
+            )
         }
         Element::R { value, .. } => Box::new(Resistor::new(name, p, n, *value)),
         Element::C { value, ic, .. } => Box::new(Capacitor::new(name, p, n, *value).with_ic(*ic)),

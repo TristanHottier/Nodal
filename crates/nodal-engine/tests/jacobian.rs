@@ -521,3 +521,203 @@ fn mos1_terminal_currents_with_junctions() {
         }
     }
 }
+
+// Transient companions (devices.md sections 1 to 3). With a hand-built
+// trapezoidal history at step H, the stamp read back as rows of `A x - b`
+// must equal the DC current plus the charge current
+// `ag0 (q(v) - q_n) - i_n`, and `A` must equal the central difference of that
+// total current (VALIDATION section 5 criteria, with the 1e-3 Vt step for
+// gmin-sized partials).
+
+mod tran_companion_matches_charge {
+    use super::*;
+    use nodal_engine::analysis::integrate::Coeffs;
+    use nodal_engine::devices::bjt::Bjt;
+    use nodal_engine::devices::diode::Diode;
+    use nodal_engine::devices::mos1::Mos1;
+    use nodal_engine::devices::{Device, LoadContext, LoadMode, TranLoad};
+    use nodal_engine::ir::Method;
+    use nodal_engine::mna::RealSystem;
+
+    const H: f64 = 1e-9;
+
+    type TestResult = Result<(), nodal_engine::error::Error>;
+
+    fn coeffs() -> Result<Coeffs, nodal_engine::error::Error> {
+        Coeffs::new(Method::Trap, 2, [H, H])
+    }
+
+    /// Rows of `A x - b` at `x`, the current leaving each node, and the system.
+    fn resid<const N: usize>(
+        dev: &dyn Device,
+        c: Coeffs,
+        x: &[f64; N],
+        hist: &[f64],
+    ) -> ([f64; N], RealSystem) {
+        let z = vec![0.0; hist.len()];
+        let mut ctx = LoadContext::new(LoadMode::Exact);
+        ctx.gmin = GMIN;
+        ctx.tran = Some(TranLoad {
+            time: 1e-6,
+            coeffs: c,
+            hist: [hist, &z, &z],
+        });
+        let mut sys = RealSystem::new(N);
+        let mut state = vec![0.0; hist.len()];
+        dev.load(x, &mut state, &ctx, &mut sys);
+        assert!(sys.fault.is_none());
+        let mut r = [0.0; N];
+        for (i, ri) in r.iter_mut().enumerate() {
+            *ri = (0..N).map(|c| sys.a.get(i, c) * x[c]).sum::<f64>() - sys.b[i];
+        }
+        (r, sys)
+    }
+
+    fn check_jacobian<const N: usize>(
+        dev: &dyn Device,
+        c: Coeffs,
+        x0: &[f64; N],
+        hist: &[f64],
+        rows: &[usize],
+        step: f64,
+    ) {
+        let (_, sys) = resid(dev, c, x0, hist);
+        for &row in rows {
+            for col in 0..N {
+                let analytic = sys.a.get(row, col);
+                let (mut xp, mut xm) = (*x0, *x0);
+                xp[col] += step;
+                xm[col] -= step;
+                let numeric = (resid(dev, c, &xp, hist).0[row] - resid(dev, c, &xm, hist).0[row])
+                    / (2.0 * step);
+                let abs = (numeric - analytic).abs();
+                let rel = abs / numeric.abs().max(analytic.abs());
+                assert!(
+                    rel <= 1e-5 || abs <= 1e-15,
+                    "x {x0:?} row {row} col {col}: analytic {analytic:e}, numeric {numeric:e}"
+                );
+            }
+        }
+    }
+
+    /// Value check of the rows of `A x - b`, which cancel terms of order
+    /// `G |x|`; the Jacobian checks keep the VALIDATION criteria.
+    fn close(a: f64, b: f64) {
+        assert!(
+            (a - b).abs() <= 1e-7 * a.abs().max(b.abs()) + 1e-15,
+            "{a:e} vs {b:e}"
+        );
+    }
+
+    #[test]
+    fn diode() -> TestResult {
+        let p = DiodeParams {
+            rs: 0.0,
+            ..charge_params()
+        };
+        let d = Diode::new("D1".into(), Some(0), None, Some(1), p);
+        let cf = coeffs()?;
+        let ag0 = cf.ag()[0];
+        let (qn, i_n) = (3e-12, 2e-5);
+        // Reverse and forward bias.
+        for vd in [-2.0, 0.65] {
+            let x = [vd, 0.0];
+            let hist = [0.0, 0.0, 0.0, qn, i_n];
+            let (r, _) = resid(&d, cf, &x, &hist);
+            let (qv, _) = charge(vd, &p, GMIN);
+            let (id, _) = eval(vd, &p, GMIN);
+            close(r[0], id + ag0 * (qv - qn) - i_n);
+            close(r[1], -r[0]);
+            check_jacobian(&d, cf, &x, &hist, &[0, 1], 1e-6 * VT);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn bjt() -> TestResult {
+        let p = bjt_params(50.0);
+        let cf = coeffs()?;
+        let ag0 = cf.ag()[0];
+        let (qbe_n, ibe_n, qbc_n, ibc_n) = (2e-13, 1e-5, -1e-13, -4e-6);
+        for pnp in [false, true] {
+            let s = if pnp { -1.0 } else { 1.0 };
+            let q = Bjt::new("Q1".into(), [Some(0), Some(1), Some(2)], pnp, p);
+            assert_eq!(q.charge_slots(), &[8, 10]);
+            // Active and saturation, as physical (c, b, e) voltages.
+            for (vbe, vbc) in [(0.7, -3.0), (0.75, 0.6)] {
+                let (vb, ve, vc) = (s * 1.0, s * (1.0 - vbe), s * (1.0 - vbc));
+                let x = [vc, vb, ve];
+                let mut hist = vec![0.0; q.state_len()];
+                hist[8..12].copy_from_slice(&[qbe_n, ibe_n, qbc_n, ibc_n]);
+                let (r, _) = resid(&q, cf, &x, &hist);
+                let ch = charges(vbe * s * s, vbc * s * s, &p);
+                let e = eval_signed(s, s * vbe, s * vbc, &p, GMIN);
+                let ib_q = ag0 * (ch.qbe - qbe_n) - ibe_n + ag0 * (ch.qbc - qbc_n) - ibc_n;
+                let ic_q = -(ag0 * (ch.qbc - qbc_n) - ibc_n);
+                // Collector and base rows carry the DC current plus the
+                // charge current (physical sign `s` for both).
+                close(r[0], e.ic + s * ic_q);
+                close(r[1], e.ib + s * ib_q);
+                check_jacobian(&q, cf, &x, &hist, &[0, 1, 2], 1e-6 * VT);
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn mosfet() -> TestResult {
+        let (w, l) = (2e-5, 1e-6);
+        let cf = coeffs()?;
+        let ag0 = cf.ag()[0];
+        for pmos in [false, true] {
+            let s = if pmos { -1.0 } else { 1.0 };
+            let p = Mos1Params {
+                vto: s * 0.7,
+                cgso: 3e-10,
+                cgdo: 2e-10,
+                cgbo: 1e-10,
+                ..mos_params()
+            };
+            let m = Mos1::new(
+                "M1".into(),
+                [Some(0), Some(1), Some(2), Some(3)],
+                pmos,
+                p,
+                MOS_BETA,
+                w,
+                l,
+            );
+            assert_eq!(m.charge_slots(), &[9, 11, 13]);
+            // Saturation: oriented vgs 2, vds 3, vbs 0.
+            let x = [s * 3.0, s * 2.0, 0.0, 0.0];
+            let (cgs, cgd, cgb) = (3e-10 * w, 2e-10 * w, 1e-10 * l);
+            // History at t_n: oriented voltages and consistent charges.
+            let (vgs1, vds1, vbs1) = (1.5, 2.5, -0.1);
+            let mut hist = vec![0.0; m.state_len()];
+            hist[..3].copy_from_slice(&[vgs1, vds1, vbs1]);
+            let (i_gs, i_gd, i_gb) = (1e-6, -2e-6, 5e-7);
+            for (slot, cap, v, i) in [
+                (9, cgs, vgs1, i_gs),
+                (11, cgd, vgs1 - vds1, i_gd),
+                (13, cgb, vgs1 - vbs1, i_gb),
+            ] {
+                hist[slot] = cap * v;
+                hist[slot + 1] = i;
+            }
+            let (r, _) = resid(&m, cf, &x, &hist);
+            let want = |cap: f64, v: f64, v1: f64, i_n: f64| ag0 * cap * (v - v1) - i_n;
+            let iq_gs = want(cgs, 2.0, vgs1, i_gs);
+            let iq_gd = want(cgd, 2.0 - 3.0, vgs1 - vds1, i_gd);
+            let iq_gb = want(cgb, 2.0, vgs1 - vbs1, i_gb);
+            // The gate carries only the overlap currents.
+            close(r[1], s * (iq_gs + iq_gd + iq_gb));
+            check_jacobian(&m, cf, &x, &hist, &[1], 1e-3);
+            // Stamped geq equals ag0 times the capacitance.
+            let (_, sys) = resid(&m, cf, &x, &hist);
+            close(sys.a.get(1, 2), -ag0 * cgs);
+            close(sys.a.get(1, 0), -ag0 * cgd);
+            close(sys.a.get(1, 3), -ag0 * cgb);
+        }
+        Ok(())
+    }
+}

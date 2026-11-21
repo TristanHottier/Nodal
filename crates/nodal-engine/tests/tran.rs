@@ -293,3 +293,138 @@ fn breakpoint_just_before_tstop_does_not_overshoot() -> TestResult {
     }
     Ok(())
 }
+
+/// Net charge of the V1 branch current over `[t0, t1]` (trapezoid over the
+/// output points, linearly interpolated at the window edges, which are not on
+/// the output grid) and the peak current.
+fn period_charge(r: &TranResult, t0: f64, t1: f64) -> Result<(f64, f64), Box<dyn Error>> {
+    let i = r
+        .branch_currents
+        .get("V1")
+        .ok_or("no branch current of V1")?;
+    let at = |t: f64| -> Option<f64> {
+        let k = r.time.iter().position(|&x| x >= t)?;
+        let (ta, tb) = (*r.time.get(k.checked_sub(1)?)?, r.time[k]);
+        let (ia, ib) = (i[k - 1], i[k]);
+        Some(ia + (ib - ia) * (t - ta) / (tb - ta))
+    };
+    let (i0, i1) = (
+        at(t0).ok_or("no point before t0")?,
+        at(t1).ok_or("no point at t1")?,
+    );
+    let mut pts = vec![(t0, i0)];
+    pts.extend(
+        r.time
+            .iter()
+            .zip(i)
+            .filter(|(t, _)| **t > t0 && **t < t1)
+            .map(|(t, v)| (*t, *v)),
+    );
+    pts.push((t1, i1));
+    let charge = pts
+        .windows(2)
+        .map(|w| 0.5 * (w[0].1 + w[1].1) * (w[1].0 - w[0].0))
+        .sum();
+    let peak = i.iter().fold(0.0_f64, |m, v| m.max(v.abs()));
+    Ok((charge, peak))
+}
+
+/// A reverse-biased diode with `CJO` only (`TT = 0`) is a nonlinear
+/// capacitor, so over one period of the periodic steady state the net
+/// charge through V1 is zero. Amplitude 2 V, five periods of settling.
+#[test]
+fn diode_reverse_charge_balance() -> TestResult {
+    let (cjo, va, freq) = (1e-11, 2.0, 1e6);
+    for method in METHODS {
+        let text = format!(
+            r#"{{"irVersion":1,"elements":[
+            {{"kind":"V","name":"V1","nodes":["in","0"],"dc":-3,
+              "tran":{{"type":"sin","vo":-3,"va":{va},"freq":{freq:e}}}}},
+            {{"kind":"R","name":"R1","nodes":["in","d"],"value":1000}},
+            {{"kind":"D","name":"D1","nodes":["d","0"],"model":"DM"}}],
+            "models":[{{"name":"DM","type":"D","params":{{"IS":1e-14,"CJO":{cjo:e},"VJ":0.8,"M":0.5,"TT":0}}}}],
+            "analyses":[{{"type":"tran","tstep":5e-9,"tstop":6e-6}}],
+            "options":{{{OPTIONS},"method":"{method}"}}}}"#
+        );
+        let r = run_tran(&text)?;
+        let (charge, peak) = period_charge(&r, 5.0 / freq, 6.0 / freq)?;
+        // The swing of the capacitor charge is of order CJO va; the net
+        // charge over a period must be a thousandth of it at most.
+        assert!(
+            charge.abs() < 1e-3 * cjo * va,
+            "{method}: net charge {charge:e} C over one period"
+        );
+        // The current itself is not negligible: the peak exceeds the bound
+        // by far, so the integral is not trivially small.
+        assert!(peak * 1e-9 > 1e-3 * cjo * va, "{method}: peak {peak:e}");
+    }
+    Ok(())
+}
+
+/// A MOSFET with the channel off and only overlap capacitances is a linear
+/// capacitor `(CGSO + CGDO) W + CGBO L` from the gate to ground, so the gate
+/// follows the RC closed form, for both polarities.
+#[test]
+fn mos_overlap_capacitance_charges_gate() -> TestResult {
+    let (w, l) = (1e-3, 1e-6);
+    let c = 2e-9 * w + 1e-9 * w + 1e-9 * l;
+    let tau = 1e6 * c;
+    for (kind, vto, sign) in [("NMOS", 5.0, 1.0), ("PMOS", -5.0, -1.0)] {
+        for method in METHODS {
+            let text = format!(
+                r#"{{"irVersion":1,"elements":[
+                {{"kind":"V","name":"V1","nodes":["in","0"],"dc":0,"tran":{{"type":"pulse","v1":0,"v2":{sign},"td":0,"tr":1e-9,"tf":1e-9,"pw":1,"per":2}}}},
+                {{"kind":"R","name":"R1","nodes":["in","g"],"value":1e6}},
+                {{"kind":"M","name":"M1","nodes":["0","g","0","0"],"model":"MM","w":{w:e},"l":{l:e}}}],
+                "models":[{{"name":"MM","type":"{kind}","params":{{"VTO":{vto},"KP":1e-4,"CGSO":2e-9,"CGDO":1e-9,"CGBO":1e-9}}}}],
+                "analyses":[{{"type":"tran","tstep":1e-7,"tstop":8e-6}}],
+                "options":{{{OPTIONS},"method":"{method}"}}}}"#
+            );
+            let r = run_tran(&text)?;
+            let g = series(&r, "g")?;
+            for (t, v) in r.time.iter().zip(g) {
+                let want = sign * rc_ramp(*t, tau, 1e-9);
+                assert!(
+                    (v - want).abs() <= 2e-3,
+                    "{kind} {method} t={t:e}: {v} vs {want}"
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+/// A reverse-biased BJT (collector and emitter grounded, base driven through
+/// 1 kOhm) with `CJE`, `CJC` and `TF`, `TR` has no DC current, so the
+/// periodic steady state again has zero net charge through V1, for NPN and
+/// PNP.
+#[test]
+fn bjt_reverse_charge_balance() -> TestResult {
+    let (cj, va, freq) = (1e-11, 2.0, 1e6);
+    for (kind, sign) in [("NPN", -1.0), ("PNP", 1.0)] {
+        for method in METHODS {
+            let text = format!(
+                r#"{{"irVersion":1,"elements":[
+                {{"kind":"V","name":"V1","nodes":["in","0"],"dc":0,
+                  "tran":{{"type":"sin","vo":{vo},"va":{va},"freq":{freq:e}}}}},
+                {{"kind":"R","name":"R1","nodes":["in","b"],"value":1000}},
+                {{"kind":"Q","name":"Q1","nodes":["0","b","0"],"model":"QM"}}],
+                "models":[{{"name":"QM","type":"{kind}","params":{{"IS":1e-16,"BF":100,"BR":1,"VAF":50,"CJE":{cj:e},"CJC":{cj:e},"VJE":0.8,"VJC":0.8,"MJE":0.4,"MJC":0.4,"TF":1e-10,"TR":1e-9}}}}],
+                "analyses":[{{"type":"tran","tstep":5e-9,"tstop":6e-6}}],
+                "options":{{{OPTIONS},"method":"{method}"}}}}"#,
+                vo = 3.0 * sign
+            );
+            let r = run_tran(&text)?;
+            let (charge, peak) = period_charge(&r, 5.0 / freq, 6.0 / freq)?;
+            assert!(
+                charge.abs() < 1e-3 * 2.0 * cj * va,
+                "{kind} {method}: net charge {charge:e} C over one period"
+            );
+            assert!(
+                peak * 1e-9 > 1e-3 * cj * va,
+                "{kind} {method}: peak {peak:e}"
+            );
+        }
+    }
+    Ok(())
+}

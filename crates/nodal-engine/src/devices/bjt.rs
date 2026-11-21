@@ -12,6 +12,7 @@ use super::constants::VT;
 use super::diode::{depletion, junction};
 use super::limit::pnjlim;
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::analysis::integrate::integrate;
 use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
@@ -206,9 +207,14 @@ pub fn eval_signed(sign: f64, vbe: f64, vbc: f64, p: &BjtParams, gmin: f64) -> B
 }
 
 /// State layout: physical `vbe`, `vbc`, terminal currents `ic`, `ib`, then
-/// `dic/dvbe`, `dic/dvbc`, `dib/dvbe`, `dib/dvbc`.
+/// `dic/dvbe`, `dic/dvbc`, `dib/dvbe`, `dib/dvbc` (the DC values, charge
+/// currents not included), then the NPN-oriented charges `Q_be` and `Q_bc`,
+/// each followed by its current.
 const S_VBE: usize = 0;
 const S_VBC: usize = 1;
+const S_QBE: usize = 8;
+const S_QBC: usize = 10;
+const STATE_LEN: usize = 12;
 
 #[derive(Debug)]
 pub struct Bjt {
@@ -246,7 +252,25 @@ impl Device for Bjt {
     }
 
     fn state_len(&self) -> usize {
-        8
+        STATE_LEN
+    }
+
+    fn charge_slots(&self) -> &'static [usize] {
+        &[S_QBE, S_QBC]
+    }
+
+    /// Stores `Q_be` and `Q_bc` (NPN orientation, so a PNP keeps the sign of
+    /// its capacitances) at the junction voltages of `x`. A BJT has no
+    /// device `ic`, so `uic` changes nothing.
+    fn init_charges(&self, x: &[f64], state: &mut [f64], _uic: bool) {
+        let (vbe, vbc) = self.junction_voltages(x);
+        let q = charges(self.sign * vbe, self.sign * vbc, &self.params);
+        if let Some([qbe, ibe, qbc, ibc]) = state.get_mut(S_QBE..S_QBE + 4) {
+            *qbe = q.qbe;
+            *qbc = q.qbc;
+            *ibe = 0.0;
+            *ibc = 0.0;
+        }
     }
 
     // Stamp derivation. Terminal currents into the device are Ic, Ib and
@@ -289,13 +313,55 @@ impl Device for Bjt {
                 false,
             ),
         };
-        let e = eval_signed(s, vbe, vbc, p, ctx.gmin);
+        let mut e = eval_signed(s, vbe, vbc, p, ctx.gmin);
         if ctx.mode.writes_state()
             && let Some(slots) = state.first_chunk_mut::<8>()
         {
             *slots = [
                 vbe, vbc, e.ic, e.ib, e.dic_dvbe, e.dic_dvbc, e.dib_dvbe, e.dib_dvbc,
             ];
+        }
+        // Transient charge block of bjtload.c (XCJC = 1, CJS = 0, PTF = 0):
+        // integrate Qbe and Qbc at the limited voltages, then
+        //   gpi += geq_be, gmu += geq_bc, geqcb *= ag[0],
+        //   cb += cq_be + cq_bc, cc -= cq_bc.
+        // The base row gains dIb/dvbe += geq_be and dIb/dvbc += geq_bc + geqcb,
+        // the collector row dIc/dvbc -= geq_bc, as the matrix loads of
+        // bjtload.c imply. The charges are NPN-oriented, so the physical
+        // currents carry the factor `sign` like Ic and Ib, while the partials
+        // (two sign flips) do not. The MODEINITTRAN first-iteration copy of
+        // state0 into state1 has no counterpart: the driver seeds the history
+        // from `init_charges`.
+        if let Some(tran) = &ctx.tran {
+            let q = charges(s * vbe, s * vbc, p);
+            match state.get_mut(S_QBE..S_QBE + 4) {
+                Some([qbe, _, qbc, _]) => {
+                    *qbe = q.qbe;
+                    *qbc = q.qbc;
+                }
+                _ => {
+                    sys.fault(Error::Internal(format!("{}: short state", self.name)));
+                    return false;
+                }
+            }
+            let be = integrate(&tran.coeffs, state, tran.hist, S_QBE, q.cbe);
+            let bc = integrate(&tran.coeffs, state, tran.hist, S_QBC, q.cbc);
+            match (be, bc) {
+                (Ok((geq_be, _)), Ok((geq_bc, _))) => {
+                    let cq_be = state.get(S_QBE + 1).copied().unwrap_or(0.0);
+                    let cq_bc = state.get(S_QBC + 1).copied().unwrap_or(0.0);
+                    let geqcb = q.cbe_vbc * tran.coeffs.ag()[0];
+                    e.ib += s * (cq_be + cq_bc);
+                    e.ic -= s * cq_bc;
+                    e.dib_dvbe += geq_be;
+                    e.dib_dvbc += geq_bc + geqcb;
+                    e.dic_dvbc -= geq_bc;
+                }
+                (Err(err), _) | (_, Err(err)) => {
+                    sys.fault(err);
+                    return false;
+                }
+            }
         }
         let ic_eq = e.ic - e.dic_dvbe * vbe - e.dic_dvbc * vbc;
         let ib_eq = e.ib - e.dib_dvbe * vbe - e.dib_dvbc * vbc;

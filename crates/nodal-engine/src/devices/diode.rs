@@ -9,6 +9,7 @@ use std::f64::consts::E;
 use super::constants::VT;
 use super::limit::pnjlim;
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::analysis::integrate::integrate;
 use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
@@ -117,10 +118,13 @@ pub(crate) fn depletion(v: f64, cj: f64, vj: f64, m: f64, fc: f64) -> (f64, f64)
     }
 }
 
-/// State layout: junction voltage, current, conductance.
+/// State layout: junction voltage, current, conductance (the DC values, the
+/// charge current is not included), then the charge `Q_d` and its current.
 const STATE_V: usize = 0;
 const STATE_I: usize = 1;
 const STATE_G: usize = 2;
+const STATE_Q: usize = 3;
+const STATE_LEN: usize = 5;
 
 #[derive(Debug)]
 pub struct Diode {
@@ -130,6 +134,9 @@ pub struct Diode {
     prime: Option<usize>,
     cathode: Option<usize>,
     params: DiodeParams,
+    /// `gmin` used by `init_charges`, which has no `LoadContext`. `load` uses
+    /// the context's value.
+    gmin: f64,
 }
 
 impl Diode {
@@ -146,7 +153,15 @@ impl Diode {
             prime: internal.or(anode),
             cathode,
             params,
+            gmin: crate::ir::DEFAULT_GMIN,
         }
+    }
+
+    /// Sets the `gmin` that `init_charges` adds to the diffusion charge, the
+    /// circuit's option value.
+    pub fn with_gmin(mut self, gmin: f64) -> Self {
+        self.gmin = gmin;
+        self
     }
 }
 
@@ -156,7 +171,22 @@ impl Device for Diode {
     }
 
     fn state_len(&self) -> usize {
-        3
+        STATE_LEN
+    }
+
+    fn charge_slots(&self) -> &'static [usize] {
+        &[STATE_Q]
+    }
+
+    /// Stores `Q_d` at the junction voltage of the solution `x`. A diode has
+    /// no device `ic`, so `uic` changes nothing.
+    fn init_charges(&self, x: &[f64], state: &mut [f64], _uic: bool) {
+        let vd = volt(x, self.prime) - volt(x, self.cathode);
+        let (q, _) = charge(vd, &self.params, self.gmin);
+        if let Some([q_slot, i_slot]) = state.get_mut(STATE_Q..STATE_Q + 2) {
+            *q_slot = q;
+            *i_slot = 0.0;
+        }
     }
 
     fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool {
@@ -172,13 +202,39 @@ impl Device for Diode {
             // dioacld.c reads the junction voltage stored by the last load.
             LoadMode::SmallSignal => (state.get(STATE_V).copied().unwrap_or(0.0), false),
         };
-        let (id, gd) = eval(vd, p, ctx.gmin);
+        let (mut id, mut gd) = eval(vd, p, ctx.gmin);
         if ctx.mode.writes_state()
             && let [v, i, g, ..] = state
         {
             *v = vd;
             *i = id;
             *g = gd;
+        }
+        // Transient charge block of dioload.c: Q_d at the limited voltage,
+        // integrated, with `gd += geq` and `cd += i_q`. The first-iteration
+        // MODEINITTRAN special case (state1 = state0, so no charge current)
+        // has no counterpart here: the driver seeds the history from
+        // `init_charges` (Q_d at the operating point), which gives the same
+        // first step.
+        if let Some(tran) = &ctx.tran {
+            let (q, cap) = charge(vd, p, ctx.gmin);
+            match state.get_mut(STATE_Q) {
+                Some(slot) => *slot = q,
+                None => {
+                    sys.fault(Error::Internal(format!("{}: empty state", self.name)));
+                    return false;
+                }
+            }
+            match integrate(&tran.coeffs, state, tran.hist, STATE_Q, cap) {
+                Ok((geq, _)) => {
+                    gd += geq;
+                    id += state.get(STATE_Q + 1).copied().unwrap_or(0.0);
+                }
+                Err(e) => {
+                    sys.fault(e);
+                    return false;
+                }
+            }
         }
         if p.rs > 0.0 {
             let grs = 1.0 / p.rs;

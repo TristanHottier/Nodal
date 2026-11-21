@@ -2,7 +2,7 @@
 
 mod ac;
 mod dc;
-pub(crate) mod integrate;
+pub mod integrate;
 mod newton;
 mod op;
 mod tran;

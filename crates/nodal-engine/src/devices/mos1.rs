@@ -10,6 +10,7 @@
 use super::constants::VT;
 use super::limit::{fetlim, limvds, pnjlim};
 use super::{Device, LoadContext, LoadMode, volt};
+use crate::analysis::integrate::integrate;
 use crate::error::Error;
 use crate::ir::{Model, param};
 use crate::mna::RealSystem;
@@ -187,13 +188,20 @@ fn bulk_vcrit(is: f64) -> f64 {
 
 /// State layout, NMOS-oriented: limited `vgs`, `vds`, `vbs`, the threshold
 /// `von`, the drain current, then `dId/dvgs`, `dId/dvds`, `dId/dvbs`, and
-/// last the limited `vbd`.
+/// the limited `vbd`, and last the overlap charges `q_gs`, `q_gd`, `q_gb`,
+/// each followed by its current. The charges are NMOS-oriented, `C` times the
+/// oriented voltage.
 const S_VGS: usize = 0;
 const S_VDS: usize = 1;
 const S_VBS: usize = 2;
 const S_VON: usize = 3;
 const S_VBD: usize = 8;
-const STATE_LEN: usize = 9;
+const S_QGS: usize = 9;
+const S_QGD: usize = 11;
+const S_QGB: usize = 13;
+const STATE_LEN: usize = 15;
+/// Length of the DC part of the state, up to and including `S_VBD`.
+const DC_LEN: usize = 9;
 
 #[derive(Debug)]
 pub struct Mos1 {
@@ -261,6 +269,78 @@ impl Mos1 {
     }
 }
 
+impl Mos1 {
+    /// Overlap capacitance companions of one transient iteration
+    /// (`mos1load.c`, Meyer block with zero Meyer capacitance: with no `TOX`
+    /// `OxideCap` is 0, so `capgs`, `capgd`, `capgb` are the overlap
+    /// capacitances alone). As there, `q = (v - v_prev) C + q_prev` with
+    /// `v_prev` the limited voltages accepted at `t_n` (`state1`), then
+    /// `NIintegrate` and the right-hand side
+    /// `ceq = i_q - geq v`, loaded as `type * ceq` on the gate and its
+    /// negative on the other terminal. `v` are the NMOS-oriented limited
+    /// `vgs`, `vgd = vgs - vds`, `vgb = vgs - vbs`.
+    ///
+    /// `MODEINITTRAN` mapping: ngspice's first iteration of the first step
+    /// extrapolates the charge and stamps no companion (`gcg* = ceq* = 0`).
+    /// Nodal has no such flag. Its driver seeds the history from
+    /// `init_charges` (`q = C v` at the operating point), so every iteration,
+    /// the first included, integrates against that history, which is what
+    /// the second ngspice iteration does.
+    ///
+    /// A fault is recorded on `sys` and stops the stamping.
+    fn load_overlap(
+        &self,
+        tran: &super::TranLoad,
+        (vgs, vds, vbs): (f64, f64, f64),
+        state: &mut [f64],
+        sys: &mut RealSystem,
+    ) {
+        let hist = tran.hist[0];
+        let (Some(&vgs1), Some(&vds1), Some(&vbs1)) =
+            (hist.get(S_VGS), hist.get(S_VDS), hist.get(S_VBS))
+        else {
+            sys.fault(Error::Internal(format!("{}: short history", self.name)));
+            return;
+        };
+        let g = self.gate;
+        for (other, cap, v, v1, slot) in [
+            (self.source, self.cgs, vgs, vgs1, S_QGS),
+            (self.drain, self.cgd, vgs - vds, vgs1 - vds1, S_QGD),
+            (self.bulk, self.cgb, vgs - vbs, vgs1 - vbs1, S_QGB),
+        ] {
+            let q_prev = hist.get(slot).copied();
+            let (Some(q_prev), Some(q_slot)) = (q_prev, state.get_mut(slot)) else {
+                sys.fault(Error::Internal(format!("{}: short state", self.name)));
+                return;
+            };
+            *q_slot = (v - v1) * cap + q_prev;
+            if cap == 0.0 {
+                // ngspice zeroes the charge current of a zero capacitance.
+                if let Some(i) = state.get_mut(slot + 1) {
+                    *i = 0.0;
+                }
+                continue;
+            }
+            match integrate(&tran.coeffs, state, tran.hist, slot, cap) {
+                Ok((geq, _)) => {
+                    let i_q = state.get(slot + 1).copied().unwrap_or(0.0);
+                    let ceq = self.sign * (i_q - geq * v);
+                    sys.add_a(g, g, geq);
+                    sys.add_a(other, other, geq);
+                    sys.add_a(g, other, -geq);
+                    sys.add_a(other, g, -geq);
+                    sys.add_b(g, -ceq);
+                    sys.add_b(other, ceq);
+                }
+                Err(e) => {
+                    sys.fault(e);
+                    return;
+                }
+            }
+        }
+    }
+}
+
 impl Device for Mos1 {
     fn name(&self) -> &str {
         &self.name
@@ -268,6 +348,26 @@ impl Device for Mos1 {
 
     fn state_len(&self) -> usize {
         STATE_LEN
+    }
+
+    fn charge_slots(&self) -> &'static [usize] {
+        &[S_QGS, S_QGD, S_QGB]
+    }
+
+    /// Stores `q = C v` for the three overlap capacitances at the oriented
+    /// voltages of `x`. A MOSFET has no device `ic`, so `uic` changes nothing.
+    fn init_charges(&self, x: &[f64], state: &mut [f64], _uic: bool) {
+        let (vgs, vds, vbs) = self.oriented(x);
+        for (slot, cap, v) in [
+            (S_QGS, self.cgs, vgs),
+            (S_QGD, self.cgd, vgs - vds),
+            (S_QGB, self.cgb, vgs - vbs),
+        ] {
+            if let Some([q, i]) = state.get_mut(slot..slot + 2) {
+                *q = cap * v;
+                *i = 0.0;
+            }
+        }
     }
 
     // Stamp derivation. The physical drain current is Id = sign * f(vgs, vds,
@@ -333,7 +433,7 @@ impl Device for Mos1 {
         };
         let e = eval_oriented(vgs, vds, vbs, p, self.beta);
         if ctx.mode.writes_state()
-            && let Some(slots) = state.first_chunk_mut::<STATE_LEN>()
+            && let Some(slots) = state.first_chunk_mut::<DC_LEN>()
         {
             *slots = [
                 vgs,
@@ -378,6 +478,9 @@ impl Device for Mos1 {
             sys.add_b(b, -ceq);
             sys.add_b(t, ceq);
         }
+        if let Some(tran) = &ctx.tran {
+            self.load_overlap(tran, (vgs, vds, vbs), state, sys);
+        }
         limited
     }
 
@@ -408,7 +511,7 @@ impl Device for Mos1 {
     /// voltages, as docs/reference/numerical-methods.md section 1.2 rules,
     /// exactly as the diode and BJT do. Do not change it back.
     fn converged(&self, x: &[f64], state: &[f64], ctx: &LoadContext) -> bool {
-        let Some(&[vgs, vds, vbs, _, id, gm, gds, gmbs, vbd]) = state.first_chunk::<STATE_LEN>()
+        let Some(&[vgs, vds, vbs, _, id, gm, gds, gmbs, vbd]) = state.first_chunk::<DC_LEN>()
         else {
             return true;
         };
