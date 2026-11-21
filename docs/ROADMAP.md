@@ -53,14 +53,13 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4486702438
 
 M5 is split in two. M5a draws schematics; M5b turns them into circuits that can be saved and netlisted.
 
-### M5a — Schematic canvas · **done**
+### M5a — Schematic canvas · in progress
 - SVG canvas: grid, zoom, pan, selection, move, rotate, mirror, delete, copy/paste.
 - IEC symbols for every v1 device, plus ground and net label.
 - Orthogonal wire drawing with junction dots, following the drawing rules of ARCHITECTURE §6.1 (a dot at every T-junction, none at a plain crossing).
 - Undo/redo for every edit.
 
 **Exit:** every v1 device, ground and net label can be placed, moved, rotated, mirrored, copied and deleted, and wired on the grid; component tests cover each edit and its undo/redo; junction-dot tests cover T-junctions and crossings; the Pages build shows the editor.
-Evidence: CI run <pending>
 
 ### M5b — Schematic data and netlister · not started
 - Parameter inspector with value-notation parsing ([ADR 0009](adr/0009-value-notation.md)).
