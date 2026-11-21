@@ -44,11 +44,11 @@
   - `params` holds raw strings; M5b parses them (ADR 0009).
 - Schema rules: coordinates are safe integers; `id` non-empty and unique across parts, wires and labels; a wire has ≥ 2 points, consecutive points differ and share `x` or `y`; `text` and `name` non-empty.
 
-- [ ] **Step 1:** Write `schematic.test.ts`: `accepts_valid_schematic` (one part of each type, one L-shaped wire, one label); `rejects_diagonal_segment`; `rejects_single_point_wire`; `rejects_repeated_point`; `rejects_fractional_coordinate`; `rejects_duplicate_id_across_kinds` (part and wire share an id); `rejects_unknown_part_type`; `rejects_rotation_45`; `rejects_extra_field`. Each rejection asserts the Zod issue path.
-- [ ] **Step 2:** `pnpm --filter @nodal/schema test`. Expected: FAIL (module missing).
-- [ ] **Step 3:** Implement the schema. Add `zustand` and `immer` to `apps/web` dependencies with `pnpm --filter @nodal/web add zustand immer` (latest versions the release-age gate accepts; caret ranges like the existing deps).
-- [ ] **Step 4:** `pnpm install --frozen-lockfile && pnpm --filter @nodal/schema test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(schema): schematic document schema`.
+- [x] **Step 1:** Write `schematic.test.ts`: `accepts_valid_schematic` (one part of each type, one L-shaped wire, one label); `rejects_diagonal_segment`; `rejects_single_point_wire`; `rejects_repeated_point`; `rejects_fractional_coordinate`; `rejects_duplicate_id_across_kinds` (part and wire share an id); `rejects_unknown_part_type`; `rejects_rotation_45`; `rejects_extra_field`. Each rejection asserts the Zod issue path.
+- [x] **Step 2:** `pnpm --filter @nodal/schema test`. Expected: FAIL (module missing).
+- [x] **Step 3:** Implement the schema. Add `zustand` and `immer` to `apps/web` dependencies with `pnpm --filter @nodal/web add zustand immer` (latest versions the release-age gate accepts; caret ranges like the existing deps).
+- [x] **Step 4:** `pnpm install --frozen-lockfile && pnpm --filter @nodal/schema test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(schema): schematic document schema`.
 
 ### Task 2: Geometry, symbol interface and two-terminal symbols
 
@@ -75,12 +75,12 @@
 
 - IEC drawings: resistor = rectangle 1 × 4 between the leads; capacitor = two plates; inductor = four semicircular humps (IEC 60617-04-03-01); vsource = circle with a line through it along the lead axis, `+` near `p`; isource = circle with a line across it perpendicular to the leads, arrow from `p` to `n`; vcvs/ccvs = diamond with `+`/`−`; vccs/cccs = diamond with arrow; control pins drawn as short leads with `+` at `cp`; ground = three horizontal lines of decreasing width below the pin; net label = text on a flag whose point sits on the anchor.
 
-- [ ] **Step 1:** Write tests. `geometry.test.ts`: `transform_rotations` (point (1,0) maps to (0,1), (−1,0), (0,−1) for 90/180/270), `mirror_then_rotate` ((1,2), mirror, 90 → (−2,−1)), `four_rotations_identity` (every pin of every symbol), `pin_positions_world` (resistor at (5,7) rotation 90 → pins (8,7), (2,7)). `symbols.test.tsx`, for each symbol in the catalog: `pins_on_integer_grid`, `pin_names_unique`, `pins_inside_bounds` (pins may sit on the edge), `prefix_matches_table`, `body_renders` (renders inside an `<svg>` without throwing and draws at least one element).
-- [ ] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
-- [ ] **Step 3:** Implement geometry and the eleven symbols.
-- [ ] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Render every symbol at zoom 2 into a throwaway HTML page or a Playwright screenshot and look at it (IEC shape, pins at the lead ends). Not committed.
-- [ ] **Step 6:** Commit `feat(web): grid geometry and two-terminal IEC symbols`.
+- [x] **Step 1:** Write tests. `geometry.test.ts`: `transform_rotations` (point (1,0) maps to (0,1), (−1,0), (0,−1) for 90/180/270), `mirror_then_rotate` ((1,2), mirror, 90 → (−2,−1)), `four_rotations_identity` (every pin of every symbol), `pin_positions_world` (resistor at (5,7) rotation 90 → pins (8,7), (2,7)). `symbols.test.tsx`, for each symbol in the catalog: `pins_on_integer_grid`, `pin_names_unique`, `pins_inside_bounds` (pins may sit on the edge), `prefix_matches_table`, `body_renders` (renders inside an `<svg>` without throwing and draws at least one element).
+- [x] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
+- [x] **Step 3:** Implement geometry and the eleven symbols.
+- [x] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Render every symbol at zoom 2 into a throwaway HTML page or a Playwright screenshot and look at it (IEC shape, pins at the lead ends). Not committed.
+- [x] **Step 6:** Commit `feat(web): grid geometry and two-terminal IEC symbols`.
 
 ### Task 3: Semiconductor, switch and op-amp symbols
 
@@ -100,11 +100,11 @@
 
 - Drawings: diode = triangle pointing from `a` to `k` with a bar; BJT = base bar, collector and emitter lines, emitter arrow out (NPN) or in (PNP), optional envelope circle; MOSFET = enhancement type with three channel segments, gate plate, bulk arrow into the channel (NMOS) or out (PMOS); switch = make contact (IEC 60617-07-02-01) with a dashed coupling line to a control rectangle between `cp` and `cn`; op-amp = triangle with `−` at `inn`, `+` at `inp`, `∞` inside. The op-amp is ideal and has no supply pins; M5b's netlister decides its IR form.
 
-- [ ] **Step 1:** Extend `symbols.test.tsx` with `catalog_covers_all_part_types` (`Object.keys(SYMBOLS)` equals `PART_TYPES`) and `palette_order` (`PALETTE` equals `[...PART_TYPES, "label"]`). The per-symbol tests from Task 2 now run over all seventeen.
-- [ ] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
-- [ ] **Step 3:** Implement the seven symbols.
-- [ ] **Step 4:** Same verification as Task 2 Step 4, plus the visual check of Task 2 Step 5 for the new symbols.
-- [ ] **Step 5:** Commit `feat(web): semiconductor, switch and op-amp symbols`.
+- [x] **Step 1:** Extend `symbols.test.tsx` with `catalog_covers_all_part_types` (`Object.keys(SYMBOLS)` equals `PART_TYPES`) and `palette_order` (`PALETTE` equals `[...PART_TYPES, "label"]`). The per-symbol tests from Task 2 now run over all seventeen.
+- [x] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
+- [x] **Step 3:** Implement the seven symbols.
+- [x] **Step 4:** Same verification as Task 2 Step 4, plus the visual check of Task 2 Step 5 for the new symbols.
+- [x] **Step 5:** Commit `feat(web): semiconductor, switch and op-amp symbols`.
 
 ### Task 4: Pure edit operations
 
@@ -123,11 +123,11 @@
     - `deleteItems(doc, ids): Schematic` (wires attached to deleted parts stay).
     - `type Clip = { parts: Part[]; wires: Wire[]; labels: NetLabel[] }`; `copyItems(doc, ids): Clip | null`; `pasteClip(doc, clip, newId: () => string, offset: Point): { doc: Schematic; ids: string[] }` (fresh ids, part names from `nextName` in clip order, label text kept, everything shifted by `offset`).
 
-- [ ] **Step 1:** Write tests. `naming.test.ts`: `first_name_is_1`, `next_after_gap` (R1, R5 → R6), `case_insensitive`, `prefixes_independent` (Q for npn and pnp share a counter). `wires.test.ts`: `normalize_drops_duplicates_and_collinear`, `normalize_null_when_degenerate`, `follow_horizontal_end`, `follow_vertical_end`, `follow_back_onto_segment_collapses`. `edits.test.ts`: `add_part_uses_defaults`, `add_wire_normalizes`, `move_translates_selected`, `move_drags_attached_wire_end`, `move_translates_wire_when_both_ends_follow`, `move_leaves_unattached_wire`, `rotate_part_and_label`, `rotate_keeps_wires_orthogonal` (resistor with wires on both pins, rotate: every segment of every wire is axis-aligned and its ends sit on the new pins), `mirror_toggles`, `mirror_moves_wire_on_controlled_source_pins` (vcvs control pins swap sides), `delete_keeps_dangling_wires`, `copy_nothing_selected_is_null`, `paste_renames_and_offsets`, `paste_after_delete`, `repeated_paste_offsets` (offsets (2,2), (4,4) given by the caller; names R2, R3), `noop_returns_same_object` (move by (0,0), delete of unknown id).
-- [ ] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
-- [ ] **Step 3:** Implement with Immer `produce`.
-- [ ] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): pure schematic edit operations`.
+- [x] **Step 1:** Write tests. `naming.test.ts`: `first_name_is_1`, `next_after_gap` (R1, R5 → R6), `case_insensitive`, `prefixes_independent` (Q for npn and pnp share a counter). `wires.test.ts`: `normalize_drops_duplicates_and_collinear`, `normalize_null_when_degenerate`, `follow_horizontal_end`, `follow_vertical_end`, `follow_back_onto_segment_collapses`. `edits.test.ts`: `add_part_uses_defaults`, `add_wire_normalizes`, `move_translates_selected`, `move_drags_attached_wire_end`, `move_translates_wire_when_both_ends_follow`, `move_leaves_unattached_wire`, `rotate_part_and_label`, `rotate_keeps_wires_orthogonal` (resistor with wires on both pins, rotate: every segment of every wire is axis-aligned and its ends sit on the new pins), `mirror_toggles`, `mirror_moves_wire_on_controlled_source_pins` (vcvs control pins swap sides), `delete_keeps_dangling_wires`, `copy_nothing_selected_is_null`, `paste_renames_and_offsets`, `paste_after_delete`, `repeated_paste_offsets` (offsets (2,2), (4,4) given by the caller; names R2, R3), `noop_returns_same_object` (move by (0,0), delete of unknown id).
+- [x] **Step 2:** `pnpm --filter @nodal/web test`. Expected: FAIL.
+- [x] **Step 3:** Implement with Immer `produce`.
+- [x] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): pure schematic edit operations`.
 
 ### Task 5: Junction dots
 
@@ -138,10 +138,10 @@
 - Produces: `junctionDots(doc: Schematic): Point[]`, sorted by `x` then `y`, no duplicates.
 - Rule (ARCHITECTURE §6.1): for each point `P` that is a wire end or a pin, its degree is (wire ends at `P`) + (pins at `P`) + 2 × (wires passing through `P`, either strictly inside a segment or at an inner vertex). `P` gets a dot when its degree ≥ 3. A point where wires only cross (no end and no pin there) is never examined, so crossings get no dot. Label anchors do not count.
 
-- [ ] **Step 1:** Write `junctions.test.ts`: `t_junction` (wire end on the inside of another wire → one dot), `plain_crossing_no_dot`, `corner_no_dot` (an L wire alone), `dot_at_corner_with_third_wire`, `two_ends_meeting_no_dot`, `three_ends_meeting_dot`, `pin_on_wire_interior_dot` (a resistor pin on the inside of a wire), `wire_end_on_pin_no_dot`, `four_way_one_dot` (two wires ending on the inside of a third from both sides at the same point), `label_does_not_count`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement (index points in a `Map` keyed `"x,y"`; O(points × segments) is fine for v1).
-- [ ] **Step 4:** `pnpm --filter @nodal/web test`. Expected: PASS.
-- [ ] **Step 5:** Write the degree rule and the transform convention (Global Constraints) into ARCHITECTURE §6.1, run the humanizer on the changed prose, commit `feat(web): junction dots`.
+- [x] **Step 1:** Write `junctions.test.ts`: `t_junction` (wire end on the inside of another wire → one dot), `plain_crossing_no_dot`, `corner_no_dot` (an L wire alone), `dot_at_corner_with_third_wire`, `two_ends_meeting_no_dot`, `three_ends_meeting_dot`, `pin_on_wire_interior_dot` (a resistor pin on the inside of a wire), `wire_end_on_pin_no_dot`, `four_way_one_dot` (two wires ending on the inside of a third from both sides at the same point), `label_does_not_count`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement (index points in a `Map` keyed `"x,y"`; O(points × segments) is fine for v1).
+- [x] **Step 4:** `pnpm --filter @nodal/web test`. Expected: PASS.
+- [x] **Step 5:** Write the degree rule and the transform convention (Global Constraints) into ARCHITECTURE §6.1, run the humanizer on the changed prose, commit `feat(web): junction dots`.
 
 ### Task 6: Editor store with history
 
@@ -157,9 +157,9 @@
   - `EditorProvider` and `useEditor<T>(selector: (s: EditorState) => T): T` in `EditorContext.tsx`.
 - Behaviour: `commit` ignores `next === doc`; otherwise pushes the old doc on `past` (drop the oldest beyond 500), clears `future`, sets `selection` to `select` when given. `undo`/`redo` swap docs and drop selected ids that no longer exist. `copy` stores `copyItems(doc, selection)` and resets `pasteCount` to 0; `paste` increments `pasteCount` and pastes at offset `(2·pasteCount, 2·pasteCount)`, selecting the pasted items. `setView` clamps zoom to [0.25, 8].
 
-- [ ] **Step 1:** Write `store.test.ts`: `commit_pushes_history`, `same_doc_no_history`, `undo_redo_roundtrip`, `new_commit_clears_future`, `history_capped_at_500`, `undo_prunes_selection`, `undo_on_empty_is_noop`, `copy_paste_selects_pasted`, `zoom_clamped`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): editor store with undo and redo`.
+- [x] **Step 1:** Write `store.test.ts`: `commit_pushes_history`, `same_doc_no_history`, `undo_redo_roundtrip`, `new_commit_clears_future`, `history_capped_at_500`, `undo_prunes_selection`, `undo_on_empty_is_noop`, `copy_paste_selects_pasted`, `zoom_clamped`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): editor store with undo and redo`.
 
 ### Task 7: Canvas: view, rendering, selection and move
 
@@ -172,10 +172,10 @@
   - `<Canvas />`: one `<svg data-testid="schematic-canvas">` filling its container; inner `<g transform="translate(view.x view.y) scale(view.zoom·GRID)">`. Renders grid dots, wires (`data-testid="wire-<id>"`, wide transparent hit stroke), parts (`data-testid="part-<id>"`, transparent bounds rect for hits, `data-selected`), labels (`label-<id>`), junction dots (`<circle data-testid="junction" data-x data-y>`), and the box-select rectangle. Selected items use a CSS class, not a different geometry.
   - Interaction in the select tool: pointer down on an item selects it (Shift toggles) and starts a drag; while dragging, the canvas renders `moveItems(doc, selection, snappedDelta)` as a preview; pointer up commits it once. Pointer down on empty canvas starts a box select (items whose bounds lie fully inside are selected; Shift adds). Middle button drag, or left drag with Space held, pans. Wheel zooms about the cursor. Esc during a drag or box select cancels it.
 
-- [ ] **Step 1:** Write tests. `coords.test.ts`: `screen_to_grid_at_zoom_extremes` (zoom 0.25 and 8 with view offset (37, −53): the client point of grid (12, −4) maps back to it), `zoom_at_keeps_cursor_fixed`. `Canvas.test.tsx` (store seeded with a resistor R1 at (10,10) and a wire): `renders_parts_wires_dots`, `click_selects`, `shift_click_toggles`, `click_empty_clears`, `box_select`, `drag_moves_and_commits_once`, `zero_drag_adds_no_history`, `escape_cancels_drag`, `wheel_zooms_about_cursor`, `space_drag_pans`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. Keep `Canvas.tsx` under 400 lines by putting pointer handling in a `useCanvasPointer` hook file if needed. Memoize `PartView`/`WireView` on their item objects.
-- [ ] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): schematic canvas with selection and move`.
+- [x] **Step 1:** Write tests. `coords.test.ts`: `screen_to_grid_at_zoom_extremes` (zoom 0.25 and 8 with view offset (37, −53): the client point of grid (12, −4) maps back to it), `zoom_at_keeps_cursor_fixed`. `Canvas.test.tsx` (store seeded with a resistor R1 at (10,10) and a wire): `renders_parts_wires_dots`, `click_selects`, `shift_click_toggles`, `click_empty_clears`, `box_select`, `drag_moves_and_commits_once`, `zero_drag_adds_no_history`, `escape_cancels_drag`, `wheel_zooms_about_cursor`, `space_drag_pans`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. Keep `Canvas.tsx` under 400 lines by putting pointer handling in a `useCanvasPointer` hook file if needed. Memoize `PartView`/`WireView` on their item objects.
+- [x] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): schematic canvas with selection and move`.
 
 ### Task 8: Tools, palette and keyboard
 
@@ -190,9 +190,9 @@
   - `useShortcuts()` (window `keydown`, ignored when the target is an `input`, `textarea` or `contenteditable`): `R` rotate, `X` mirror, `Delete`/`Backspace` delete, `Ctrl/Cmd+C` copy, `Ctrl/Cmd+V` paste, `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` and `Ctrl/Cmd+Y` redo, `W` wire tool, `Esc` cancel or back to select.
   - `<Editor />`: palette, canvas, and a bottom status bar holding the existing `engine-status` text.
 
-- [ ] **Step 1:** Write tests. `Editor.test.tsx`: a table over all eighteen `PALETTE` entries, each running `place → move → rotate → mirror (parts only) → copy/paste → delete` through the UI (palette click, canvas click at grid (10,10), drag to (14,12), keys) and checking the store after each step; after each step `Ctrl+Z` restores the document before it and `Ctrl+Shift+Z` re-applies it (`toEqual` on `doc`). Plus `shortcuts_ignored_in_inputs` and `escape_returns_to_select`. `wireTool.test.tsx`: `draws_l_wire_between_two_pins` (two resistors; wire ends sit on the pins; two segments), `slash_toggles_bend`, `click_on_wire_interior_ends_wire_with_dot`, `escape_discards_wire`, `enter_commits_wire`, `wire_undo_redo`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): placement, wire tool and shortcuts`.
+- [x] **Step 1:** Write tests. `Editor.test.tsx`: a table over all eighteen `PALETTE` entries, each running `place → move → rotate → mirror (parts only) → copy/paste → delete` through the UI (palette click, canvas click at grid (10,10), drag to (14,12), keys) and checking the store after each step; after each step `Ctrl+Z` restores the document before it and `Ctrl+Shift+Z` re-applies it (`toEqual` on `doc`). Plus `shortcuts_ignored_in_inputs` and `escape_returns_to_select`. `wireTool.test.tsx`: `draws_l_wire_between_two_pins` (two resistors; wire ends sit on the pins; two segments), `slash_toggles_bend`, `click_on_wire_interior_ends_wire_with_dot`, `escape_discards_wire`, `enter_commits_wire`, `wire_undo_redo`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): placement, wire tool and shortcuts`.
 
 ### Task 9: App integration, end-to-end test and close M5a
 
@@ -202,9 +202,9 @@
 - Consumes: `<Editor />` (Task 8).
 - Produces: `App` renders `<EditorProvider><Editor /></EditorProvider>`; `engine-status` keeps its three texts.
 
-- [ ] **Step 1:** Write `e2e/editor.spec.ts` (Chromium and Firefox, against the production build under `/Nodal/`): `editor_draws_and_undoes` (place a resistor and a ground from the palette, wire the resistor's bottom pin to ground, expect one `wire-*` element; place a second wire ending on the first one's inside, expect one `junction`; `Ctrl+Z` removes it). Keep `App.test.tsx`'s three engine-status tests passing.
-- [ ] **Step 2:** `pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e`. Expected: FAIL until App renders the editor, then PASS, including `shell.spec.ts`.
-- [ ] **Step 3:** Update ARCHITECTURE §6.1 (interaction and keymap) and §8, README status ("M5a done: schematic editor without simulation; nothing is saved yet"), and ROADMAP M5a status with an Evidence line placeholder. Run the humanizer on the prose.
-- [ ] **Step 4:** Full local check: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e && cargo test --workspace`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): editor in the app shell`, push, wait for CI. Check that `https://tristanhottier.github.io/Nodal/` shows the palette and canvas.
-- [ ] **Step 6:** Fill the ROADMAP Evidence line (CI run URL, the web job running the component tests, the deploy job), set M5a to **done**, update the session notes' Status section, commit `docs: close M5a`, push.
+- [x] **Step 1:** Write `e2e/editor.spec.ts` (Chromium and Firefox, against the production build under `/Nodal/`): `editor_draws_and_undoes` (place a resistor and a ground from the palette, wire the resistor's bottom pin to ground, expect one `wire-*` element; place a second wire ending on the first one's inside, expect one `junction`; `Ctrl+Z` removes it). Keep `App.test.tsx`'s three engine-status tests passing.
+- [x] **Step 2:** `pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e`. Expected: FAIL until App renders the editor, then PASS, including `shell.spec.ts`.
+- [x] **Step 3:** Update ARCHITECTURE §6.1 (interaction and keymap) and §8, README status ("M5a done: schematic editor without simulation; nothing is saved yet"), and ROADMAP M5a status with an Evidence line placeholder. Run the humanizer on the prose.
+- [x] **Step 4:** Full local check: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e && cargo test --workspace`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): editor in the app shell`, push, wait for CI. Check that `https://tristanhottier.github.io/Nodal/` shows the palette and canvas.
+- [x] **Step 6:** Fill the ROADMAP Evidence line (CI run URL, the web job running the component tests, the deploy job), set M5a to **done**, update the session notes' Status section, commit `docs: close M5a`, push.
