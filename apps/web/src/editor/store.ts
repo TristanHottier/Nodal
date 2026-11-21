@@ -1,6 +1,13 @@
 // Editor state: document, snapshot undo/redo (ADR 0005), selection, clipboard,
 // active tool and view transform. Framework-free so tests drive it directly.
-import { EMPTY_SCHEMATIC, type PartType, type Rotation, type Schematic } from "@nodal/schema";
+import {
+  newProject,
+  type PartType,
+  type Project,
+  type ProjectModel,
+  type Rotation,
+  type Schematic,
+} from "@nodal/schema";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { type Clip, copyItems, pasteClip } from "./model/edits";
 
@@ -16,8 +23,12 @@ export interface View {
   zoom: number;
 }
 
+/** Everything in a project file except the schematic, which lives in `doc`. */
+export type ProjectMeta = Omit<Project, "schematic">;
+
 export interface EditorState {
   doc: Schematic;
+  project: ProjectMeta;
   past: Schematic[];
   future: Schematic[];
   selection: readonly string[];
@@ -41,6 +52,13 @@ export interface EditorState {
   copy(): void;
   paste(): void;
   newId(): string;
+  /** Name and model edits are not part of history. */
+  setProjectName(name: string): void;
+  setModels(models: ProjectModel[]): void;
+  /** Replace the whole project and reset history, selection, clipboard and view. */
+  loadProject(p: Project): void;
+  /** The current project in schema key order, ready to serialize. */
+  getProject(): Project;
 }
 
 export const MAX_HISTORY = 500;
@@ -63,11 +81,15 @@ function prune(selection: readonly string[], doc: Schematic): readonly string[] 
 
 export function createEditorStore(opts?: {
   doc?: Schematic;
+  project?: Project;
   newId?: () => string;
 }): StoreApi<EditorState> {
   const newId = opts?.newId ?? (() => crypto.randomUUID());
+  const initial = opts?.project ?? newProject("Untitled", new Date().toISOString());
+  const { schematic: initialDoc, ...initialMeta } = initial;
   return createStore<EditorState>()((set, get) => ({
-    doc: opts?.doc ?? EMPTY_SCHEMATIC,
+    doc: opts?.doc ?? initialDoc,
+    project: initialMeta,
     past: [],
     future: [],
     selection: [],
@@ -115,6 +137,41 @@ export function createEditorStore(opts?: {
     },
     setTool: (tool) => {
       set({ tool });
+    },
+    setProjectName: (name) => {
+      const s = get();
+      if (s.project.name !== name) set({ project: { ...s.project, name } });
+    },
+    setModels: (models) => {
+      const s = get();
+      if (s.project.models !== models) set({ project: { ...s.project, models } });
+    },
+    loadProject(p) {
+      const { schematic, ...meta } = p;
+      set({
+        doc: schematic,
+        project: meta,
+        past: [],
+        future: [],
+        selection: [],
+        clipboard: null,
+        pasteCount: 0,
+        gestureActive: false,
+        tool: { kind: "select" },
+        view: { x: 0, y: 0, zoom: 1 },
+      });
+    },
+    getProject() {
+      const { doc, project: m } = get();
+      return {
+        format: m.format,
+        formatVersion: m.formatVersion,
+        name: m.name,
+        createdAt: m.createdAt,
+        schematic: doc,
+        models: m.models,
+        simulation: m.simulation,
+      };
     },
     setGestureActive: (gestureActive) => {
       if (get().gestureActive !== gestureActive) set({ gestureActive });
