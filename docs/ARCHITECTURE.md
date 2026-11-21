@@ -125,12 +125,20 @@ trait Device {
     fn init_charges(&self, x: &[f64], state: &mut [f64], uic: bool) {}
     /// First source waveform corner strictly after t.
     fn next_breakpoint(&self, t: f64) -> Option<f64> { None }
+    /// Fraction of the step at which a stored device state (a switch) changed
+    /// between two accepted-candidate points, or None.
+    fn crossing(&self, x_prev: &[f64], x_new: &[f64], prev: &[f64], new: &[f64]) -> Option<f64> { None }
+    /// Independent sources: replace the DC value, and read it back.
+    fn set_dc(&mut self, value: f64) -> bool { false }
+    fn dc_value(&self) -> Option<f64> { None }
+    /// Independent sources: the waveform value at time t.
+    fn tran_value(&self, t: f64) -> Option<f64> { None }
 }
 ```
 
 Limiting happens inside `load`, as in SPICE, so there is no separate limit method. `load` receives the iterate `x`, the device's slice of the state vector (previous limited voltages, currents and conductances, or charges and currents) and a `LoadContext` (mode, gmin, source factor, tolerances, and an optional `tran`). `Device::converged` is the device's own convergence test. `load` cannot return an error, so a device that fails (for example a state slice too short for its charge slots) calls `RealSystem::fault`, which keeps the first error, and the Newton loop returns it as a fatal error after loading.
 
-In a transient step `ctx.tran` carries the time being solved for, the integration coefficients and the device's own slices of the states accepted at the previous three time points. A capacitor then stores `q = C v`, integrates it and stamps the companion conductance and current, and an inductor integrates its flux and rewrites its branch row. Independent sources take their value from the waveform at that time, or from `dc` when they have none. Without `tran`, including the transient's initial operating point, capacitors stay open, inductors stay shorted and sources use `dc` times the source factor. The transient driver reads `charge_slots`, `init_charges` and `next_breakpoint` to set up the initial state and to place forced time points.
+In a transient step `ctx.tran` carries the time being solved for, the integration coefficients and the device's own slices of the states accepted at the previous three time points. A capacitor then stores `q = C v`, integrates it and stamps the companion conductance and current, and an inductor integrates its flux and rewrites its branch row. Independent sources take their value from the waveform at that time, or from `dc` when they have none. Without `tran`, including the transient's initial operating point, capacitors stay open, inductors stay shorted and sources use `dc` times the source factor. The transient driver reads `charge_slots` for the truncation error, `init_charges` for the initial state, `next_breakpoint` for forced time points, `crossing` to reject a step in which a switch changed state, and `dc_value`, `set_dc` and `tran_value` to put sources at their t = 0 value for the initial operating point and restore their DC values afterwards.
 
 AC analysis uses `LoadMode::SmallSignal`. In it `load` stamps the conductance matrix $G$ at the operating point without writing state: a diode or BJT reads the junction voltages stored by the last Newton load, a MOSFET reads `x` limited against the state, and a switch keeps its stored on/off state. `load_reactive` fills $C$, and `load_ac_excitation` fills the phasor right-hand side. Per frequency, `mna::assemble_ac` forms $G + j\omega C$ and a dense complex LU solves it.
 

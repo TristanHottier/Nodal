@@ -32,10 +32,14 @@ with $\text{tol}_j$ = `vntol` for node voltages and `abstol` for branch currents
 
 In addition, no device may have applied limiting during this iteration.
 
+In a transient step, the diode and the BJT add a rounding allowance $32\,\epsilon\, a_0\,(|q| + |q_n|)$ to the tolerance of the second test, where $\epsilon$ is the machine epsilon, $a_0$ the leading integration coefficient, $q$ the junction charge at the new voltage and $q_n$ the accepted charge. The recompute-at-new-voltage test compares charge currents that contain $a_0 (q - q_n)$, and at very small steps the difference of the two charge evaluations sits at the rounding floor of that product, so without the allowance the test can fail on rounding noise alone. ngspice compares stored values rather than recomputed ones and does not need it.
+
 ### 1.3 Iteration limits
 
 - DC: `itl1` (100) iterations, then fall back (§1.4).
 - Transient: `itl4` (10) iterations per time point. If it fails, cut the step by 8 and retry.
+
+Divergence from ngspice-42: after a Newton failure or a rejected step, Nodal restarts Newton from the last accepted solution, where ngspice restarts from the last iterate.
 
 ### 1.4 DC fallbacks, tried in order
 
@@ -112,9 +116,13 @@ $h_{new} = \min\big(2h,\; \min_{\text{states}} h_{prop}\big)$.
 - If $h_{new} < 0.9\,h$, reject the point and retry with $h_{new}$.
 - Otherwise accept it, and use $h_{new}$ for the next step.
 
+Order raise: after an accepted order 1 step, the proposal is recomputed with order 2. Order 2 is kept for the next step only when its proposal exceeds $1.05\,h$, and order 1 stays otherwise.
+
 Clamps:
 - $h \le$ `tmax`, which defaults to $\min(\text{tstep}, (\text{tstop} - \text{tstart})/50)$, as in ngspice.
-- $h \ge h_{min} = 10^{-11} \cdot \text{tmax}$ (ngspice `delmin`). Below $h_{min}$: error "time step too small", naming the device with the smallest $h_{prop}$.
+- $h \ge h_{min} = 10^{-11} \cdot \text{tmax}$ (ngspice `delmin`). The first time a step falls to $h_{min}$ or below, it is set to $h_{min}$ and tried once more. If the step is already at $h_{min}$ and still fails, the run stops with "time step too small". After a Newton failure the error names the unknown with the largest last update. After a truncation rejection it names the device with the smallest $h_{prop}$.
+
+A run is also limited to `MAX_TRAN_POINTS` ($10^6$) accepted points, like the $10^6$ frequencies of an AC sweep (§5.1). Exceeding it is an `Invalid` error ("tran analysis: more than 1000000 time points").
 
 ### 3.3 Breakpoints
 
@@ -124,9 +132,9 @@ Switch threshold crossings are not breakpoints, because their time isn't known i
 
 ### 3.3a Start of the run
 
-Divergence from ngspice: after a Newton failure or a rejected step, Nodal restarts Newton from the last accepted solution, where ngspice restarts from the last iterate. The last output point is always exactly $t_{stop}$: $t_{stop}$ is a forced landing like any breakpoint.
+The last output point is always exactly $t_{stop}$: $t_{stop}$ is a forced landing like any breakpoint. A forced last step can be shorter than $h_{min}$. If Newton fails on such a step, the run can end in "time step too small", because the step cannot be cut further.
 
-Without `uic`, the run starts from the operating point with every source with a waveform at its value at $t = 0$ (ngspice `vsrcload.c` does the same in `MODETRANOP`). With `uic`, the unknowns start at zero and the capacitor and inductor initial conditions fill the charge history. Nodal then solves one backward Euler step of length $h_{min}$ at $t = 0$, so the first reported point shows the initial voltages and currents. ngspice does not report $t = 0$ with `uic`. If that step does not converge, the run stops with an error naming `uic` and $t = 0$. With `uic`, $t_{step}$ is also a breakpoint, as in ngspice. The first step is $\min(t_{stop}/100,\, t_{step})/10$, cut by the post-breakpoint rule and divided by 10 again, and it is accepted without a truncation check.
+Without `uic`, the run starts from the operating point with every source with a waveform at its value at $t = 0$ (ngspice `vsrcload.c` does the same in `MODETRANOP`). With `uic`, the unknowns start at zero and the capacitor and inductor initial conditions fill the charge history. Nodal then solves one backward Euler step of length $h_{min}$ at $t = 0$, so the first reported point shows the initial voltages and currents. ngspice does not report $t = 0$ with `uic`. If that step does not converge, the run stops with the "time step too small" error at $t = 0$, naming the unknown with the largest last update. With `uic`, $t_{step}$ is also a breakpoint, as in ngspice. The first step is $\min(t_{stop}/100,\, t_{step})/10$, cut by the post-breakpoint rule and divided by 10 again, and it is accepted without a truncation check.
 
 ### 3.4 Output points
 

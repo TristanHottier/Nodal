@@ -42,13 +42,15 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4315659352
 **Exit:** circuits A1–A4 pass (magnitude and phase).
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44826285994 at 0c6e64e (rust, web, deploy green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/job/136599600321) runs the AC closed-form tests for A1 and A2, the capacitance finite-difference tests for the diode and BJT, and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/artifacts/14673776614) shows A1–A6 passing against ngspice-42 in magnitude and phase.
 
-### M4 — Transient analysis · not started
+### M4 — Transient analysis · done
 - C, L and junction charges integrated with trapezoidal and BDF2.
 - Source waveforms: pulse, sine, PWL, with breakpoints.
 - LTE-based step control (ported from ngspice `cktterr.c`); `uic`; switch hysteresis, with step rejection and crossing location at each threshold crossing.
-- MOSFET bulk junction diodes with saturation current (IS) and forward-biased bulk, as in ngspice `mos1load.c`. The DC and AC loading is done (devices.md §3); junction capacitances are not supported.
+- MOSFET bulk junction diodes with saturation current (IS) and forward-biased bulk, as in ngspice `mos1load.c`. The DC, AC and transient loading is done (devices.md §3); bulk junction capacitances are not supported.
+
 
 **Exit:** circuits T1–T6 pass with both `trap` and `gear`.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44867024382 at 9ddee70 (rust job green). Its [rust job](https://github.com/TristanHottier/Nodal/actions/runs/44867024382/job/136732857420) runs the transient closed-form tests and `nodal-cli validate`; the `validation-report` [artifact](https://github.com/TristanHottier/Nodal/actions/runs/44867024382/artifacts/14692261605) shows T1–T6 passing against ngspice-42 with `trap` and `gear`. The T4 and T6 circuits differ from their first drafts (a gate resistor, `tmax`, `RON`); the reasons are in [VALIDATION.md](VALIDATION.md) §4.
 
 ### M5 — Schematic editor · not started
 - SVG canvas: grid, zoom, pan, selection, move, rotate, mirror, delete, copy/paste.
