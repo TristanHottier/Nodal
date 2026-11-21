@@ -104,7 +104,7 @@ describe("junctionDots", () => {
   });
 
   it("wire_end_plus_pass_through_same_wire_counts_one", () => {
-    // Wire ends at (5,0) after passing through it: degree 1 + 1 pin = 2, no dot.
+    // Wire ends at (5,0) after passing through it: degree 1 (the end only), no dot.
     const d = doc([wire("a", p(0, 0), p(10, 0), p(10, 3), p(5, 3), p(5, 0))]);
     expect(junctionDots(d)).toEqual([]);
   });

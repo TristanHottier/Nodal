@@ -1,11 +1,11 @@
 // Wire tool: click to fix points, L-shaped preview to the cursor, commit by
-// double click, Enter, or a click on a pin, wire end or wire segment.
-import type { Point, Schematic } from "@nodal/schema";
+// double click, Enter, or a click on a pin, label anchor, wire end or wire segment.
+import type { Point } from "@nodal/schema";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createStore, useStore } from "zustand";
 import type { CanvasToolHandlers } from "../canvas/Canvas";
 import { useEditor, useEditorStore } from "../EditorContext";
-import { pinPositions } from "../geometry";
+import { isConnectionPoint } from "../model/connectivity";
 import { addWire } from "../model/edits";
 import { samePoint } from "../model/wires";
 
@@ -21,31 +21,6 @@ const IDLE: WireState = { points: [], cursor: null, vertical: false };
 export function lRoute(from: Point, to: Point, vertical: boolean): Point[] {
   const bend = vertical ? { x: from.x, y: to.y } : { x: to.x, y: from.y };
   return [bend, to];
-}
-
-function onSegment(p: Point, a: Point, b: Point): boolean {
-  const cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
-  return (
-    cross === 0 &&
-    p.x >= Math.min(a.x, b.x) &&
-    p.x <= Math.max(a.x, b.x) &&
-    p.y >= Math.min(a.y, b.y) &&
-    p.y <= Math.max(a.y, b.y)
-  );
-}
-
-/** True if `p` is a pin, a wire end, or lies on a wire segment (inclusive). */
-export function isConnectionPoint(doc: Schematic, p: Point): boolean {
-  if (doc.parts.some((part) => pinPositions(part).some((pin) => samePoint(pin.at, p)))) return true;
-  return doc.wires.some((w) => {
-    const first = w.points[0];
-    const last = w.points[w.points.length - 1];
-    if ((first && samePoint(first, p)) || (last && samePoint(last, p))) return true;
-    return w.points.some((a, i) => {
-      const b = w.points[i + 1];
-      return b !== undefined && onSegment(p, a, b);
-    });
-  });
 }
 
 export interface WireTool {

@@ -156,4 +156,35 @@ describe("wire tool", () => {
     redo();
     expect(store.getState().doc).toEqual(after);
   });
+
+  it("click_on_label_anchor_ends_wire", () => {
+    setup({ ...DOC, labels: [{ id: "L1", text: "VOUT", x: 30, y: 30, rotation: 0 }] });
+    click(10, 13);
+    click(30, 30);
+    const { wires } = store.getState().doc;
+    expect(wires).toHaveLength(1);
+    expect(wires[0]?.points.at(-1)).toEqual({ x: 30, y: 30 });
+    expect(preview()).toBeUndefined();
+  });
+
+  it("click_on_wire_bend_ends_wire", () => {
+    const bent: Schematic = {
+      ...DOC,
+      wires: [
+        {
+          id: "w0",
+          points: [
+            { x: 30, y: 0 },
+            { x: 30, y: 5 },
+            { x: 40, y: 5 },
+          ],
+        },
+      ],
+    };
+    setup(bent);
+    click(10, 13);
+    click(30, 5);
+    expect(store.getState().doc.wires).toHaveLength(2);
+    expect(preview()).toBeUndefined();
+  });
 });

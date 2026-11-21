@@ -1,33 +1,10 @@
 // Junction dots: where three or more connections meet at one grid point.
-import type { Point, Schematic, Wire } from "@nodal/schema";
+import type { Point, Schematic } from "@nodal/schema";
 import { pinPositions } from "../geometry";
+import { pointOnWire } from "./connectivity";
 import { samePoint } from "./wires";
 
 const key = (p: Point): string => `${String(p.x)},${String(p.y)}`;
-
-/** True if `p` lies strictly inside the segment `a`-`b` (not at either end). */
-function strictlyInside(p: Point, a: Point, b: Point): boolean {
-  if (samePoint(p, a) || samePoint(p, b)) return false;
-  if (a.x === b.x) {
-    return p.x === a.x && p.y > Math.min(a.y, b.y) && p.y < Math.max(a.y, b.y);
-  }
-  return a.y === b.y && p.y === a.y && p.x > Math.min(a.x, b.x) && p.x < Math.max(a.x, b.x);
-}
-
-/** True if the wire runs through `p` at an inner vertex or inside a segment. */
-function passesThrough(w: Wire, p: Point): boolean {
-  const pts = w.points;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const v = pts[i];
-    if (v && samePoint(v, p)) return true;
-  }
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1];
-    const b = pts[i];
-    if (a && b && strictlyInside(p, a, b)) return true;
-  }
-  return false;
-}
 
 /**
  * Points that get a junction dot, sorted by x then y. A point is examined only
@@ -63,7 +40,7 @@ export function junctionDots(doc: Schematic): Point[] {
       const first = w.points[0];
       const last = w.points[w.points.length - 1];
       const hasEnd = (first && samePoint(first, pt)) || (last && samePoint(last, pt));
-      if (!hasEnd && passesThrough(w, pt)) degree += 2;
+      if (!hasEnd && pointOnWire(w, pt)) degree += 2;
     }
     if (degree >= 3) dots.push(pt);
   }
