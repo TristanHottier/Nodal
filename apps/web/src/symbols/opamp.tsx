@@ -12,7 +12,7 @@ export const opamp: SymbolDef = {
     { name: "out", x: 4, y: 0 },
   ],
   bounds: { x0: -4, y0: -3, x1: 4, y1: 3 },
-  defaultParams: {},
+  defaultParams: { gain: "1e6" },
   Body: () => (
     <g>
       <g {...STROKE}>
