@@ -225,10 +225,13 @@ uPlot. Click a net to probe its voltage; click a two-terminal part to probe its 
 ```json
 { "format": "nodal-project", "formatVersion": 1, "name": "…", "createdAt": "…",
   "schematic": { "parts": [ … ], "wires": [ … ], "labels": [ … ] },
+  "models": [ { "name": "D1N4148", "type": "D", "params": { "IS": "2.5n" } } ],
   "simulation": { "analyses": [ … ], "options": { … } } }
 ```
 
 Loading validates with Zod and runs migrations from older `formatVersion`s. Unknown future versions are refused with a clear message.
+
+A migration maps one version to the next. A file at version v goes through the migrations for v, v + 1 and so on up to the current version, and loading fails if a step is missing. Model parameters and part parameters are stored as the strings the user typed (for example `"2.5n"`); the netlister parses them with the value notation of [ADR 0009](adr/0009-value-notation.md).
 
 ## 8. Testing layers
 

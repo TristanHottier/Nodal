@@ -66,8 +66,9 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4495261769
 - Parameter inspector with value-notation parsing ([ADR 0009](adr/0009-value-notation.md)).
 - Netlister with diagnostics, using the connectivity rules of ARCHITECTURE §6.1.
 - IndexedDB autosave; `.nodal.json` import/export.
+- Reference circuits as generated `.nodal.json` schematics with layout, in `validation/schematics/`.
 
-**Exit:** every reference circuit in `validation/circuits/` can be drawn in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires.
+**Exit:** every reference circuit in `validation/circuits/` has a schematic in `validation/schematics/` that loads in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires; a project survives export, import and a page reload.
 
 ### M6 — Simulation in the browser · not started
 - `nodal-wasm` in a Web Worker: run, progress, cancel.

@@ -138,7 +138,7 @@ const model = z.strictObject({
   params: z.record(z.string(), z.number()).default({}),
 });
 
-const analysis = z.discriminatedUnion("type", [
+export const analysisSchema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("op") }),
   z.strictObject({
     type: z.literal("dc"),
@@ -167,7 +167,7 @@ const analysis = z.discriminatedUnion("type", [
 /** Largest allowed number of points in a DC or AC sweep. */
 const MAX_SWEEP_POINTS = 1_000_000;
 
-const options = z.strictObject({
+export const optionsSchema = z.strictObject({
   temp: optional(finite),
   reltol: optional(finite),
   vntol: optional(finite),
@@ -178,9 +178,9 @@ const options = z.strictObject({
   trtol: optional(finite),
 });
 
-const ELEMENT_NAME = /^[RLCVIEGHFDQMS][A-Za-z0-9_]*$/;
-const MODEL_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
-const NODE_NAME = /^[A-Za-z0-9_]+$/;
+export const elementNameRegex = /^[RLCVIEGHFDQMS][A-Za-z0-9_]*$/;
+export const modelNameRegex = /^[A-Za-z][A-Za-z0-9_]*$/;
+export const nodeNameRegex = /^[A-Za-z0-9_]+$/;
 
 /** First group of names equal ignoring ASCII case, sorted and joined; else undefined. */
 function caseCollision(names: Iterable<string>): string | undefined {
@@ -205,8 +205,8 @@ const netlistBase = z.strictObject({
   elements: z.array(element),
   models: z.array(model).default([]),
   nodeset: optional(z.record(z.string(), z.number())),
-  analyses: z.array(analysis),
-  options: optional(options),
+  analyses: z.array(analysisSchema),
+  options: optional(optionsSchema),
 });
 
 type NetlistBase = z.output<typeof netlistBase>;
@@ -217,7 +217,7 @@ type Issue = { message: string; path: (string | number)[] };
 function checkModels(models: NetlistModel[]): Issue | undefined {
   // V10
   for (const [i, m] of models.entries()) {
-    if (!MODEL_NAME.test(m.name)) {
+    if (!modelNameRegex.test(m.name)) {
       return {
         message: `model name ${JSON.stringify(m.name)} must match ^[A-Za-z][A-Za-z0-9_]*$`,
         path: ["models", i],
@@ -407,7 +407,7 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
   for (const [i, e] of n.elements.entries()) {
     const at = ["elements", i];
     // V3
-    if (!ELEMENT_NAME.test(e.name)) {
+    if (!elementNameRegex.test(e.name)) {
       return fail(
         `element name ${JSON.stringify(e.name)} must match ^[RLCVIEGHFDQMS][A-Za-z0-9_]*$`,
         at,
@@ -418,7 +418,7 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
     }
     // V4
     for (const node of nodesOf(e)) {
-      if (!NODE_NAME.test(node)) {
+      if (!nodeNameRegex.test(node)) {
         return fail(
           `element ${e.name}: node ${JSON.stringify(node)} must match ^[A-Za-z0-9_]+$`,
           at,
