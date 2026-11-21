@@ -28,7 +28,7 @@ export type {
   TranAnalysis,
   Waveform,
 } from "./ir";
-export { PARAM_SPECS, describeRange, inRange } from "./models";
+export { MODEL_KINDS, PARAM_SPECS, describeRange, inRange } from "./models";
 export type { ParamRange, ParamSpec } from "./models";
 export { EMPTY_SCHEMATIC, PART_TYPES, schematicSchema } from "./schematic";
 export type { NetLabel, Part, PartType, Point, Rotation, Schematic, Wire } from "./schematic";
