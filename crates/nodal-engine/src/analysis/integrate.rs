@@ -1,4 +1,3 @@
-#![allow(dead_code)] // consumed by device load (tasks 6, 8) and the transient driver (task 7)
 //! Numerical integration of charge and flux states, and the truncation-error
 //! step proposal (numerical-methods.md sections 2 and 3).
 //!
@@ -29,7 +28,7 @@ fn slot(level: &[f64], idx: usize, who: &str) -> Result<f64, Error> {
 /// Integration coefficients: `i_{n+1} = ag[0] q_{n+1} + ag[1] q_n + ag[2] q_{n-1}`
 /// (trapezoidal order 2 adds the `-ag[1] i_n` term instead, see [`integrate`]).
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Coeffs {
+pub struct Coeffs {
     method: Method,
     order: usize,
     ag: [f64; 3],
@@ -41,7 +40,7 @@ const XMU: f64 = 0.5;
 impl Coeffs {
     /// Port of `NIcomCof` for orders 1 and 2. `h = [h_n, h_{n-1}]` where
     /// `h_n = t_{n+1} - t_n`. An order outside 1..=2 is an error (ngspice `E_ORDER`).
-    pub(crate) fn new(method: Method, order: usize, h: [f64; 2]) -> Result<Coeffs, Error> {
+    pub fn new(method: Method, order: usize, h: [f64; 2]) -> Result<Coeffs, Error> {
         if !(1..=2).contains(&order) {
             return Err(Error::Internal(format!(
                 "Coeffs::new: illegal integration order {order}"
@@ -103,15 +102,15 @@ impl Coeffs {
         Ok(Coeffs { method, order, ag })
     }
 
-    pub(crate) fn method(&self) -> Method {
+    pub fn method(&self) -> Method {
         self.method
     }
 
-    pub(crate) fn order(&self) -> usize {
+    pub fn order(&self) -> usize {
         self.order
     }
 
-    pub(crate) fn ag(&self) -> [f64; 3] {
+    pub fn ag(&self) -> [f64; 3] {
         self.ag
     }
 }
@@ -145,6 +144,7 @@ pub(crate) fn integrate(
 }
 
 /// Tolerances for [`truncation`].
+#[allow(dead_code)] // used by the transient driver (task 7)
 #[derive(Debug, Clone, Copy)]
 pub struct TruncOpts {
     pub reltol: f64,
@@ -153,7 +153,9 @@ pub struct TruncOpts {
     pub trtol: f64,
 }
 
+#[allow(dead_code)] // used by the transient driver (task 7)
 const GEAR_COEFF: [f64; 2] = [0.5, 0.2222222222];
+#[allow(dead_code)] // used by the transient driver (task 7)
 const TRAP_COEFF: [f64; 2] = [0.5, 0.08333333333];
 
 /// Port of `CKTterr` for one charge slot `q`: the largest step the local
@@ -161,6 +163,7 @@ const TRAP_COEFF: [f64; 2] = [0.5, 0.08333333333];
 /// accepted levels at t_n, t_{n-1}, t_{n-2}; `h = [h_n, h_{n-1}, h_{n-2}]`.
 /// The caller takes the minimum with the current step, as ngspice does.
 /// A level too short for the slots it needs is an `Error::Internal`.
+#[allow(dead_code)] // used by the transient driver (task 7)
 pub(crate) fn truncation(
     c: &Coeffs,
     q: usize,

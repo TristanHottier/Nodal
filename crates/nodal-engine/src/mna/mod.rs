@@ -11,6 +11,9 @@ pub struct RealSystem {
     /// The first stamp that fell outside the system, as `(row, column)`.
     /// `add_b` records `(row, usize::MAX)`. A device bug, never a netlist one.
     pub out_of_range: Option<(usize, usize)>,
+    /// The first error a device hit inside `load`, which cannot return one.
+    /// The Newton loop takes it after loading and fails fatally.
+    pub fault: Option<Error>,
 }
 
 impl RealSystem {
@@ -20,7 +23,13 @@ impl RealSystem {
             a: DenseMatrix::zeros(n),
             b: vec![0.0; n],
             out_of_range: None,
+            fault: None,
         }
+    }
+
+    /// Records a device error. Only the first one is kept.
+    pub fn fault(&mut self, e: Error) {
+        self.fault.get_or_insert(e);
     }
 
     /// Adds `v` to `A[row, col]`. `None` is ground and is skipped.
@@ -117,6 +126,15 @@ mod tests {
         let mut sys = RealSystem::new(2);
         sys.add_b(Some(7), 1.0);
         assert_eq!(sys.out_of_range, Some((7, usize::MAX)));
+    }
+
+    #[test]
+    fn first_fault_wins() {
+        let mut sys = RealSystem::new(1);
+        assert!(sys.fault.is_none());
+        sys.fault(Error::Internal("first".into()));
+        sys.fault(Error::Internal("second".into()));
+        assert!(matches!(&sys.fault, Some(Error::Internal(m)) if m == "first"));
     }
 
     #[test]

@@ -108,6 +108,7 @@ pub(crate) fn newton_counted(
             source_factor: cfg.source_factor,
             reltol: opts.reltol,
             abstol: opts.abstol,
+            tran: None,
         };
         let mut sys = RealSystem::new(n);
         let mut limited = false;
@@ -127,6 +128,9 @@ pub(crate) fn newton_counted(
             for i in 0..voltages {
                 sys.add_a(Some(i), Some(i), cfg.diag_gmin);
             }
+        }
+        if let Some(e) = sys.fault.take() {
+            return (Err(fatal(&x, e)), iter);
         }
         if let Some((row, col)) = sys.out_of_range {
             let e = Error::Internal(format!("stamp out of range at row {row}, column {col}"));
@@ -413,6 +417,7 @@ fn no_convergence(circuit: &Circuit, state: &[f64], f: &StageFailure) -> Error {
         source_factor: f.source_factor,
         reltol: opts.reltol,
         abstol: opts.abstol,
+        tran: None,
     };
     let mut sys = RealSystem::new(n);
     let mut scratch = state.to_vec();
@@ -761,6 +766,31 @@ mod tests {
         };
         assert!(!updates.is_empty());
         assert!(updates.iter().all(|(_, v)| *v != 0.0), "{updates:?}");
+        Ok(())
+    }
+
+    /// Test device whose load always records a fault.
+    #[derive(Debug)]
+    struct Faulty;
+
+    impl Device for Faulty {
+        fn name(&self) -> &str {
+            "XFAULT"
+        }
+
+        fn load(&self, _: &[f64], _: &mut [f64], _: &LoadContext, sys: &mut RealSystem) -> bool {
+            sys.fault(Error::Internal("device fault".into()));
+            true
+        }
+    }
+
+    #[test]
+    fn device_fault_is_fatal() -> TestResult {
+        let circuit = with_device_on_b(Box::new(Faulty))?;
+        assert!(matches!(
+            run(&circuit, Strategy::All),
+            Err(Error::Internal(m)) if m == "device fault"
+        ));
         Ok(())
     }
 

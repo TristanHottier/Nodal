@@ -60,6 +60,7 @@ pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Erro
         source_factor: 1.0,
         reltol: opts.reltol,
         abstol: opts.abstol,
+        tran: None,
     };
     // SmallSignal never writes state, but loading on a copy keeps the
     // operating-point state intact whatever a device does.

@@ -16,6 +16,7 @@ mod vccs;
 mod vcvs;
 mod vsource;
 
+use crate::analysis::integrate::Coeffs;
 use crate::circuit::Circuit;
 use crate::error::Error;
 use crate::ir::{Element, MOS_DEFAULT_SIZE, Model, ModelKind, param};
@@ -64,8 +65,8 @@ impl LoadMode {
 }
 
 /// Per-load settings shared by every device.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct LoadContext {
+#[derive(Debug, Clone, Copy)]
+pub struct LoadContext<'a> {
     pub mode: LoadMode,
     /// Conductance across every pn junction.
     pub gmin: f64,
@@ -75,9 +76,22 @@ pub struct LoadContext {
     pub reltol: f64,
     /// Absolute current tolerance for `Device::converged`.
     pub abstol: f64,
+    /// Transient settings. `None` outside a transient time step, including
+    /// the transient's own initial operating point.
+    pub tran: Option<TranLoad<'a>>,
 }
 
-impl LoadContext {
+/// What a device needs to load one transient time point.
+#[derive(Debug, Clone, Copy)]
+pub struct TranLoad<'a> {
+    /// The time being solved for, `t_{n+1}`.
+    pub time: f64,
+    pub coeffs: Coeffs,
+    /// This device's own slice of the state accepted at `t_{n-j}`, `j = 0..3`.
+    pub hist: [&'a [f64]; 3],
+}
+
+impl LoadContext<'static> {
     /// Default options (ngspice defaults) in the given mode, sources at full value.
     pub fn new(mode: LoadMode) -> Self {
         Self {
@@ -86,6 +100,7 @@ impl LoadContext {
             source_factor: 1.0,
             reltol: crate::ir::DEFAULT_RELTOL,
             abstol: 1e-12,
+            tran: None,
         }
     }
 }
@@ -131,6 +146,22 @@ pub trait Device: std::fmt::Debug {
 
     /// The DC value of an independent source, `None` for any other device.
     fn dc_value(&self) -> Option<f64> {
+        None
+    }
+
+    /// Offsets in the device state of each charge or flux `q`. The slot
+    /// `q + 1` holds the matching current (or voltage, for a flux).
+    fn charge_slots(&self) -> &'static [usize] {
+        &[]
+    }
+
+    /// Stores every charge at the solution `x` and zeroes the current slots.
+    /// With `uic`, a capacitor stores `C * ic` and an inductor `L * ic`
+    /// (`ic` 0 when unset) instead of reading `x`.
+    fn init_charges(&self, _x: &[f64], _state: &mut [f64], _uic: bool) {}
+
+    /// The first waveform corner of this device strictly after `t`.
+    fn next_breakpoint(&self, _t: f64) -> Option<f64> {
         None
     }
 }
@@ -255,23 +286,17 @@ pub(crate) fn instantiate(
             ))
         }
         Element::R { value, .. } => Box::new(Resistor::new(name, p, n, *value)),
-        Element::C { value, .. } => Box::new(Capacitor::new(name, p, n, *value)),
-        Element::L { value, .. } => Box::new(Inductor::new(
-            name.clone(),
-            p,
-            n,
-            branch(circuit, &name)?,
-            *value,
-        )),
-        Element::V { dc, ac, .. } => Box::new(VoltageSource::new(
-            name.clone(),
-            p,
-            n,
-            branch(circuit, &name)?,
-            *dc,
-            *ac,
-        )),
-        Element::I { dc, ac, .. } => Box::new(CurrentSource::new(name, p, n, *dc, *ac)),
+        Element::C { value, ic, .. } => Box::new(Capacitor::new(name, p, n, *value).with_ic(*ic)),
+        Element::L { value, ic, .. } => Box::new(
+            Inductor::new(name.clone(), p, n, branch(circuit, &name)?, *value).with_ic(*ic),
+        ),
+        Element::V { dc, ac, tran, .. } => Box::new(
+            VoltageSource::new(name.clone(), p, n, branch(circuit, &name)?, *dc, *ac)
+                .with_waveform(tran.clone()),
+        ),
+        Element::I { dc, ac, tran, .. } => {
+            Box::new(CurrentSource::new(name, p, n, *dc, *ac).with_waveform(tran.clone()))
+        }
         Element::E {
             control_nodes,
             gain,

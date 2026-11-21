@@ -105,29 +105,32 @@ nodal-engine/src/
 └── error.rs     typed errors; no panics in library code
 ```
 
-### 4.2 Device trait (shape, not final API)
+### 4.2 Device trait
 
 ```rust
 trait Device {
-    /// Stamp the linearized companion model at the current Newton iterate.
-    fn load(&self, x: &[f64], ctx: &LoadContext, sys: &mut RealSystem);
+    fn state_len(&self) -> usize { 0 }
+    /// Stamp the companion model at the iterate x. Returns true if limiting
+    /// changed a junction voltage.
+    fn load(&self, x: &[f64], state: &mut [f64], ctx: &LoadContext, sys: &mut RealSystem) -> bool;
     /// Stamp dQ/dv (and -L on an inductor branch row) into the reactive
     /// matrix C. Called once per AC run. Never touches C's right-hand side.
     fn load_reactive(&self, x: &[f64], state: &[f64], ctx: &LoadContext, c: &mut RealSystem) {}
     /// Stamp the AC phasor of an independent source.
     fn load_ac_excitation(&self, b: &mut AcExcitation) {}
-    /// Limit junction voltages between Newton iterations (pnjlim, fetlim).
-    fn limit(&self, x_new: &mut [f64], x_old: &[f64]) {}
-    /// Accept a converged time point: store charges/currents for integration.
-    fn accept(&mut self, x: &[f64], ctx: &TranContext) {}
-    /// Local truncation error estimate for step control.
-    fn truncation_error(&self, ctx: &TranContext) -> Option<f64> { None }
-    /// Time points where this device's behaviour changes abruptly.
-    fn breakpoints(&self, t0: f64, t1: f64, out: &mut Vec<f64>) {}
+    fn converged(&self, x_new: &[f64], state: &[f64], ctx: &LoadContext) -> bool { true }
+    /// Offsets of each charge q in the device state; q + 1 holds its current.
+    fn charge_slots(&self) -> &'static [usize] { &[] }
+    /// Store every charge at x (or at the element ic values with uic).
+    fn init_charges(&self, x: &[f64], state: &mut [f64], uic: bool) {}
+    /// First source waveform corner strictly after t.
+    fn next_breakpoint(&self, t: f64) -> Option<f64> { None }
 }
 ```
 
-As built in M2, limiting happens inside `load`, as in SPICE, so there is no separate `limit` method. `load` receives the iterate `x`, the device's slice of the state vector (previous limited voltages, currents and conductances) and a `LoadContext` (mode, gmin, source factor), and returns true when it limited a junction voltage. `Device::converged` is the device's own convergence test.
+Limiting happens inside `load`, as in SPICE, so there is no separate limit method. `load` receives the iterate `x`, the device's slice of the state vector (previous limited voltages, currents and conductances, or charges and currents) and a `LoadContext` (mode, gmin, source factor, tolerances, and an optional `tran`). `Device::converged` is the device's own convergence test. `load` cannot return an error, so a device that fails (for example a state slice too short for its charge slots) calls `RealSystem::fault`, which keeps the first error, and the Newton loop returns it as a fatal error after loading.
+
+In a transient step `ctx.tran` carries the time being solved for, the integration coefficients and the device's own slices of the states accepted at the previous three time points. A capacitor then stores `q = C v`, integrates it and stamps the companion conductance and current, and an inductor integrates its flux and rewrites its branch row. Independent sources take their value from the waveform at that time, or from `dc` when they have none. Without `tran`, including the transient's initial operating point, capacitors stay open, inductors stay shorted and sources use `dc` times the source factor. The transient driver reads `charge_slots`, `init_charges` and `next_breakpoint` to set up the initial state and to place forced time points.
 
 AC analysis uses `LoadMode::SmallSignal`. In it `load` stamps the conductance matrix $G$ at the operating point without writing state: a diode or BJT reads the junction voltages stored by the last Newton load, a MOSFET reads `x` limited against the state, and a switch keeps its stored on/off state. `load_reactive` fills $C$, and `load_ac_excitation` fills the phasor right-hand side. Per frequency, `mna::assemble_ac` forms $G + j\omega C$ and a dense complex LU solves it.
 
