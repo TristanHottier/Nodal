@@ -29,7 +29,8 @@ export const WireView = memo(function WireView({
         points={points}
         fill="none"
         stroke="transparent"
-        strokeWidth={0.8}
+        strokeWidth={10}
+        vectorEffect="non-scaling-stroke"
         strokeLinejoin="round"
         pointerEvents="stroke"
       />

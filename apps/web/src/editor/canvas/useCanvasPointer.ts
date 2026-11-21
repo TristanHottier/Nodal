@@ -35,7 +35,12 @@ type Gesture =
 
 const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement &&
-  (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+  (t.tagName === "INPUT" ||
+    t.tagName === "TEXTAREA" ||
+    t.tagName === "SELECT" ||
+    t.tagName === "BUTTON" ||
+    t.getAttribute("role") === "button" ||
+    t.isContentEditable);
 
 export function useCanvasPointer(
   svgRef: RefObject<SVGSVGElement | null>,
@@ -87,9 +92,14 @@ export function useCanvasPointer(
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    const onBlur = () => {
+      space.current = false;
+    };
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
     };
   }, []);
 
@@ -180,12 +190,24 @@ export function useCanvasPointer(
     s.select(g.shift ? [...new Set([...s.selection, ...ids])] : ids);
   };
 
+  const cancel = () => {
+    gesture.current = null;
+    setPreview(null);
+  };
+
   const onDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (store.getState().tool.kind !== "select") tool?.onDoubleClick?.(snap(locate(e)));
   };
 
   return {
     preview,
-    handlers: { onPointerDown, onPointerMove, onPointerUp, onDoubleClick },
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp,
+      onPointerCancel: cancel,
+      onLostPointerCapture: cancel,
+      onDoubleClick,
+    },
   };
 }

@@ -159,6 +159,37 @@ describe("Canvas", () => {
     expect(screen.queryByTestId("selection-box")).toBeNull();
   });
 
+  it("pointer_cancel_cancels_drag", () => {
+    fireEvent.pointerDown(screen.getByTestId("part-R1"), { ...ptr, ...at(10, 10) });
+    fireEvent.pointerMove(svg, { ...ptr, ...at(15, 15) });
+    fireEvent.pointerCancel(svg, { ...ptr });
+    fireEvent.pointerUp(svg, { ...ptr, ...at(15, 15) });
+    expect(store.getState().past).toHaveLength(0);
+    expect(screen.getByTestId("part-R1").getAttribute("transform")).toContain("translate(10 10)");
+  });
+
+  it("wire_hit_stroke_is_non_scaling", () => {
+    const hit = screen.getByTestId("wire-wA").querySelectorAll("polyline")[1];
+    expect(hit?.getAttribute("vector-effect")).toBe("non-scaling-stroke");
+  });
+
+  it("space_on_button_not_prevented", () => {
+    const b = document.createElement("button");
+    document.body.appendChild(b);
+    const ev = new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true });
+    b.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(false);
+    b.remove();
+  });
+
+  it("window_blur_resets_space", () => {
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.blur(window);
+    fireEvent.pointerDown(svg, { ...ptr, clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(svg, { ...ptr, clientX: 50, clientY: 50 });
+    expect(store.getState().view).toMatchObject({ x: 0, y: 0 });
+  });
+
   it("wheel_zooms_about_cursor", () => {
     fireEvent.wheel(svg, { deltaY: -100, ...at(10, 10) });
     const v = store.getState().view;
