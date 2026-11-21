@@ -88,6 +88,7 @@ enum Culprit {
 struct Stats {
     max_order: usize,
     newton_failures: usize,
+    crossing_rejections: usize,
 }
 
 /// The first breakpoint strictly after `t`: a source corner, an extra
@@ -180,6 +181,27 @@ fn truncate_all<'a>(
         }
     }
     Ok((best, who))
+}
+
+/// The smallest crossing fraction over all devices whose stored state changed
+/// between the accepted point and the converged trial point.
+fn earliest_crossing(
+    circuit: &Circuit,
+    x_prev: &[f64],
+    x_new: &[f64],
+    state_prev: &[f64],
+    state_new: &[f64],
+) -> Result<Option<f64>, Error> {
+    let mut best: Option<f64> = None;
+    for (device, &offset) in circuit.devices.iter().zip(&circuit.state_offsets) {
+        let range = offset..offset + device.state_len();
+        let prev = slice_of(state_prev, range.clone(), device.name())?;
+        let new = slice_of(state_new, range, device.name())?;
+        if let Some(theta) = device.crossing(x_prev, x_new, prev, new) {
+            best = Some(best.map_or(theta, |b| b.min(theta)));
+        }
+    }
+    Ok(best)
 }
 
 /// Runs a transient analysis. Source DC values are restored before returning.
@@ -342,6 +364,8 @@ fn run(
         delta_old = [delta, delta_old[0], delta_old[1]];
 
         // dctran.c label 600: attempts at this point.
+        // Whether the accepted point changed a device state (a switch).
+        let mut state_changed;
         let accepted = loop {
             let olddelta = delta;
             delta_old[0] = delta;
@@ -365,10 +389,25 @@ fn run(
                     delta /= 8.0;
                     order = 1;
                 }
-                Ok(x_new) if first => {
-                    break (time, hit, x_new, trial);
-                }
                 Ok(x_new) => {
+                    // A device state changed during the step: the crossing is
+                    // located by rejecting the step unless it lies within
+                    // `reltol` of the end, then retrying just past it. A
+                    // retry that would fall below delmin is accepted as is.
+                    let crossed =
+                        earliest_crossing(circuit, &x, &x_new, &history.levels[0], &trial)?;
+                    state_changed = crossed.is_some();
+                    if let Some(theta) = crossed {
+                        let retry = theta * delta + 0.5 * opts.reltol * delta;
+                        if (1.0 - theta) * delta > opts.reltol * delta && retry > hmin {
+                            stats.crossing_rejections += 1;
+                            delta = retry;
+                            continue;
+                        }
+                    }
+                    if first {
+                        break (time, hit, x_new, trial);
+                    }
                     let h = [delta_old[0], delta_old[1], delta_old[2]];
                     let (cut, who) = truncate_all(circuit, &coeffs, &trial, &history, h, &opts)?;
                     let mut newdelta = (2.0 * delta).min(cut);
@@ -417,7 +456,8 @@ fn run(
         ];
         x = x_new;
         t = time;
-        reached = hit.is_some();
+        // A state change restarts like a breakpoint: order 1, short step.
+        reached = hit.is_some() || state_changed;
         stats.max_order = stats.max_order.max(order);
         first = false;
         if t >= tstart {
@@ -572,6 +612,24 @@ mod tests {
             let (_, stats) = run_stats(&mut circuit, &s)?;
             assert_eq!(stats.max_order, 2, "{method:?}");
         }
+        Ok(())
+    }
+
+    #[test]
+    fn switch_crossing_rejects_a_step_and_converges() -> TestResult {
+        let text = r#"{"irVersion":1,"elements":[
+            {"kind":"V","name":"VC","nodes":["c","0"],"dc":0,
+             "tran":{"type":"pwl","points":[[0,0],[1e-4,5],[1,5]]}},
+            {"kind":"V","name":"V1","nodes":["in","0"],"dc":10},
+            {"kind":"R","name":"R1","nodes":["in","out"],"value":1000},
+            {"kind":"S","name":"S1","nodes":["out","0"],"controlNodes":["c","0"],"model":"SM"}],
+            "models":[{"name":"SM","type":"SW","params":{"VT":2.5,"VH":0.5,"RON":1}}],
+            "analyses":[{"type":"tran","tstep":1e-6,"tstop":1e-4}]}"#;
+        let mut circuit = Circuit::build(&parse_netlist(text)?)?;
+        let (result, stats) = run_stats(&mut circuit, &spec(false))?;
+        assert!(stats.crossing_rejections >= 1);
+        assert_eq!(result.time.last().copied(), Some(1e-4));
+        assert!(result.time.windows(2).all(|w| w[1] > w[0]));
         Ok(())
     }
 

@@ -109,6 +109,34 @@ impl Device for Switch {
         sys.add_a(self.n, self.n, g);
         limited
     }
+
+    /// Linear interpolation of `v_c` to the threshold it crossed: `VT + VH`
+    /// going on, `VT - VH` going off.
+    fn crossing(
+        &self,
+        x_prev: &[f64],
+        x_new: &[f64],
+        state_prev: &[f64],
+        state_new: &[f64],
+    ) -> Option<f64> {
+        let was_on = state_prev.first().copied().unwrap_or(0.0) != 0.0;
+        let is_on = state_new.first().copied().unwrap_or(0.0) != 0.0;
+        if was_on == is_on {
+            return None;
+        }
+        let threshold = if is_on {
+            self.params.vt + self.params.vh
+        } else {
+            self.params.vt - self.params.vh
+        };
+        let v0 = volt(x_prev, self.cp) - volt(x_prev, self.cn);
+        let v1 = volt(x_new, self.cp) - volt(x_new, self.cn);
+        let span = v1 - v0;
+        if span == 0.0 {
+            return Some(1.0);
+        }
+        Some(((threshold - v0) / span).clamp(0.0, 1.0))
+    }
 }
 
 #[cfg(test)]
@@ -145,6 +173,25 @@ mod tests {
                 "fd {fd} vs {stamped}"
             );
         }
+    }
+
+    #[test]
+    fn crossing_interpolates_the_crossed_threshold() {
+        let params = SwitchParams {
+            vt: 1.0,
+            vh: 0.5,
+            g_on: 1.0,
+            g_off: 1e-12,
+        };
+        let s = Switch::new("S1".into(), [Some(0), None], [Some(1), None], params);
+        let at = |vc: f64| [0.0, vc];
+        // Off to on crosses 1.5 V: from 0 V to 3 V that is halfway.
+        let up = s.crossing(&at(0.0), &at(3.0), &[0.0], &[1.0]);
+        assert_eq!(up, Some(0.5));
+        // On to off crosses 0.5 V: from 2 V to -1 V that is half.
+        let down = s.crossing(&at(2.0), &at(-1.0), &[1.0], &[0.0]);
+        assert_eq!(down, Some(0.5));
+        assert_eq!(s.crossing(&at(0.0), &at(3.0), &[0.0], &[0.0]), None);
     }
 
     #[test]

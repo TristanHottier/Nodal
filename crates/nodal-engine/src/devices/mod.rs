@@ -166,6 +166,23 @@ pub trait Device: std::fmt::Debug {
     /// (`ic` 0 when unset) instead of reading `x`.
     fn init_charges(&self, _x: &[f64], _state: &mut [f64], _uic: bool) {}
 
+    /// For a device whose stored state differs between the accepted point
+    /// (`x_prev`, `state_prev`) and the converged trial point (`x_new`,
+    /// `state_new`), the fraction `theta` in `[0, 1]` of the step at which the
+    /// state-deciding quantity crossed its threshold, by linear
+    /// interpolation. `None` when the state did not change or the device has
+    /// no such state. The transient driver uses it to locate switch
+    /// transitions by step rejection.
+    fn crossing(
+        &self,
+        _x_prev: &[f64],
+        _x_new: &[f64],
+        _state_prev: &[f64],
+        _state_new: &[f64],
+    ) -> Option<f64> {
+        None
+    }
+
     /// The first waveform corner of this device strictly after `t`.
     fn next_breakpoint(&self, _t: f64) -> Option<f64> {
         None

@@ -496,3 +496,92 @@ fn bjt_switch_edge_runs_to_tstop() -> TestResult {
     }
     Ok(())
 }
+
+/// A 10 V source behind 1 kohm into a switch (RON 1, ROFF 1e9) whose control
+/// node follows `wave`. `V(out)` is near 10 V while the switch is off and
+/// near 10 mV while it is on.
+fn switch_netlist(wave: &str, analysis: &str) -> String {
+    format!(
+        r#"{{"irVersion":1,"elements":[
+        {{"kind":"V","name":"VC","nodes":["c","0"],"dc":0,"tran":{wave}}},
+        {{"kind":"V","name":"V1","nodes":["in","0"],"dc":10}},
+        {{"kind":"R","name":"R1","nodes":["in","out"],"value":1000}},
+        {{"kind":"S","name":"S1","nodes":["out","0"],"controlNodes":["c","0"],"model":"SM"}}],
+        "models":[{{"name":"SM","type":"SW","params":{{"VT":2.5,"VH":0.5,"RON":1,"ROFF":1e9}}}}],
+        "analyses":[{analysis}],
+        "options":{{"reltol":1e-3,"vntol":1e-9,"abstol":1e-15,"chgtol":1e-18}}}}"#
+    )
+}
+
+/// The times at which the switch output changes state, as (time, now_on).
+fn switch_changes(r: &TranResult) -> Result<Vec<(f64, bool)>, Box<dyn Error>> {
+    let out = series(r, "out")?;
+    let mut changes = Vec::new();
+    let mut on = out[0] < 5.0;
+    for (t, v) in r.time.iter().zip(out).skip(1) {
+        if (*v < 5.0) != on {
+            on = *v < 5.0;
+            changes.push((*t, on));
+        }
+    }
+    Ok(changes)
+}
+
+#[test]
+fn switch_turns_on_within_reltol() -> TestResult {
+    let wave = r#"{"type":"pwl","points":[[0,0],[1e-3,5],[1,5]]}"#;
+    let r = run_tran(&switch_netlist(
+        wave,
+        r#"{"type":"tran","tstep":1e-5,"tstop":1e-3}"#,
+    ))?;
+    let changes = switch_changes(&r)?;
+    assert_eq!(changes.len(), 1, "{changes:?}");
+    let (t_on, on) = changes[0];
+    // Crossing of VT + VH = 3 V on a 5 V/ms ramp; reltol 1e-3 of a step of at
+    // most tstep = 1e-5.
+    let crossing = 0.6e-3;
+    assert!(on);
+    assert!(
+        t_on >= crossing && t_on - crossing <= 1e-3 * 1e-5,
+        "first on point at {t_on:e}, crossing at {crossing:e}"
+    );
+    Ok(())
+}
+
+#[test]
+fn switch_hysteresis_band() -> TestResult {
+    let wave = r#"{"type":"pwl","points":[[0,0],[1e-3,5],[2e-3,0],[1,0]]}"#;
+    let r = run_tran(&switch_netlist(
+        wave,
+        r#"{"type":"tran","tstep":1e-5,"tstop":2e-3}"#,
+    ))?;
+    let changes = switch_changes(&r)?;
+    assert_eq!(changes.len(), 2, "{changes:?}");
+    // On at 3 V (0.6 ms on the way up), off at 2 V (1.6 ms on the way down).
+    let tol = 1e-3 * 1e-5;
+    let (t_on, on) = changes[0];
+    assert!(on && t_on >= 0.6e-3 && t_on - 0.6e-3 <= tol, "{t_on:e}");
+    let (t_off, on) = changes[1];
+    assert!(!on && t_off >= 1.6e-3 && t_off - 1.6e-3 <= tol, "{t_off:e}");
+    Ok(())
+}
+
+#[test]
+fn fast_edge_through_band() -> TestResult {
+    let wave = r#"{"type":"pwl","points":[[0,0],[1e-4,0],[1.00001e-4,5],[1,5]]}"#;
+    let r = run_tran(&switch_netlist(
+        wave,
+        r#"{"type":"tran","tstep":1e-5,"tstop":2e-4}"#,
+    ))?;
+    let changes = switch_changes(&r)?;
+    assert_eq!(changes.len(), 1, "{changes:?}");
+    let (t_on, on) = changes[0];
+    // 3 V is reached 0.6 of the way up a 1 ns edge.
+    let crossing = 1e-4 + 0.6e-9;
+    assert!(on);
+    assert!(
+        t_on >= crossing && t_on - crossing <= 1e-3 * 1e-9,
+        "first on point at {t_on:e}, crossing at {crossing:e}"
+    );
+    Ok(())
+}
