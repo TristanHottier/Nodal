@@ -16,6 +16,29 @@ const PREFIX: Record<string, string> = {
   ground: "GND",
 };
 
+const TWO = (a: string, b: string) => [
+  { name: a, x: 0, y: -3 },
+  { name: b, x: 0, y: 3 },
+];
+const PINS: Record<string, { name: string; x: number; y: number }[]> = {
+  resistor: TWO("1", "2"),
+  capacitor: TWO("1", "2"),
+  inductor: TWO("1", "2"),
+  vsource: TWO("p", "n"),
+  isource: TWO("p", "n"),
+  vcvs: [...TWO("p", "n"), { name: "cp", x: -4, y: -2 }, { name: "cn", x: -4, y: 2 }],
+  vccs: [...TWO("p", "n"), { name: "cp", x: -4, y: -2 }, { name: "cn", x: -4, y: 2 }],
+  ccvs: TWO("p", "n"),
+  cccs: TWO("p", "n"),
+  ground: [{ name: "gnd", x: 0, y: 0 }],
+};
+
+describe("pins_match_table", () => {
+  it.each(Object.entries(SYMBOLS))("%s", (type, def) => {
+    expect(def.pins).toEqual(PINS[type]);
+  });
+});
+
 describe("palette", () => {
   it("lists every part type then label", () => {
     expect(PALETTE).toEqual([...PART_TYPES, "label"]);
@@ -52,7 +75,9 @@ describe.each(Object.entries(SYMBOLS))("symbol %s", (type, def) => {
         <def.Body />
       </svg>,
     );
-    expect(container.querySelector("svg")?.children.length).toBeGreaterThan(0);
+    expect(
+      container.querySelectorAll("path, circle, rect, line, polygon, polyline, text").length,
+    ).toBeGreaterThan(0);
   });
 });
 
