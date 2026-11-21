@@ -124,7 +124,9 @@ Switch threshold crossings are not breakpoints, because their time isn't known i
 
 ### 3.3a Start of the run
 
-Without `uic`, the run starts from the operating point with every source with a waveform at its value at $t = 0$ (ngspice `vsrcload.c` does the same in `MODETRANOP`). With `uic`, the unknowns start at zero and the capacitor and inductor initial conditions fill the charge history. Nodal then solves one backward Euler step of length $h_{min}$ at $t = 0$, so the first reported point shows the initial voltages and currents. ngspice does not report $t = 0$ with `uic`. The first step is $\min(t_{stop}/100,\, t_{step})/10$, cut by the post-breakpoint rule and divided by 10 again, and it is accepted without a truncation check.
+Divergence from ngspice: after a Newton failure or a rejected step, Nodal restarts Newton from the last accepted solution, where ngspice restarts from the last iterate. The last output point is always exactly $t_{stop}$: $t_{stop}$ is a forced landing like any breakpoint.
+
+Without `uic`, the run starts from the operating point with every source with a waveform at its value at $t = 0$ (ngspice `vsrcload.c` does the same in `MODETRANOP`). With `uic`, the unknowns start at zero and the capacitor and inductor initial conditions fill the charge history. Nodal then solves one backward Euler step of length $h_{min}$ at $t = 0$, so the first reported point shows the initial voltages and currents. ngspice does not report $t = 0$ with `uic`. If that step does not converge, the run stops with an error naming `uic` and $t = 0$. With `uic`, $t_{step}$ is also a breakpoint, as in ngspice. The first step is $\min(t_{stop}/100,\, t_{step})/10$, cut by the post-breakpoint rule and divided by 10 again, and it is accepted without a truncation check.
 
 ### 3.4 Output points
 

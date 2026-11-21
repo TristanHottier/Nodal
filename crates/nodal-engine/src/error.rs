@@ -36,8 +36,14 @@ pub enum Error {
     /// An AC analysis failed at one frequency. `cause` is the original error.
     AcPoint { frequency: f64, cause: Box<Error> },
     /// A transient step shrank below the minimum step size. `device` names
-    /// the device (or unknown) that forced the smallest step.
-    TimestepTooSmall { time: f64, device: String },
+    /// the device with the smallest truncation-error step. After a Newton
+    /// failure there is no such device: `device` is empty and `unknown` is
+    /// the unknown with the largest last update.
+    TimestepTooSmall {
+        time: f64,
+        device: String,
+        unknown: String,
+    },
     /// A bug in the engine, not a problem with the netlist.
     Internal(String),
 }
@@ -85,7 +91,16 @@ impl fmt::Display for Error {
             Error::AcPoint { frequency, cause } => {
                 write!(f, "ac analysis failed at {frequency:e} Hz: {cause}")
             }
-            Error::TimestepTooSmall { time, device } => write!(
+            Error::TimestepTooSmall {
+                time,
+                device,
+                unknown,
+            } if device.is_empty() => write!(
+                f,
+                "time step too small at t = {time:e} s (Newton did not converge; \
+                 largest update at {unknown})"
+            ),
+            Error::TimestepTooSmall { time, device, .. } => write!(
                 f,
                 "time step too small at t = {time:e} s (smallest proposed step: {device})"
             ),
@@ -105,10 +120,20 @@ mod tests {
         let e = Error::TimestepTooSmall {
             time: 1.5e-6,
             device: "C1".into(),
+            unknown: String::new(),
         };
         assert_eq!(
             e.to_string(),
             "time step too small at t = 1.5e-6 s (smallest proposed step: C1)"
+        );
+        let e = Error::TimestepTooSmall {
+            time: 1.5e-6,
+            device: String::new(),
+            unknown: "V(a)".into(),
+        };
+        assert_eq!(
+            e.to_string(),
+            "time step too small at t = 1.5e-6 s (Newton did not converge; largest update at V(a))"
         );
     }
 

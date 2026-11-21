@@ -69,9 +69,23 @@ impl TranResult {
     }
 }
 
-/// What made the last attempt fail, for the error message.
+/// What limited the step last, for the error message.
 #[derive(Debug, Clone, Default)]
-struct Blame(String);
+enum Culprit {
+    #[default]
+    None,
+    /// The device with the smallest truncation-error step.
+    Device(String),
+    /// The unknown with the largest update of a failed Newton run.
+    Unknown(String),
+}
+
+/// Counters of a run, for tests.
+#[derive(Debug, Clone, Copy, Default)]
+struct Stats {
+    max_order: usize,
+    newton_failures: usize,
+}
 
 /// The first breakpoint strictly after `t`: a source corner, an extra
 /// breakpoint, or `tstop`.
@@ -167,7 +181,7 @@ fn truncate_all<'a>(
 /// Runs a transient analysis. Source DC values are restored before returning.
 pub fn solve_tran(circuit: &mut Circuit, spec: &TranSpec) -> Result<TranResult, Error> {
     let (x0, state0) = initial_point(circuit, spec)?;
-    run(circuit, spec, x0, state0)
+    run(circuit, spec, x0, state0).map(|(result, _)| result)
 }
 
 /// The starting point: the operating point (with sources at their t = 0
@@ -206,7 +220,8 @@ fn run(
     spec: &TranSpec,
     mut x: Vec<f64>,
     mut state: Vec<f64>,
-) -> Result<TranResult, Error> {
+) -> Result<(TranResult, Stats), Error> {
+    let mut stats = Stats::default();
     let TranSpec {
         tstep,
         tstop,
@@ -245,7 +260,8 @@ fn run(
     };
     if uic {
         // Consistent point at t = 0: backward Euler over `hmin` from the
-        // initial charges. Failure keeps the zero start, as ngspice does.
+        // initial charges. ngspice has no such step and reports no t = 0
+        // point with uic; a failure here is an error, not a silent zero start.
         let coeffs = Coeffs::new(spec.method, 1, [hmin, hmin])?;
         let cfg = NewtonConfig {
             init_junction: false,
@@ -267,6 +283,11 @@ fn run(
                 if let Some(e) = f.error {
                     return Err(e);
                 }
+                return Err(Error::Invalid(format!(
+                    "tran analysis: the initial conditions (uic) did not converge at t = 0 \
+                     (largest update at {})",
+                    blame_unknown(circuit, &f.last_update)
+                )));
             }
         }
     }
@@ -283,12 +304,13 @@ fn run(
     let mut order = 1_usize;
     let mut first = true;
     let mut reached = true; // breaks[0] = 0 at the start
-    let mut blame = Blame::default();
+    let mut culprit = Culprit::None;
 
     loop {
         delta = delta.min(tmax);
         let next = next_break(circuit, &extra, tstop, t);
-        let mut landing = None;
+        // The forced landing: (step, target time).
+        let mut landing: Option<(f64, f64)> = None;
         if reached || next - t <= hmin {
             // First point after a breakpoint: order 1 and a short step.
             order = 1;
@@ -302,11 +324,17 @@ fn run(
             // Force the breakpoint.
             save_delta = delta;
             delta = next - t;
-            landing = Some(delta);
+            landing = Some((delta, next));
         } else if t + 1.9 * delta > next {
             // Equalise the last two steps before the breakpoint.
             save_delta = delta;
             delta = (next - t) / 2.0;
+        }
+        // tstop is always a forced landing, so no step floor or reduced step
+        // can end past it.
+        if landing.is_none() && t + delta >= tstop {
+            delta = tstop - t;
+            landing = Some((delta, tstop));
         }
         delta_old = [delta, delta_old[0], delta_old[1]];
 
@@ -314,8 +342,8 @@ fn run(
         let accepted = loop {
             let olddelta = delta;
             delta_old[0] = delta;
-            let hit = landing == Some(delta);
-            let time = if hit { next } else { t + delta };
+            let hit = landing.filter(|&(d, _)| d == delta);
+            let time = hit.map_or(t + delta, |(_, target)| target);
             let coeffs = Coeffs::new(spec.method, order, [delta_old[0], delta_old[1]])?;
             let cfg = NewtonConfig {
                 init_junction: false,
@@ -329,7 +357,8 @@ fn run(
                     if let Some(e) = f.error {
                         return Err(e);
                     }
-                    blame = Blame(blame_unknown(circuit, &f.last_update));
+                    culprit = Culprit::Unknown(blame_unknown(circuit, &f.last_update));
+                    stats.newton_failures += 1;
                     delta /= 8.0;
                     order = 1;
                 }
@@ -353,7 +382,7 @@ fn run(
                         break (time, hit, x_new, trial);
                     }
                     if let Some(w) = who {
-                        blame = Blame(w);
+                        culprit = Culprit::Device(w);
                     }
                     delta = newdelta;
                 }
@@ -363,9 +392,15 @@ fn run(
                 if olddelta > hmin {
                     delta = hmin;
                 } else {
+                    let (device, unknown) = match culprit {
+                        Culprit::Device(d) => (d, String::new()),
+                        Culprit::Unknown(u) => (String::new(), u),
+                        Culprit::None => (String::new(), String::new()),
+                    };
                     return Err(Error::TimestepTooSmall {
                         time: t,
-                        device: blame.0,
+                        device,
+                        unknown,
                     });
                 }
             }
@@ -379,7 +414,8 @@ fn run(
         ];
         x = x_new;
         t = time;
-        reached = hit;
+        reached = hit.is_some();
+        stats.max_order = stats.max_order.max(order);
         first = false;
         if t >= tstart {
             result.push(circuit, t, &x);
@@ -388,7 +424,7 @@ fn run(
             break;
         }
     }
-    Ok(result)
+    Ok((result, stats))
 }
 
 /// The unknown with the largest Newton update, as the culprit of a failure.
@@ -403,8 +439,9 @@ fn blame_unknown(circuit: &Circuit, update: &[f64]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::devices::NeverConverges;
+    use crate::devices::{Device, LoadContext, NeverConverges};
     use crate::ir::parse_netlist;
+    use crate::mna::RealSystem;
 
     type TestResult = Result<(), Box<dyn std::error::Error>>;
 
@@ -430,20 +467,109 @@ mod tests {
         Ok(Circuit::build(&parse_netlist(text)?)?)
     }
 
-    #[test]
-    fn timestep_too_small_names_a_culprit() -> TestResult {
+    /// Stamps nothing and reports non-convergence whenever `fails(time, ag0)`
+    /// holds for a transient point, with `ag0` the leading integration
+    /// coefficient (about 1/h).
+    #[derive(Debug)]
+    struct Flaky {
+        fails: fn(f64, f64) -> bool,
+    }
+
+    impl Device for Flaky {
+        fn name(&self) -> &str {
+            "XFLAKY"
+        }
+
+        fn load(&self, _: &[f64], _: &mut [f64], ctx: &LoadContext, _: &mut RealSystem) -> bool {
+            ctx.tran
+                .is_some_and(|t| (self.fails)(t.time, t.coeffs.ag()[0]))
+        }
+    }
+
+    fn with_device(device: Box<dyn Device>) -> Result<Circuit, Box<dyn std::error::Error>> {
         let mut circuit = rc_circuit()?;
-        let node = circuit.node("a");
         circuit.state_offsets.push(circuit.state_len());
-        circuit.devices.push(Box::new(NeverConverges { node }));
+        circuit.devices.push(device);
+        Ok(circuit)
+    }
+
+    fn run_stats(circuit: &mut Circuit, spec: &TranSpec) -> Result<(TranResult, Stats), Error> {
+        let (x, state) = initial_point(circuit, spec)?;
+        run(circuit, spec, x, state)
+    }
+
+    #[test]
+    fn uic_start_failure_is_an_error() -> TestResult {
+        let node = rc_circuit()?.node("a");
+        let mut circuit = with_device(Box::new(NeverConverges { node }))?;
         match solve_tran(&mut circuit, &spec(true)) {
-            Err(Error::TimestepTooSmall { time, device }) => {
+            Err(Error::Invalid(msg)) => {
+                assert!(msg.contains("uic") && msg.contains("t = 0"), "{msg}");
+                Ok(())
+            }
+            other => Err(format!("expected Invalid, got {other:?}").into()),
+        }
+    }
+
+    #[test]
+    fn timestep_too_small_after_newton_failure_names_an_unknown() -> TestResult {
+        // Fails at every transient point except the t = 0 start.
+        let mut circuit = with_device(Box::new(Flaky {
+            fails: |time, _| time > 0.0,
+        }))?;
+        match solve_tran(&mut circuit, &spec(true)) {
+            Err(Error::TimestepTooSmall {
+                time,
+                device,
+                unknown,
+            }) => {
                 assert_eq!(time, 0.0);
-                assert!(!device.is_empty());
+                assert!(device.is_empty());
+                assert!(
+                    unknown.starts_with("V(") || unknown.starts_with("I("),
+                    "{unknown}"
+                );
                 Ok(())
             }
             other => Err(format!("expected TimestepTooSmall, got {other:?}").into()),
         }
+    }
+
+    #[test]
+    fn newton_failure_is_followed_by_a_smaller_step() -> TestResult {
+        // Steps longer than 1e-7 fail after t = 1e-5.
+        let mut circuit = with_device(Box::new(Flaky {
+            fails: |time, ag0| time > 1e-5 && ag0 < 1e7,
+        }))?;
+        let (result, stats) = run_stats(&mut circuit, &spec(false))?;
+        assert!(stats.newton_failures > 0);
+        assert_eq!(result.time.last().copied(), Some(1e-4));
+        assert!(result.time.windows(2).all(|w| w[1] > w[0]));
+        let late: Vec<f64> = result
+            .time
+            .windows(2)
+            .filter(|w| w[0] > 2e-5)
+            .map(|w| w[1] - w[0])
+            .collect();
+        assert!(
+            !late.is_empty() && late.iter().all(|h| *h <= 2e-7),
+            "{late:?}"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn order_rises_to_two_on_a_smooth_stretch() -> TestResult {
+        for method in [Method::Trap, Method::Gear] {
+            let mut circuit = rc_circuit()?;
+            let s = TranSpec {
+                method,
+                ..spec(false)
+            };
+            let (_, stats) = run_stats(&mut circuit, &s)?;
+            assert_eq!(stats.max_order, 2, "{method:?}");
+        }
+        Ok(())
     }
 
     #[test]

@@ -273,3 +273,23 @@ fn operating_point_uses_waveform_value_at_zero() -> TestResult {
     }
     Ok(())
 }
+
+#[test]
+fn breakpoint_just_before_tstop_does_not_overshoot() -> TestResult {
+    // hmin = 1e-11 * 1e-6 = 1e-17; the corner sits 5e-18 below tstop, so the
+    // post-breakpoint floor of 2 hmin would step past tstop.
+    let near = 1e-4 - 5e-18;
+    assert!(near < 1e-4 && 1e-4 - near < 1e-17);
+    let wave = format!(r#"{{"type":"pwl","points":[[0,0],[{near:e},1],[1,1]]}}"#);
+    for method in METHODS {
+        let r = run_tran(&rc(
+            method,
+            r#"{"type":"tran","tstep":1e-6,"tstop":1e-4}"#,
+            &wave,
+        ))?;
+        assert_eq!(r.time.last().copied(), Some(1e-4), "{method}");
+        assert!(r.time.iter().all(|t| *t <= 1e-4), "{method}");
+        assert!(r.time.windows(2).all(|w| w[1] > w[0]), "{method}");
+    }
+    Ok(())
+}
