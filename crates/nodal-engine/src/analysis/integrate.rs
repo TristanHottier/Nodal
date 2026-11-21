@@ -2,7 +2,7 @@
 //! step proposal (numerical-methods.md sections 2 and 3).
 //!
 //! Ports of ngspice `maths/ni/nicomcof.c` (`NIcomCof`), `maths/ni/niinteg.c`
-//! (`NIintegrate`) and `spicelib/analysis/cktterr.c` (`CKTterr`).
+//! (`NIintegrate`) and `spicelib/analysis/cktterr.c` (`CKTterr`; identical in ngspice-42 for orders 1 and 2).
 //!
 //! Index mapping. ngspice keeps `CKTstates[k]` with `state0` the iterate at
 //! t_{n+1} and `state1`, `state2`, ... the accepted levels at t_n, t_{n-1}, ....

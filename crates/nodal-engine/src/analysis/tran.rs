@@ -1,7 +1,10 @@
 //! Transient analysis (numerical-methods.md sections 1.3, 2 and 3).
 //!
-//! The step control is a port of ngspice `spicelib/analysis/dctran.c`: the
-//! first and post-breakpoint step sizes, breakpoint landing and equalising,
+//! The step control is a port of ngspice-42 `spicelib/analysis/dctran.c`
+//! (XSPICE build, as in Debian's ngspice): the
+//! first and post-breakpoint step sizes, breakpoint landing (no equalising of
+//! the last two steps, no `2 * delmin` floor, breakpoints within
+//! `10 * delmin` thrown out unless final),
 //! the divide-by-eight retry after a Newton failure, the accept or reject
 //! decision from the truncation error (`CKTtrunc`, here
 //! [`truncation`](super::integrate::truncation)), and the order raise from 1
@@ -102,13 +105,14 @@ fn next_break(circuit: &Circuit, extra: &[f64], tstop: f64, t: f64) -> f64 {
     best
 }
 
-/// The first breakpoint more than `hmin` after `t` (ngspice treats closer
-/// ones as already reached).
-fn break_beyond(circuit: &Circuit, extra: &[f64], tstop: f64, t: f64, hmin: f64) -> f64 {
+/// The first breakpoint more than `gap` after `t`, or `tstop` (dctran.c of
+/// ngspice-42, XSPICE build: breakpoints within `CKTminBreak` of the current
+/// time are thrown out unless they are the final stop).
+fn break_beyond(circuit: &Circuit, extra: &[f64], tstop: f64, t: f64, gap: f64) -> f64 {
     let mut c = t;
     loop {
         let n = next_break(circuit, extra, tstop, c);
-        if n - t > hmin || !n.is_finite() {
+        if n - t > gap || n == tstop || !n.is_finite() {
             return n;
         }
         c = n;
@@ -244,6 +248,8 @@ fn run(
     }
     // ngspice delmin, numerical-methods.md section 3.2.
     let hmin = 1e-11 * tmax;
+    // XSPICE `CKTminBreak`, 10 * delmin when unset.
+    let min_break = 10.0 * hmin;
     let opts = TruncOpts {
         reltol: circuit.options.reltol,
         abstol: circuit.options.abstol,
@@ -295,7 +301,7 @@ fn run(
         result.push(circuit, 0.0, &x);
     }
 
-    // dctran.c: first step and bookkeeping.
+    // ngspice-42 dctran.c: first step and bookkeeping.
     let extra: Vec<f64> = if uic { vec![tstep] } else { Vec::new() };
     let mut t = 0.0_f64;
     let mut delta = (tstop / 100.0).min(tstep) / 10.0;
@@ -309,32 +315,29 @@ fn run(
     loop {
         delta = delta.min(tmax);
         let next = next_break(circuit, &extra, tstop, t);
+        // The next breakpoint that survives ngspice's clean-up of those
+        // within `min_break` of the current time (tstop always survives).
+        let target = break_beyond(circuit, &extra, tstop, t, min_break);
         // The forced landing: (step, target time).
         let mut landing: Option<(f64, f64)> = None;
         if reached || next - t <= hmin {
             // First point after a breakpoint: order 1 and a short step.
             order = 1;
-            let beyond = break_beyond(circuit, &extra, tstop, t, hmin);
-            delta = delta.min(0.1 * save_delta.min(beyond - t));
+            if target - t > min_break {
+                delta = delta.min(0.1 * save_delta.min(target - t));
+            }
             if first {
                 delta /= 10.0;
             }
-            delta = delta.max(hmin * 2.0);
-        } else if t + delta >= next {
-            // Force the breakpoint.
-            save_delta = delta;
-            delta = next - t;
-            landing = Some((delta, next));
-        } else if t + 1.9 * delta > next {
-            // Equalise the last two steps before the breakpoint.
-            save_delta = delta;
-            delta = (next - t) / 2.0;
         }
-        // tstop is always a forced landing, so no step floor or reduced step
-        // can end past it.
-        if landing.is_none() && t + delta >= tstop {
-            delta = tstop - t;
-            landing = Some((delta, tstop));
+        // Force the breakpoint. The XSPICE build has no equalising of the
+        // last two steps and no 2 * delmin floor.
+        // tstop within `min_break` is reached in one step, so a corner just
+        // below tstop cannot make the steps shrink forever.
+        if t + delta >= target || target - t <= min_break {
+            save_delta = delta;
+            delta = target - t;
+            landing = Some((delta, target));
         }
         delta_old = [delta, delta_old[0], delta_old[1]];
 
@@ -387,7 +390,7 @@ fn run(
                     delta = newdelta;
                 }
             }
-            // dctran.c: below delmin once is allowed, twice is an error.
+            // ngspice-42 dctran.c: below delmin once is allowed, twice is an error.
             if delta <= hmin {
                 if olddelta > hmin {
                     delta = hmin;

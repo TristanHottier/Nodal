@@ -428,3 +428,39 @@ fn bjt_reverse_charge_balance() -> TestResult {
     }
     Ok(())
 }
+
+#[test]
+fn no_equalising_step_before_a_breakpoint() -> TestResult {
+    // A quiet circuit takes steps of tmax = tstop / 50 = 8e-6. ngspice-42 lands on the
+    // vertex with a single shortened step and never halves the remainder.
+    for method in METHODS {
+        for k in 1..=9 {
+            let vertex = 2.3e-4 + f64::from(k) * 1e-6;
+            let wave = format!(
+                r#"{{"type":"pwl","points":[[0,0],[{vertex:e},0],[{:e},1],[1,1]]}}"#,
+                vertex + 5e-5
+            );
+            let r = run_tran(&rc(
+                method,
+                r#"{"type":"tran","tstep":1e-5,"tstop":4e-4}"#,
+                &wave,
+            ))?;
+            let i = r
+                .time
+                .iter()
+                .position(|t| *t == vertex)
+                .ok_or("no point at the vertex")?;
+            let steps: Vec<f64> = r.time.windows(2).map(|w| w[1] - w[0]).collect();
+            // Steps from t = 1e-4 up to the one before the landing step.
+            let from = r.time.iter().position(|t| *t >= 1e-4).ok_or("early")?;
+            for h in &steps[from..i - 1] {
+                assert!(
+                    (h - 8e-6).abs() <= 1e-12,
+                    "{method} vertex {vertex:e}: step {h:e}"
+                );
+            }
+            assert!(steps[i - 1] <= 8e-6 + 1e-12);
+        }
+    }
+    Ok(())
+}

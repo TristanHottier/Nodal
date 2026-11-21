@@ -118,7 +118,7 @@ Clamps:
 
 ### 3.3 Breakpoints
 
-Independent sources report the times where their waveform has a corner: pulse edges, PWL vertices, and the sine delay start. The integrator never steps across a breakpoint. It shortens the step to land exactly on it, then restarts at small $h$ with one backward Euler step (§2.1).
+Independent sources report the times where their waveform has a corner: pulse edges, PWL vertices, and the sine delay start. The integrator never steps across a breakpoint. It shortens the step to land exactly on it, then restarts at order 1 with a step of at most $0.1\min(h_{saved},\, t_{next} - t)$. This follows ngspice-42 (the XSPICE build that Debian ships): there is no equalising of the last two steps before a breakpoint, no $2\,h_{min}$ floor, and breakpoints closer than $10\,h_{min}$ to the current time are dropped unless they are $t_{stop}$.
 
 Switch threshold crossings are not breakpoints, because their time isn't known in advance. They are handled by step rejection ([devices.md](devices.md) §4).
 
