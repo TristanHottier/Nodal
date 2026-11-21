@@ -210,7 +210,39 @@ Detected while solving:
 
 ### 6.2 Netlister
 
-Pure TypeScript function `projectToNetlist(doc) → { ir, diagnostics }`. It does union–find over connection points, assigns net names, maps part parameters to IR elements, and reports dangling pins and unconnected parts. Unit-tested without a browser.
+`projectToNetlist(project)` is a pure function that returns `{ ir, diagnostics }`. The code lives in `apps/web/src/netlist/`: `nets.ts` (connectivity and net names), `elements.ts` (parts to IR elements), `netlister.ts` (orchestration and checks) and `equivalence.ts` (`compareNetlists`, used to compare a schematic with a reference IR). It has unit tests and needs no browser.
+
+**Nets.** Union-find has one node per pin, per wire and per label. At every pin position, wire end and label anchor `P`, it joins the pins, wire ends and labels at `P` and every wire for which `pointOnWire(w, P)` holds. A wire is one conductor, and bends and crossings are not connection points. All ground pins share one net.
+
+**Names.**
+- A ground pin names its net `0`. A net label names its net. Labels whose text is equal ignoring ASCII case join their nets, and the net takes the first spelling in document order.
+- A label must match `^[A-Za-z0-9_]+$` and must not be `0` or `gnd` in any case (`bad-label`). Labels on nets without pins are ignored.
+- Other nets get `N001`, `N002`, … (`N1000` after `N999`) in order of first pin: parts in document order, pins in catalog order. Names equal to a label ignoring case are skipped.
+
+**Elements.** Parts become elements in document order; ground parts produce none. The kind letter comes from the symbol prefix, and an op-amp becomes `E` plus its part name with nodes `[out, "0"]` and `controlNodes: [inp, inn]`. Element nodes follow pin order. Only the fields in `PARAM_FIELDS` whose `when` condition holds are read. Values use the notation of [ADR 0009](adr/0009-value-notation.md). Optional empty fields are left out and the IR defaults apply. A source with `acMag` gets `ac: { mag, phase }`, with the phase defaulting to 0. References (`model`, `controlSource`, a DC sweep `source`) must match a name exactly.
+
+**Diagnostics.** Each has a severity, a code, a message that names the part and field, and the ids of the parts or labels involved. `ir` is `null` when any error is present.
+
+| Code | Severity | Meaning |
+|---|---|---|
+| `no-ground` | error | No ground symbol in the schematic. |
+| `invalid-value` | error | A field does not parse, for example `R1 value: not a number: 4,7k`. |
+| `missing-value` | error | A required field is empty. |
+| `bad-name` | error | A part name does not fit the IR element rules or does not start with the kind letter. |
+| `duplicate-name` | error | Two IR element names are equal ignoring case. |
+| `bad-label` | error | A label has characters outside the node-name set, or is `0` or `gnd`. |
+| `label-conflict` | error | One net has labels that differ beyond case, or a label sits on ground. |
+| `missing-model` | error | A device has no model, or the named model does not exist. |
+| `model-type-mismatch` | error | The model type does not fit the device, for example `D1 model QMOD is NPN, expected D`. |
+| `invalid-model` | error | A model parameter does not parse. |
+| `unknown-control-source` | error | A CCVS or CCCS names no voltage source. The ids include a source whose name differs only in case. |
+| `unknown-sweep-source` | error | A DC sweep names no voltage or current source. |
+| `shorted-element` | error | Both terminals of a two-terminal element (any kind except Q and M) are on one net. |
+| `ir-invalid` | error | `parseNetlist` rejected the result; the message carries its text. |
+| `dangling-pin` | warning | A pin has no other pin on its net. |
+| `unconnected-part` | warning | Every pin of a part is alone on its net. It replaces the dangling-pin warnings of that part. |
+
+Warnings do not stop netlist generation. Renaming a voltage source never rewrites the CCVS, CCCS or sweep that refers to it. The netlister reports `unknown-control-source` or `unknown-sweep-source` for each.
 
 ### 6.3 Symbols
 
