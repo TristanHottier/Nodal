@@ -10,7 +10,7 @@ import { useWireTool } from "./tools/wire";
 import { useShortcuts } from "./useShortcuts";
 
 const CSS = `
-.nodal-editor { display: grid; grid-template-columns: 180px 1fr; grid-template-rows: 1fr auto; width: 100%; height: 100vh; }
+.nodal-editor { display: grid; grid-template-columns: 180px 1fr; grid-template-rows: 1fr auto; width: 100%; height: 100%; }
 .nodal-palette { grid-row: 1; grid-column: 1; display: flex; flex-direction: column; gap: 2px; padding: 6px; overflow-y: auto; border-right: 1px solid #e5e7eb; background: #f8fafc; }
 .nodal-palette button { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font: inherit; text-align: left; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
 .nodal-palette button:hover { background: #e2e8f0; }
@@ -33,7 +33,9 @@ function EditorBody({ status }: { status?: ReactNode }) {
       <div className="nodal-canvas-pane">
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
       </div>
-      <div className="nodal-status">{status}</div>
+      <div className="nodal-status">
+        <strong>Nodal</strong> {status}
+      </div>
     </div>
   );
 }

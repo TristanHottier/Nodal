@@ -205,6 +205,8 @@ Detected while solving:
 - **Symbol transform:** a symbol-local point `p` of a part at `(x, y)` is mirrored first (`(px, py) → (−px, py)` when `mirror` is set), then rotated clockwise on screen (`90: (px, py) → (−py, px)`, `180: → (−px, −py)`, `270: → (py, −px)`), then translated by `(x, y)`. All coordinates are integers in grid units.
 - Nets get names from net labels; unlabeled nets get generated names (`N001`…). The ground symbol forces net `0`.
 - Undo/redo: every edit produces a new immutable document (Immer); history keeps snapshots with structural sharing.
+- **Interaction:** the palette picks the Select, Wire or place tool. Clicking with a place tool puts the part or label on the nearest grid point. The wire tool starts a wire on the first click and ends it on a click at a pin, a wire end or inside a wire segment. The wire preview has one bend, and `/` moves it to the other corner. Dragging with Select moves the selection.
+- **Keymap:** `R` rotate, `X` mirror, `Delete` or `Backspace` delete, `Ctrl/Cmd+C` and `Ctrl/Cmd+V` copy and paste, `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo, `W` wire tool, `/` toggle the bend, `Enter` or double click finish a wire, `Esc` cancel. The mouse wheel zooms; middle-button drag or `Space` plus drag pans.
 
 ### 6.2 Netlister
 
@@ -235,5 +237,5 @@ Loading validates with Zod and runs migrations from older `formatVersion`s. Unkn
 | Device math | `cargo test` | Stamps on 1–3 element circuits; finite-difference Jacobian check for every nonlinear device. |
 | Analyses | `cargo test` + `validation/` | Analytic circuits; ngspice golden comparison ([VALIDATION.md](VALIDATION.md)). |
 | Netlister, schema | Vitest | Connectivity edge cases, file migrations. |
-| Deployed shell | Playwright (from M0) | The production build served under `/Nodal/` loads the worker and `.wasm` and shows the engine version. |
+| Deployed shell and editor | Playwright (from M0, editor from M5a) | The production build served under `/Nodal/` loads the worker and `.wasm` and shows the engine version. The editor places a resistor and a ground, wires them, makes a junction dot and undoes it. |
 | End to end | Playwright (from M6) | Draw an RC circuit, run transient, check a probed value. |

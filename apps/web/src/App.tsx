@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Editor } from "./editor/Editor";
 import { getEngineVersion } from "./engine/client";
 
 type Status =
@@ -33,10 +34,5 @@ export function App() {
         ? `Engine ${status.version}`
         : `Engine failed to load: ${status.message}`;
 
-  return (
-    <main>
-      <h1>Nodal</h1>
-      <p data-testid="engine-status">{text}</p>
-    </main>
-  );
+  return <Editor status={<span data-testid="engine-status">{text}</span>} />;
 }
