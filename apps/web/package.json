@@ -14,8 +14,10 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "immer": "^11.2.10",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

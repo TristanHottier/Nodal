@@ -22,3 +22,5 @@ export type {
 } from "./ir";
 export { PARAM_SPECS } from "./models";
 export type { ParamRange, ParamSpec } from "./models";
+export { EMPTY_SCHEMATIC, PART_TYPES, schematicSchema } from "./schematic";
+export type { NetLabel, Part, PartType, Point, Rotation, Schematic, Wire } from "./schematic";
