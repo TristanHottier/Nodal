@@ -25,6 +25,16 @@ fn slot(level: &[f64], idx: usize, who: &str) -> Result<f64, Error> {
     })
 }
 
+/// Number of machine epsilons of relative error assumed in a junction charge.
+const CHARGE_NOISE: f64 = 32.0;
+
+/// Rounding allowance of a charge current `a0 (q - q_n) - ...` (see
+/// `Diode::converged`): `a0` times the rounding of the charges, enlarged by
+/// the evaluation of the junction exponential.
+pub(crate) fn charge_rounding(c: &Coeffs, q: f64, q_n: f64) -> f64 {
+    CHARGE_NOISE * f64::EPSILON * c.ag()[0].abs() * (q.abs() + q_n.abs())
+}
+
 /// Integration coefficients: `i_{n+1} = ag[0] q_{n+1} + ag[1] q_n + ag[2] q_{n-1}`
 /// (trapezoidal order 2 adds the `-ag[1] i_n` term instead, see [`integrate`]).
 #[derive(Debug, Clone, Copy, PartialEq)]

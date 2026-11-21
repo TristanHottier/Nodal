@@ -118,10 +118,6 @@ pub(crate) fn depletion(v: f64, cj: f64, vj: f64, m: f64, fc: f64) -> (f64, f64)
     }
 }
 
-/// Number of machine epsilons of relative error assumed in a junction charge,
-/// for the convergence allowance of the charge current.
-const CHARGE_NOISE: f64 = 32.0;
-
 /// State layout: junction voltage, current, conductance (in a transient step
 /// the totals including the charge terms, as `dioload.c`), then the charge `Q_d` and its current.
 const STATE_V: usize = 0;
@@ -185,7 +181,7 @@ impl Diode {
         }
         let (geq, _) = integrate(&tran.coeffs, state, tran.hist, STATE_Q, cap)?;
         let q_n = tran.hist[0].get(STATE_Q).copied().unwrap_or(0.0);
-        let noise = CHARGE_NOISE * f64::EPSILON * tran.coeffs.ag()[0].abs() * (q.abs() + q_n.abs());
+        let noise = crate::analysis::integrate::charge_rounding(&tran.coeffs, q, q_n);
         Ok((geq, state.get(STATE_Q + 1).copied().unwrap_or(0.0), noise))
     }
 }

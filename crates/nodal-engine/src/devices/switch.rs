@@ -1,7 +1,8 @@
 //! Voltage-controlled switch (docs/reference/devices.md section 4).
 //!
-//! The state decision follows ngspice `swload.c`, restricted to DC and to a
-//! non-negative `VH`. State slot 0 holds the on/off state (1.0 on, 0.0 off).
+//! The state decision follows ngspice `swload.c`, restricted to a
+//! non-negative `VH`. DC and transient (threshold crossings located by step
+//! rejection, devices.md §4). State slot 0 holds the on/off state (1.0 on, 0.0 off).
 
 use super::{Device, LoadContext, LoadMode, volt};
 use crate::error::Error;

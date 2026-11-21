@@ -35,6 +35,8 @@ pub const DEFAULT_TRTOL: f64 = 7.0;
 pub const DEFAULT_CHGTOL: f64 = 1e-14;
 /// Highest integration order (`CKTmaxOrder`).
 const MAX_ORDER: usize = 2;
+/// Largest allowed number of accepted time points in one transient run.
+pub const MAX_TRAN_POINTS: usize = 1_000_000;
 
 /// Everything a transient run needs besides the circuit.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -244,8 +246,19 @@ fn initial_point(circuit: &mut Circuit, spec: &TranSpec) -> Result<(Vec<f64>, Ve
 fn run(
     circuit: &Circuit,
     spec: &TranSpec,
+    x: Vec<f64>,
+    state: Vec<f64>,
+) -> Result<(TranResult, Stats), Error> {
+    run_capped(circuit, spec, x, state, MAX_TRAN_POINTS)
+}
+
+/// [`run`] with the accepted-point limit as a parameter, so tests can lower it.
+fn run_capped(
+    circuit: &Circuit,
+    spec: &TranSpec,
     mut x: Vec<f64>,
     mut state: Vec<f64>,
+    max_points: usize,
 ) -> Result<(TranResult, Stats), Error> {
     let mut stats = Stats::default();
     let TranSpec {
@@ -258,6 +271,16 @@ fn run(
     if !(tstep > 0.0 && tstop > tstart && tstart >= 0.0 && tstop.is_finite()) {
         return Err(Error::Invalid(
             "tran analysis: need tstep > 0 and 0 <= tstart < tstop".into(),
+        ));
+    }
+    if !(spec.trtol > 0.0 && spec.trtol.is_finite()) {
+        return Err(Error::Invalid(
+            "tran analysis: trtol must be positive and finite".into(),
+        ));
+    }
+    if !(spec.chgtol >= 0.0 && spec.chgtol.is_finite()) {
+        return Err(Error::Invalid(
+            "tran analysis: chgtol must be non-negative and finite".into(),
         ));
     }
     let tmax = spec
@@ -311,11 +334,12 @@ fn run(
                 if let Some(e) = f.error {
                     return Err(e);
                 }
-                return Err(Error::Invalid(format!(
-                    "tran analysis: the initial conditions (uic) did not converge at t = 0 \
-                     (largest update at {})",
-                    blame_unknown(circuit, &f.last_update)
-                )));
+                // Reads as a convergence failure at t = 0, like a failed step.
+                return Err(Error::TimestepTooSmall {
+                    time: 0.0,
+                    device: String::new(),
+                    unknown: blame_unknown(circuit, &f.last_update),
+                });
             }
         }
     }
@@ -333,6 +357,7 @@ fn run(
     let mut first = true;
     let mut reached = true; // breaks[0] = 0 at the start
     let mut culprit = Culprit::None;
+    let mut accepted_points = 0_usize;
 
     loop {
         delta = delta.min(tmax);
@@ -429,6 +454,11 @@ fn run(
                     delta = newdelta;
                 }
             }
+            if !delta.is_finite() {
+                return Err(Error::Internal(format!(
+                    "tran: non-finite time step after t = {t:e}"
+                )));
+            }
             // ngspice-42 dctran.c: below delmin once is allowed, twice is an error.
             if delta <= hmin {
                 if olddelta > hmin {
@@ -460,6 +490,12 @@ fn run(
         reached = hit.is_some() || state_changed;
         stats.max_order = stats.max_order.max(order);
         first = false;
+        accepted_points += 1;
+        if accepted_points > max_points {
+            return Err(Error::Invalid(format!(
+                "tran analysis: more than {max_points} time points"
+            )));
+        }
         if t >= tstart {
             result.push(circuit, t, &x);
         }
@@ -546,11 +582,17 @@ mod tests {
         let node = rc_circuit()?.node("a");
         let mut circuit = with_device(Box::new(NeverConverges { node }))?;
         match solve_tran(&mut circuit, &spec(true)) {
-            Err(Error::Invalid(msg)) => {
-                assert!(msg.contains("uic") && msg.contains("t = 0"), "{msg}");
+            Err(Error::TimestepTooSmall {
+                time,
+                device,
+                unknown,
+            }) => {
+                assert_eq!(time, 0.0);
+                assert!(device.is_empty());
+                assert!(unknown.starts_with("V(") || unknown.starts_with("I("));
                 Ok(())
             }
-            other => Err(format!("expected Invalid, got {other:?}").into()),
+            other => Err(format!("expected TimestepTooSmall, got {other:?}").into()),
         }
     }
 
@@ -639,6 +681,73 @@ mod tests {
         solve_tran(&mut circuit, &spec(false))?;
         let dc = circuit.device_mut("V1").and_then(|d| d.dc_value());
         assert_eq!(dc, Some(1.0));
+        Ok(())
+    }
+
+    #[test]
+    fn point_cap_is_a_typed_error() -> TestResult {
+        let mut circuit = rc_circuit()?;
+        let (x, state) = initial_point(&mut circuit, &spec(false))?;
+        match run_capped(&circuit, &spec(false), x, state, 10) {
+            Err(Error::Invalid(msg)) => {
+                assert_eq!(msg, "tran analysis: more than 10 time points");
+                Ok(())
+            }
+            other => Err(format!("expected Invalid, got {other:?}").into()),
+        }
+    }
+
+    #[test]
+    fn invalid_tolerances_are_rejected() -> TestResult {
+        for (trtol, chgtol) in [
+            (0.0, DEFAULT_CHGTOL),
+            (-1.0, DEFAULT_CHGTOL),
+            (f64::NAN, DEFAULT_CHGTOL),
+            (f64::INFINITY, DEFAULT_CHGTOL),
+            (DEFAULT_TRTOL, -1.0),
+            (DEFAULT_TRTOL, f64::NAN),
+            (DEFAULT_TRTOL, f64::INFINITY),
+        ] {
+            let mut circuit = rc_circuit()?;
+            let s = TranSpec {
+                trtol,
+                chgtol,
+                ..spec(false)
+            };
+            match solve_tran(&mut circuit, &s) {
+                Err(Error::Invalid(_)) => {}
+                other => return Err(format!("{trtol} {chgtol}: got {other:?}").into()),
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn lte_failure_names_the_device() -> TestResult {
+        let text = r#"{"irVersion":1,"elements":[
+            {"kind":"V","name":"V1","nodes":["in","0"],"dc":0,
+             "tran":{"type":"pulse","v1":0,"v2":1,"td":1e-5,"tr":1e-9,"tf":1e-9,"pw":1,"per":2}},
+            {"kind":"R","name":"R1","nodes":["in","a"],"value":1000},
+            {"kind":"C","name":"C1","nodes":["a","0"],"value":1e-6}],
+            "analyses":[{"type":"tran","tstep":1e-6,"tstop":1e-4}]}"#;
+        let mut circuit = Circuit::build(&parse_netlist(text)?)?;
+        // A tiny trtol drives the truncation-error step to hmin on the edge.
+        let s = TranSpec {
+            trtol: 1e-15,
+            ..spec(false)
+        };
+        match solve_tran(&mut circuit, &s) {
+            Err(Error::TimestepTooSmall {
+                time,
+                device,
+                unknown,
+            }) => {
+                assert_eq!(device, "C1");
+                assert!(unknown.is_empty());
+                assert!((time - 1e-5).abs() < 1e-8, "{time}");
+            }
+            other => return Err(format!("expected TimestepTooSmall, got {other:?}").into()),
+        }
         Ok(())
     }
 }

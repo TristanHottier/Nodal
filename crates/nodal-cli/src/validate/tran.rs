@@ -48,10 +48,17 @@ pub fn parse_tran_golden(text: &str) -> Result<TranGolden, String> {
                 fields.len()
             ));
         }
-        for (column, field) in columns.iter_mut().zip(&fields) {
+        for (col, (column, field)) in columns.iter_mut().zip(&fields).enumerate() {
             let value: f64 = field
                 .parse()
                 .map_err(|_| format!("line {}: bad number `{field}`", index + 1))?;
+            if !value.is_finite() {
+                return Err(format!(
+                    "line {}, column {}: non-finite value `{field}`",
+                    index + 1,
+                    col + 1
+                ));
+            }
             column.push(value);
         }
     }
@@ -187,6 +194,13 @@ mod tests {
         assert_eq!(g.signals, vec!["V(a)", "I(V1)"]);
         assert_eq!(g.columns, vec![vec![1.0, 3.0], vec![2.0, 4.0]]);
         assert!(parse_tran_golden("sweep,V(a)\n0,1\n").is_err());
+        let e = parse_tran_golden("time,V(a)\n0,1\n1e-3,NaN\n").err();
+        assert!(
+            e.as_deref()
+                .is_some_and(|m| m.contains("line 3") && m.contains("column 2")),
+            "{e:?}"
+        );
+        assert!(parse_tran_golden("time,V(a)\n0,inf\n").is_err());
         Ok(())
     }
 

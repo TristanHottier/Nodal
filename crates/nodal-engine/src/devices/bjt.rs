@@ -246,16 +246,6 @@ impl Bjt {
     }
 }
 
-/// Rounding allowance of a charge current `a0 (q - q_n) - ...` (see
-/// `Diode::converged`): `a0` times the rounding of the charges, enlarged by
-/// the evaluation of the junction exponential.
-fn charge_noise(c: &crate::analysis::integrate::Coeffs, q: f64, q_n: f64) -> f64 {
-    CHARGE_NOISE * f64::EPSILON * c.ag()[0].abs() * (q.abs() + q_n.abs())
-}
-
-/// Number of machine epsilons of relative error assumed in a junction charge.
-const CHARGE_NOISE: f64 = 32.0;
-
 impl Bjt {
     /// Transient charge block of `bjtload.c`: integrates `Qbe` and `Qbc` at
     /// the physical junction voltages `(vbe, vbc)`, writing the charges and
@@ -296,8 +286,8 @@ impl Bjt {
         e.dic_dvbc -= geq_bc;
         let hist = |slot: usize| tran.hist[0].get(slot).copied().unwrap_or(0.0);
         Ok((
-            charge_noise(&tran.coeffs, q.qbe, hist(S_QBE)),
-            charge_noise(&tran.coeffs, q.qbc, hist(S_QBC)),
+            crate::analysis::integrate::charge_rounding(&tran.coeffs, q.qbe, hist(S_QBE)),
+            crate::analysis::integrate::charge_rounding(&tran.coeffs, q.qbc, hist(S_QBC)),
         ))
     }
 }
