@@ -1,0 +1,28 @@
+{
+  "irVersion": 1,
+  "title": "T3 Half-wave rectifier with smoothing capacitor (gear)",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "tran": { "type": "sin", "vo": 0, "va": 10, "freq": 50 }
+    },
+    { "kind": "D", "name": "D1", "nodes": ["in", "out"], "model": "DM" },
+    { "kind": "R", "name": "R1", "nodes": ["out", "0"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["out", "0"], "value": 0.0001 }
+  ],
+  "models": [
+    { "name": "DM", "type": "D", "params": { "IS": 1e-14, "RS": 0.1, "CJO": 1e-11, "TT": 1e-9 } }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 0.00001, "tstop": 0.06 }],
+  "options": {
+    "temp": 27,
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18,
+    "method": "gear"
+  }
+}

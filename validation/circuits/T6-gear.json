@@ -1,0 +1,44 @@
+{
+  "irVersion": 1,
+  "title": "T6 Voltage-controlled switch with hysteresis and RC load (gear)",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VCTL",
+      "nodes": ["ctl", "0"],
+      "dc": 0,
+      "tran": {
+        "type": "pwl",
+        "points": [
+          [0, 0],
+          [0.001, 5],
+          [0.002, 0],
+          [0.003, 5],
+          [0.004, 0]
+        ]
+      }
+    },
+    {
+      "kind": "S",
+      "name": "S1",
+      "nodes": ["out", "0"],
+      "controlNodes": ["ctl", "0"],
+      "model": "SM"
+    },
+    { "kind": "V", "name": "V2", "nodes": ["vs", "0"], "dc": 5 },
+    { "kind": "R", "name": "R1", "nodes": ["vs", "out"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["out", "0"], "value": 0.000001 }
+  ],
+  "models": [
+    { "name": "SM", "type": "SW", "params": { "VT": 2.5, "VH": 0.5, "RON": 100, "ROFF": 1000000 } }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 0.00001, "tstop": 0.004, "tmax": 2e-7 }],
+  "options": {
+    "temp": 27,
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18,
+    "method": "gear"
+  }
+}

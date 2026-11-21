@@ -1,0 +1,43 @@
+{
+  "irVersion": 1,
+  "title": "T5 NPN saturating switch driven by PWL (gear)",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "VIN",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "tran": {
+        "type": "pwl",
+        "points": [
+          [0, 0],
+          [0.000001, 0],
+          [0.00000101, 5],
+          [0.000005, 5],
+          [0.00000501, 0],
+          [0.00001, 0]
+        ]
+      }
+    },
+    { "kind": "R", "name": "RB", "nodes": ["in", "b"], "value": 10000 },
+    { "kind": "Q", "name": "Q1", "nodes": ["c", "b", "0"], "model": "QN" },
+    { "kind": "R", "name": "RC", "nodes": ["vcc", "c"], "value": 1000 },
+    { "kind": "V", "name": "VCC", "nodes": ["vcc", "0"], "dc": 5 }
+  ],
+  "models": [
+    {
+      "name": "QN",
+      "type": "NPN",
+      "params": { "BF": 100, "TF": 3e-10, "TR": 1e-8, "CJE": 2e-12, "CJC": 1e-12 }
+    }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 1e-8, "tstop": 0.00001 }],
+  "options": {
+    "temp": 27,
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18,
+    "method": "gear"
+  }
+}

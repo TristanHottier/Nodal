@@ -1,0 +1,33 @@
+{
+  "irVersion": 1,
+  "title": "T1 RC step response (trap)",
+  "elements": [
+    {
+      "kind": "V",
+      "name": "V1",
+      "nodes": ["in", "0"],
+      "dc": 0,
+      "tran": {
+        "type": "pulse",
+        "v1": 0,
+        "v2": 1,
+        "td": 0,
+        "tr": 1e-9,
+        "tf": 1e-9,
+        "pw": 1,
+        "per": 2
+      }
+    },
+    { "kind": "R", "name": "R1", "nodes": ["in", "out"], "value": 1000 },
+    { "kind": "C", "name": "C1", "nodes": ["out", "0"], "value": 0.000001 }
+  ],
+  "analyses": [{ "type": "tran", "tstep": 0.00001, "tstop": 0.005 }],
+  "options": {
+    "temp": 27,
+    "reltol": 0.000001,
+    "vntol": 1e-9,
+    "abstol": 1e-15,
+    "chgtol": 1e-18,
+    "method": "trap"
+  }
+}

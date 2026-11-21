@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { checkFrequencyScale, mapSignals, parseRaw, staleGoldens } from "./regen-goldens.mjs";
+import {
+  checkFrequencyScale,
+  goldenIds,
+  mapSignals,
+  parseRaw,
+  staleGoldens,
+} from "./regen-goldens.mjs";
 
 const complexRaw = `Title: rc
 Date: Fri Nov 20 2026
@@ -75,4 +81,27 @@ test("staleGoldens names a golden of another kind", () => {
 test("checkFrequencyScale accepts a real scale and rejects an imaginary part", () => {
   checkFrequencyScale(parseRaw(complexRaw).points);
   assert.throws(() => checkFrequencyScale([[[1, 0]], [[10, 1e-3]]]), /non-zero imaginary part/);
+});
+
+test("mapSignals keeps time as the first signal of a tran plot", () => {
+  const mapped = mapSignals(["time", "v(out)", "v1#branch"], ir, "tran");
+  assert.deepEqual(mapped, [
+    [0, "time"],
+    [1, "V(out)"],
+    [2, "I(V1)"],
+  ]);
+});
+
+test("mapSignals rejects a tran plot that does not start with time", () => {
+  assert.throws(() => mapSignals(["v(out)", "time"], ir, "tran"), /time/);
+});
+
+test("goldenIds lists tran goldens next to the other kinds", () => {
+  const files = ["A1.ac.csv", "T1-trap.tran.csv", "L1.op.csv", "N1.dc.csv", "notes.txt"];
+  assert.deepEqual(goldenIds(files), ["A1", "L1", "N1", "T1-trap"]);
+});
+
+test("staleGoldens names a tran golden when the kind changes", () => {
+  assert.deepEqual(staleGoldens("T1-trap", "op", ["T1-trap.tran.csv"]), ["T1-trap.tran.csv"]);
+  assert.deepEqual(staleGoldens("T1-trap", "tran", ["T1-trap.tran.csv"]), []);
 });

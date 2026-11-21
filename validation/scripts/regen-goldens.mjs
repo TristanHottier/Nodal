@@ -1,7 +1,8 @@
 // Regenerates ngspice goldens: node validation/scripts/regen-goldens.mjs [<id>...]
-// With no ids, every existing validation/golden/*.op.csv, *.dc.csv and *.ac.csv is regenerated.
-// Each circuit has exactly one analysis (op, dc or ac); a dc golden has one row per sweep point
-// and an ac golden one row per frequency, with .re and .im columns for every signal.
+// With no ids, every existing validation/golden/*.op.csv, *.dc.csv, *.ac.csv and *.tran.csv is
+// regenerated. Each circuit has exactly one analysis (op, dc, ac or tran); a dc golden has one
+// row per sweep point, an ac golden one row per frequency, with .re and .im columns for every
+// signal, and a tran golden one row per ngspice time point.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -48,7 +49,7 @@ function ngspiceVersion() {
   return line.replace(/^[\s*]+|[\s*]+$/g, "");
 }
 
-const kinds = ["op", "dc", "ac"];
+const kinds = ["op", "dc", "ac", "tran"];
 
 /**
  * Parses an ASCII rawfile into `{ names, points, complex }`: the variable names in file order
@@ -122,7 +123,8 @@ export function checkFrequencyScale(points) {
  * In a dc plot the first vector is the scale (`v(v-sweep)` or `i(i-sweep)` in ngspice-42,
  * possibly the source name in newer versions) and becomes `sweep`. Vectors with a `#` other
  * than `#branch` are device-internal and skipped. Anything else unexpected is fatal.
- * In an ac plot the first vector must be `frequency`, which keeps that name.
+ * In an ac plot the first vector must be `frequency`, which keeps that name; in a tran plot
+ * it must be `time`.
  */
 export function mapSignals(names, ir, analysisType) {
   const { nodes, elements } = irNames(ir);
@@ -146,6 +148,11 @@ export function mapSignals(names, ir, analysisType) {
       if (name !== "frequency")
         fail(`an ac plot must start with the frequency vector, found ${name}`);
       mapped.push([column, "frequency"]);
+      return;
+    }
+    if (analysisType === "tran" && column === 0) {
+      if (name !== "time") fail(`a tran plot must start with the time vector, found ${name}`);
+      mapped.push([column, "time"]);
       return;
     }
     if (name.includes("#") && !name.endsWith("#branch")) return;
@@ -193,6 +200,7 @@ function compute(id, version) {
       `# analysis: ${analysisType}`,
       `# ngspice: ${version}`,
       `# options: ${optionsLine.slice(".options ".length)}`,
+      ...(analysisType === "tran" ? [`# method: ${ir.options?.method ?? "trap"}`] : []),
       `# generated: ${new Date().toISOString().slice(0, 10)}`,
     ];
     let body;
@@ -217,6 +225,7 @@ function compute(id, version) {
         ),
       ];
     } else {
+      if (raw.complex) fail(`${id}: ${analysisType} rawfile is complex`);
       body = [
         mapped.map(([, name]) => name).join(","),
         ...raw.points.map((row) => mapped.map(([column]) => formatValue(row[column])).join(",")),
@@ -241,17 +250,20 @@ export function staleGoldens(id, kind, files) {
   return files.filter((f) => kinds.some((k) => k !== kind && f === `${id}.${k}.csv`));
 }
 
+/** Circuit ids that have a golden of any kind among `files`, sorted. */
+export function goldenIds(files) {
+  const ids = files.flatMap((f) => {
+    const kind = kinds.find((k) => f.endsWith(`.${k}.csv`));
+    return kind === undefined ? [] : [f.slice(0, -`.${kind}.csv`.length)];
+  });
+  return [...new Set(ids)].sort();
+}
+
 function main() {
   let ids = process.argv.slice(2);
   if (ids.length === 0) {
     try {
-      ids = [
-        ...new Set(
-          readdirSync(goldenDir)
-            .filter((f) => kinds.some((k) => f.endsWith(`.${k}.csv`)))
-            .map((f) => f.slice(0, -".op.csv".length)),
-        ),
-      ];
+      ids = goldenIds(readdirSync(goldenDir));
     } catch {
       ids = [];
     }

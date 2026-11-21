@@ -15,3 +15,4 @@ Architecture Decision Records for Nodal, one file per decision, numbered in the 
 | [0008](0008-ngspice-golden-validation.md) | Solver validation against ngspice golden files | Accepted |
 | [0009](0009-value-notation.md) | Value notation with SPICE-style suffixes, case-sensitive | Accepted |
 | [0010](0010-github-pages-hosting.md) | Host on GitHub Pages | Accepted |
+| [0011](0011-transient-absolute-floor.md) | Absolute floor on the transient tolerance | Accepted |

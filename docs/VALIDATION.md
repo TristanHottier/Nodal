@@ -2,7 +2,7 @@
 
 How Nodal proves its numbers are right. Policy: [ADR 0008](adr/0008-ngspice-golden-validation.md).
 
-**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 and L5 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355). N1–N6 match ngspice within the §3 tolerances, and the Jacobian tests of §5 pass for the diode, BJT, MOSFET and switch; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43156593522/job/130977856325). A1–A6 match ngspice within the §3 AC tolerances, A1 and A2 also match their closed-form responses, and the diode and BJT capacitances match finite differences of their charges; all are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/job/136599600321).
+**Rule:** a document in this repo may claim an accuracy only if a test in CI demonstrates it. L1–L3 and L5 match ngspice within the §3 op tolerance, and L1–L4 match their closed-form values; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43115456912/job/130842158355). N1–N6 match ngspice within the §3 tolerances, and the Jacobian tests of §5 pass for the diode, BJT, MOSFET and switch; both are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/43156593522/job/130977856325). A1–A6 match ngspice within the §3 AC tolerances, A1 and A2 also match their closed-form responses, and the diode and BJT capacitances match finite differences of their charges; all are checked in the [rust CI job](https://github.com/TristanHottier/Nodal/actions/runs/44826285994/job/136599600321). T1–T3, T5 and T6 match ngspice within the §3 transient tolerance, for both `trap` and `gear`; this is checked by `nodal-cli validate` in the rust CI job.
 
 ## 1. Three kinds of check
 
@@ -33,11 +33,11 @@ For every compared signal, a sample passes if $|x - x_{\text{ref}}| \le r\,|x_{\
 | OP, DC sweep | every node voltage and voltage-source current, every sweep point | 1e-5 | 1e-8 V · 1e-13 A |
 | AC | magnitude at every frequency point | 1e-4 | 1e-12 (linear units) |
 | AC | phase at every frequency point | — | 0.01° |
-| Transient | Nodal output linearly interpolated onto ngspice time points | — | 1e-3 × signal peak-to-peak |
+| Transient | every node voltage and voltage-source current; Nodal output linearly interpolated onto ngspice time points | — | 1e-3 × peak-to-peak of the reference signal, plus 1e-8 V · 1e-13 A (ADR 0011) |
 
 Phase is not compared where $|x_{\text{ref}}| \le 10^{-12}$, because phase is undefined there.
 
-Transient uses a range-normalized absolute bound because the two simulators choose different time points, so interpolation error is unavoidable.
+Transient uses a range-normalized absolute bound because the two simulators choose different time points, so interpolation error is unavoidable. A constant signal has a peak-to-peak value of zero, so the op absolute tolerance is added to the bound ([ADR 0011](adr/0011-transient-absolute-floor.md)). A golden time point outside the time range of Nodal's output fails.
 
 These are initial values. Each will be tightened to roughly 10× the worst error seen once the suite runs. Loosening one requires an ADR.
 
@@ -88,7 +88,9 @@ Circuit IDs are referenced by the roadmap's exit criteria. "A" in the Check colu
 | T5 | NPN saturating switch driven by PWL | G |
 | T6 | Voltage-controlled switch with hysteresis, triangular PWL control, RC load | G |
 
-Every transient circuit runs with `method=trap` and `method=gear`.
+Every transient circuit runs with `method=trap` and `method=gear`. Each ID therefore has two files, `<id>-trap` and `<id>-gear`, for example `T1-trap` and `T1-gear`, and two goldens, `<id>-trap.tran.csv` and `<id>-gear.tran.csv`. The golden header records the method.
+
+T6 uses `RON` = 100 Ω and `tmax` = 2e-7 s, not the defaults. ngspice-42 can switch a SW model early: `swload.c` reads the control voltage from the previous solution vector, which after a rejected trial step holds the rejected iterate. With the default `tmax`, the switch turned on at a control voltage of about 2.966 V, although `VT` + `VH` = 3.0 V. Nodal switches at the threshold. With `tmax` = 2e-7 s ngspice switches at 3.003 V, and `RON` = 100 Ω slows the on-edge to about 91 µs, so the remaining timing difference of under a microsecond stays inside the tolerance.
 
 ## 5. Jacobian tests
 

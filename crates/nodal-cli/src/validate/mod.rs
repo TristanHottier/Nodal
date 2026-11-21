@@ -1,10 +1,14 @@
 //! `nodal-cli validate`: compares Nodal's results with committed ngspice goldens.
+//! Transient goldens live in [`tran`].
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
+mod tran;
+
 use nodal_engine::analysis::{AcResult, ComplexSeries, DcResult, OpResult};
 use nodal_engine::{AnalysisResult, simulate};
+use tran::{compare_tran, parse_tran_golden};
 
 /// Absolute tolerance floor for voltages, in volts (VALIDATION.md section 3).
 pub const V_ABS: f64 = 1e-8;
@@ -477,6 +481,7 @@ enum Kind {
     Op,
     Dc,
     Ac,
+    Tran,
 }
 
 impl Kind {
@@ -485,6 +490,7 @@ impl Kind {
             Kind::Op => "op",
             Kind::Dc => "dc",
             Kind::Ac => "ac",
+            Kind::Tran => "tran",
         }
     }
 }
@@ -556,6 +562,19 @@ fn check_golden(dir: &Path, id: &str, kind: Kind, golden_path: &Path) -> Result<
                 ac.ok_or_else(|| format!("{id}: circuit has no ac analysis"))?,
             )
         }
+        Kind::Tran => {
+            let golden = parse_tran_golden(&golden_text).map_err(in_file)?;
+            let netlist = crate::load(&circuit_path)?;
+            let results = simulate(&netlist).map_err(|e| format!("{id}: {e}"))?;
+            let tran = results.iter().find_map(|r| match r {
+                AnalysisResult::Tran(tran) => Some(tran),
+                AnalysisResult::Op(_) | AnalysisResult::Dc(_) | AnalysisResult::Ac(_) => None,
+            });
+            compare_tran(
+                &golden,
+                tran.ok_or_else(|| format!("{id}: circuit has no tran analysis"))?,
+            )
+        }
     };
     let worst = comparison
         .checks
@@ -617,7 +636,7 @@ fn render(rows: &[Row]) -> String {
     table
 }
 
-/// Compares every `golden/<id>.op.csv`, `.dc.csv` and `.ac.csv` under `dir` with a fresh run
+/// Compares every `golden/<id>.op.csv`, `.dc.csv`, `.ac.csv` and `.tran.csv` under `dir` with a fresh run
 /// of `circuits/<id>.json`.
 /// Returns the table and whether every row passed. A circuit that fails to load or simulate
 /// becomes an `ERROR` row and fails the run; a missing or empty `golden/` is an `Err`.
@@ -635,6 +654,8 @@ pub fn validate_dir(dir: &Path) -> Result<(String, bool), String> {
             ids.push((id.to_string(), Kind::Dc, path.clone()));
         } else if let Some(id) = name.strip_suffix(".ac.csv") {
             ids.push((id.to_string(), Kind::Ac, path.clone()));
+        } else if let Some(id) = name.strip_suffix(".tran.csv") {
+            ids.push((id.to_string(), Kind::Tran, path.clone()));
         }
     }
     if ids.is_empty() {
