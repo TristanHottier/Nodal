@@ -47,7 +47,7 @@ const waveform = z.discriminatedUnion("type", [
     theta: z.number().default(0),
     phase: z.number().default(0),
   }),
-  /** `[time, value]` pairs. */
+  // `points` holds `[time, value]` pairs.
   z.strictObject({ type: z.literal("pwl"), points: z.array(z.tuple([z.number(), z.number()])) }),
 ]);
 
@@ -452,6 +452,8 @@ function check(n: NetlistBase, ctx: z.RefinementCtx): boolean {
     if (e.kind === "V" || e.kind === "I") {
       if (!Number.isFinite(e.dc)) return fail(`element ${e.name}: dc must be finite`, at);
     }
+    // V18 and V19. Their finite checks cannot fire here (Zod rejects non-finite numbers first);
+    // they stay so the rule order and messages match the Rust validator.
     // V18
     if ((e.kind === "V" || e.kind === "I") && e.tran) {
       const issue = checkWaveform(e.name, e.tran);

@@ -48,6 +48,41 @@ describe("fixtures shared with the Rust engine", () => {
   });
 });
 
+describe("valid/tran.json", () => {
+  const raw = load(join(fixtures, "valid", "tran.json"));
+  const parsed = parseNetlist(raw);
+
+  test("parses with defaults filled in", () => {
+    if (!parsed.ok) throw new Error(parsed.issues.join("\n"));
+    const el = (name: string) => parsed.value.elements.find((e) => e.name === name);
+    const v1 = el("V1");
+    const v2 = el("V2");
+    const c1 = el("C1");
+    const l1 = el("L1");
+    expect(v1?.kind === "V" && v1.tran?.type === "pulse" && v1.tran.td).toBe(1e-6);
+    expect(v2?.kind === "V" && v2.tran).toMatchObject({ type: "sin", td: 0, theta: 10, phase: 90 });
+    const i1 = el("I1");
+    expect(i1?.kind === "I" && i1.tran).toMatchObject({ type: "pulse", td: 0 });
+    expect(c1?.kind === "C" && c1.ic).toBe(1);
+    expect(l1?.kind === "L" && l1.ic).toBe(0.5);
+    expect(parsed.value.analyses[0]).toEqual({
+      type: "tran",
+      tstep: 1e-6,
+      tstop: 1e-3,
+      tstart: 0,
+      tmax: undefined,
+      uic: true,
+    });
+    expect(parsed.value.options?.method).toBe("gear");
+  });
+
+  test("round-trips through JSON", () => {
+    if (!parsed.ok) throw new Error(parsed.issues.join("\n"));
+    const again = parseNetlist(JSON.parse(JSON.stringify(parsed.value)));
+    expect(again).toEqual(parsed);
+  });
+});
+
 describe("messages name the culprit", () => {
   test("duplicate-name-case", () => {
     const text = issuesOf("duplicate-name-case").join("\n");
