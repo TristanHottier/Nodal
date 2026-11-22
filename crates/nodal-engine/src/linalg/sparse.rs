@@ -41,6 +41,13 @@ pub struct SparseLu<T: Scalar = f64> {
     row_perm: Vec<usize>,
     row_perm_inv: Vec<usize>,
     factored: bool,
+    // Dense factorization used when the sparse pivot check is stricter than
+    // the dense rule; it replaces the sparse factors until the next `factor`.
+    fallback: Option<DenseLu<T>>,
+    col_max: Vec<f64>,
+    // Test seam: scales the pivot threshold to force the fallback branch.
+    #[cfg(test)]
+    threshold_scale: f64,
     // Dimension the scratch buffers were sized for.
     mem_n: usize,
     factor_mem: MemBuffer,
@@ -70,6 +77,10 @@ impl<T: Scalar> Default for SparseLu<T> {
             row_perm: Vec::new(),
             row_perm_inv: Vec::new(),
             factored: false,
+            fallback: None,
+            col_max: Vec::new(),
+            #[cfg(test)]
+            threshold_scale: 1.0,
             mem_n: 0,
             factor_mem: MemBuffer::new(faer::dyn_stack::StackReq::empty()),
             solve_mem: RefCell::new(MemBuffer::new(faer::dyn_stack::StackReq::empty())),
@@ -83,15 +94,17 @@ impl<T: Scalar> SparseLu<T> {
     }
 
     /// Fills `col_ptr`, `row_idx` and `values` with the nonzeros of `a`
-    /// (row indices ascending within each column). Returns the largest
-    /// modulus of each column, or the first column holding a non-finite entry.
+    /// (row indices ascending within each column). Fills `col_max` with the
+    /// largest modulus of each column, or returns the first column holding a
+    /// non-finite entry.
     ///
     /// One pass over the dense storage gathers the nonzeros as triplets in
     /// row-major order; a counting sort by column then yields the compressed
     /// form without a second scan.
-    fn collect(&mut self, a: &DenseMatrix<T>) -> Result<Vec<f64>, SolveError> {
+    fn collect(&mut self, a: &DenseMatrix<T>) -> Result<(), SolveError> {
         let n = a.n();
-        let mut col_max = vec![0.0_f64; n];
+        self.col_max.clear();
+        self.col_max.resize(n, 0.0);
         self.col_ptr.clear();
         self.col_ptr.resize(n + 1, 0);
         self.trip.clear();
@@ -104,8 +117,8 @@ impl<T: Scalar> SparseLu<T> {
                 if !v.is_finite() {
                     return Err(SolveError::SingularPivot { index: c });
                 }
-                if m > col_max[c] {
-                    col_max[c] = m;
+                if m > self.col_max[c] {
+                    self.col_max[c] = m;
                 }
                 self.col_ptr[c + 1] += 1;
                 self.trip.push((r, c, v));
@@ -127,34 +140,64 @@ impl<T: Scalar> SparseLu<T> {
             self.values[slot] = v;
             self.next[c] = slot + 1;
         }
-        Ok(col_max)
+        Ok(())
     }
 
-    /// The error label for a failed factorization. The dense backend's rule
-    /// reports the smallest failing original column; reproduce it so error
-    /// labels do not depend on the backend. Failure is the rare path.
-    fn dense_label(a: &DenseMatrix<T>, fallback: usize) -> SolveError {
-        match DenseLu::<T>::new().factor(a) {
-            Err(e) => e,
-            Ok(()) => SolveError::SingularPivot { index: fallback },
-        }
+    /// Dense fallback for a matrix the sparse path rejects. The dense rule
+    /// is the reference: its error (smallest failing original column) is
+    /// returned unchanged, and when it accepts the matrix, its factorization
+    /// serves the following solves. Sparse never rejects what dense accepts.
+    fn dense_fallback(&mut self, a: &DenseMatrix<T>) -> Result<(), SolveError> {
+        let mut dense = DenseLu::<T>::new();
+        dense.factor(a)?;
+        self.fallback = Some(dense);
+        self.factored = true;
+        Ok(())
     }
+}
+
+/// Why the sparse factorization did not produce usable factors.
+enum Reject {
+    /// Final: report as is.
+    Final(SolveError),
+    /// The sparse path failed or its pivot check failed; ask the dense one.
+    Dense,
 }
 
 impl<T: Scalar> LinearSolver<T> for SparseLu<T> {
     fn factor(&mut self, a: &DenseMatrix<T>) -> Result<(), SolveError> {
         self.factored = false;
-        let n = a.n();
-        self.n = n;
-        if n == 0 {
+        self.fallback = None;
+        self.n = a.n();
+        if self.n == 0 {
             return Ok(());
         }
-        let col_max = self.collect(a)?;
+        match self.factor_sparse(a) {
+            Ok(()) => Ok(()),
+            Err(Reject::Final(e)) => Err(e),
+            Err(Reject::Dense) => self.dense_fallback(a),
+        }
+    }
+
+    fn solve(&self, b: &mut [T]) -> Result<(), SolveError> {
+        if let (true, Some(dense)) = (self.factored, &self.fallback) {
+            return dense.solve(b);
+        }
+        self.solve_sparse(b)
+    }
+}
+
+impl<T: Scalar> SparseLu<T> {
+    fn factor_sparse(&mut self, a: &DenseMatrix<T>) -> Result<(), Reject> {
+        let n = a.n();
+        self.collect(a).map_err(Reject::Final)?;
         let same = self
             .pattern
             .as_ref()
             .is_some_and(|p| p.col_ptr == self.col_ptr && p.row_idx == self.row_idx);
         if !same {
+            // `collect` builds a valid n by n column-compressed pattern with
+            // ascending in-range row indices, so `new_checked` cannot panic.
             let sym =
                 SymbolicSparseColMatRef::new_checked(n, n, &self.col_ptr, None, &self.row_idx);
             match factorize_symbolic_lu(sym, LuSymbolicParams::default()) {
@@ -167,13 +210,15 @@ impl<T: Scalar> LinearSolver<T> for SparseLu<T> {
                 }
                 Err(_) => {
                     self.pattern = None;
-                    return Err(Self::dense_label(a, 0));
+                    return Err(Reject::Dense);
                 }
             }
         }
         let Some(pattern) = &self.pattern else {
-            return Err(SolveError::NotFactored);
+            return Err(Reject::Final(SolveError::NotFactored));
         };
+        // Same pattern as above, so the constructor and the faer asserts on
+        // matching dimensions hold.
         let sym =
             SymbolicSparseColMatRef::new_checked(n, n, &pattern.col_ptr, None, &pattern.row_idx);
         let mat = SparseColMatRef::new(sym, &self.values);
@@ -200,34 +245,28 @@ impl<T: Scalar> LinearSolver<T> for SparseLu<T> {
             col_perm,
             MemStack::new(&mut self.factor_mem),
         );
-        if let Err(e) = res {
-            let fallback = match e {
-                faer::sparse::linalg::LuError::SymbolicSingular { index } => {
-                    col_perm.arrays().0.get(index).copied().unwrap_or(0)
-                }
-                _ => 0,
-            };
-            return Err(Self::dense_label(a, fallback));
+        if res.is_err() {
+            return Err(Reject::Dense);
         }
         // The pivot of permuted column j is the last entry of column j of U.
         let u = self.numeric.u_factor_unsorted();
         let perm = col_perm.arrays().0;
-        let mut bad: Option<usize> = None;
+        #[cfg(test)]
+        let scale = self.threshold_scale;
+        #[cfg(not(test))]
+        let scale = 1.0;
         for (j, &k) in perm.iter().enumerate() {
             let pivot = u.val_of_col(j).last().map_or(0.0, |v| v.modulus());
-            let threshold = n as f64 * f64::EPSILON * col_max[k];
-            if (pivot.is_nan() || pivot <= threshold) && bad.is_none_or(|b| k < b) {
-                bad = Some(k);
+            let threshold = scale * n as f64 * f64::EPSILON * self.col_max[k];
+            if pivot.is_nan() || pivot <= threshold {
+                return Err(Reject::Dense);
             }
-        }
-        if let Some(k) = bad {
-            return Err(Self::dense_label(a, k));
         }
         self.factored = true;
         Ok(())
     }
 
-    fn solve(&self, b: &mut [T]) -> Result<(), SolveError> {
+    fn solve_sparse(&self, b: &mut [T]) -> Result<(), SolveError> {
         if self.n == 0 {
             return if b.is_empty() {
                 Ok(())
@@ -437,6 +476,76 @@ mod tests {
         let mut s = SparseLu::<f64>::new();
         s.factor(&m)?;
         assert_eq!(s.solve(&mut [1.0]), Err(SolveError::DimensionMismatch));
+        Ok(())
+    }
+
+    #[test]
+    fn numerically_singular_full_structure() {
+        let mut rng = Rng(11);
+        let (a, _) = random_system::<f64>(&mut rng, 5, &|re, _| re);
+        // Column 3 equals column 1: structurally full, numerically rank 4.
+        let mut m = DenseMatrix::<f64>::zeros(5);
+        for r in 0..5 {
+            for c in 0..5 {
+                m.add(r, c, if c == 3 { a.get(r, 1) } else { a.get(r, c) });
+            }
+        }
+        assert!((0..5).all(|r| m.get(r, 3) != 0.0 || a.get(r, 1) == 0.0));
+        let dense = DenseLu::<f64>::new().factor(&m);
+        assert!(matches!(dense, Err(SolveError::SingularPivot { .. })));
+        assert_eq!(SparseLu::<f64>::new().factor(&m), dense);
+    }
+
+    #[test]
+    fn near_threshold_agrees_with_dense() {
+        // Column 1 holds [1, d]; the pivot of column 1 is d against a
+        // threshold of n * eps * 1.
+        let thr = 2.0 * f64::EPSILON;
+        for scale in [0.25, 0.5, 0.9, 0.99, 1.01, 1.1, 2.0, 4.0] {
+            let mut m = DenseMatrix::<f64>::zeros(2);
+            m.add(0, 0, 1.0);
+            m.add(0, 1, 1.0);
+            m.add(1, 1, scale * thr);
+            let run = |s: &mut dyn LinearSolver<f64>| {
+                let mut b = [1.0, 1.0];
+                s.factor(&m).and_then(|()| s.solve(&mut b)).map(|()| b)
+            };
+            let dense = run(&mut DenseLu::new());
+            let sparse = run(&mut SparseLu::new());
+            assert_eq!(dense.is_ok(), sparse.is_ok(), "scale {scale}");
+            if dense.is_err() {
+                assert_eq!(dense, sparse, "scale {scale}");
+            }
+        }
+    }
+
+    #[test]
+    fn dense_fallback_serves_matrix_sparse_check_rejects() -> Result<(), Box<dyn Error>> {
+        // No natural matrix passes the dense rule yet fails the sparse one,
+        // so the test seam scales the sparse threshold out of reach.
+        let mut rng = Rng(5);
+        let (a, b) = random_system::<f64>(&mut rng, 12, &|re, _| re);
+        let mut s = SparseLu::<f64>::new();
+        s.threshold_scale = 1e30;
+        s.factor(&a)?;
+        assert!(s.fallback.is_some());
+        let mut x = b.clone();
+        s.solve(&mut x)?;
+        let mut want = b.clone();
+        let mut d = DenseLu::<f64>::new();
+        d.factor(&a)?;
+        d.solve(&mut want)?;
+        assert!(max_rel_diff(&x, &want) <= 1e-14);
+        // A genuinely singular matrix still reports dense's index.
+        let mut z = DenseMatrix::<f64>::zeros(3);
+        z.add(0, 0, 1.0);
+        z.add(1, 1, 1.0);
+        assert_eq!(s.factor(&z), Err(SolveError::SingularPivot { index: 2 }));
+        assert!(s.fallback.is_none());
+        // The next factor() returns to the sparse path.
+        s.threshold_scale = 1.0;
+        s.factor(&a)?;
+        assert!(s.fallback.is_none());
         Ok(())
     }
 }
