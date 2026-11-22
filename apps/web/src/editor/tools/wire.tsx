@@ -101,12 +101,9 @@ export function useWireTool(): WireTool {
     state.points.length > 0 ? (
       <polyline
         data-testid="wire-preview"
+        className="nodal-wire-preview"
         data-points={shown.map((p) => `${String(p.x)},${String(p.y)}`).join(" ")}
         points={shown.map((p) => `${String(p.x)},${String(p.y)}`).join(" ")}
-        fill="none"
-        stroke="#2563eb"
-        strokeWidth={1.5}
-        strokeDasharray="4 3"
         vectorEffect="non-scaling-stroke"
         pointerEvents="none"
       />

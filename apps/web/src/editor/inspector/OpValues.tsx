@@ -27,9 +27,13 @@ export function OpValues({ part }: { part: Part }) {
   return (
     <section aria-label="Operating point" style={{ opacity: view.stale ? 0.5 : 1 }}>
       <h3>Operating point</h3>
-      {current !== undefined && <div>{`I(${name}) = ${formatQuantity(current, "A")}`}</div>}
+      {current !== undefined && (
+        <div className="nodal-num">{`I(${name}) = ${formatQuantity(current, "A")}`}</div>
+      )}
       {rows.map((r) => (
-        <div key={r.pin}>{r.text}</div>
+        <div key={r.pin} className="nodal-num">
+          {r.text}
+        </div>
       ))}
     </section>
   );

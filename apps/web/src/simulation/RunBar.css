@@ -1,0 +1,27 @@
+.nodal-results {
+  grid-row: 2;
+  grid-column: 1 / span 3;
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-runbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-md);
+}
+
+.nodal-runbar progress {
+  width: var(--progress-width);
+}
+
+.nodal-runbar [role="status"] {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-runbar [data-failed="true"] {
+  color: var(--color-error);
+}

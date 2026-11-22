@@ -1,0 +1,5 @@
+/* `vector-effect` is not inherited in SVG, so the `nodal-symbol` class carries it to every shape. */
+.nodal-symbol,
+.nodal-symbol :is(path, line, circle, rect, polyline, polygon, ellipse) {
+  vector-effect: non-scaling-stroke;
+}

@@ -111,9 +111,15 @@ export function CursorTable({
               return (
                 <tr key={r.key + suffix} data-signal={r.key + suffix}>
                   <td>{r.key + suffix}</td>
-                  <td data-col="a">{fmt(r.a, u)}</td>
-                  <td data-col="b">{fmt(r.b, u)}</td>
-                  <td data-col="delta">{fmt(r.delta, u)}</td>
+                  <td data-col="a" className="nodal-num">
+                    {fmt(r.a, u)}
+                  </td>
+                  <td data-col="b" className="nodal-num">
+                    {fmt(r.b, u)}
+                  </td>
+                  <td data-col="delta" className="nodal-num">
+                    {fmt(r.delta, u)}
+                  </td>
                 </tr>
               );
             }),
@@ -122,13 +128,13 @@ export function CursorTable({
         <tfoot>
           <tr>
             <td>Δx</td>
-            <td colSpan={3} data-col="dx">
+            <td colSpan={3} data-col="dx" className="nodal-num">
               {fmt(first?.dx ?? null, xUnit)}
             </td>
           </tr>
           <tr>
             <td>1/Δx</td>
-            <td colSpan={3} data-col="inverse-dx">
+            <td colSpan={3} data-col="inverse-dx" className="nodal-num">
               {fmt(first?.inverseDx ?? null, xUnit === "s" ? "Hz" : xUnit === "Hz" ? "s" : "")}
             </td>
           </tr>

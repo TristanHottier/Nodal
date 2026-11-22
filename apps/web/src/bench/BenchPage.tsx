@@ -7,6 +7,7 @@ import { createEditorStore } from "../editor/store";
 import { bigProject } from "./bigProject";
 import { editorFramesPass, MAX_SLOW_FRACTION, runPanZoom } from "./editorBench";
 import { runEngineBench, type BenchRow } from "./engineBench";
+import "./BenchPage.css";
 
 const CASES = [
   { name: "tran50", netlist: tran50, budgetMs: 1000 },
@@ -67,7 +68,7 @@ function EditorBench({ onRow }: { onRow: (row: BenchRow) => void }) {
   }, [onRow, store]);
 
   return (
-    <div ref={host} style={{ width: 1200, height: 700, border: "1px solid #ccc" }}>
+    <div ref={host} className="nodal-bench-editor">
       <Editor store={store} />
     </div>
   );
@@ -96,7 +97,7 @@ export function BenchPage() {
   }, []);
 
   return (
-    <main style={{ fontFamily: "monospace", padding: 16 }}>
+    <main className="nodal-bench">
       <h1>Nodal engine bench</h1>
       <p>{editorRow === undefined ? "Running..." : "Done."}</p>
       <table data-testid="bench-results">

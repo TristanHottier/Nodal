@@ -1,0 +1,109 @@
+.nodal-waveform {
+  display: flex;
+  /* Equals WAVEFORM_PANEL_HEIGHT in WaveformPanel.tsx; Plot sizing reads the constant. */
+  height: var(--waveform-height);
+  font-size: var(--text-sm);
+  background: var(--color-plot-bg);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-waveform-plots {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nodal-waveform-side {
+  flex: none;
+  width: var(--waveform-side-width);
+  padding: var(--space-1) var(--space-2);
+  overflow-y: auto;
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-waveform .u-title {
+  display: none;
+}
+
+.nodal-signalpicker {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.nodal-signalpicker select {
+  flex: 1;
+  min-width: 0;
+}
+
+.nodal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.nodal-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border: var(--border-width) solid;
+  border-radius: var(--radius-pill);
+  background: var(--color-panel-raised);
+}
+
+.nodal-chip button {
+  min-height: 0;
+  padding: 0 var(--space-1);
+  line-height: 1;
+  border: 0;
+  background: none;
+}
+
+.nodal-cursor-inputs {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.nodal-cursor-inputs .nodal-field {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: var(--space-1);
+}
+
+.nodal-cursors table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.nodal-cursors th,
+.nodal-cursors td {
+  padding: 0 var(--space-1);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.nodal-cursors th:first-child,
+.nodal-cursors td:first-child {
+  text-align: left;
+}
+
+.nodal-optable {
+  padding: var(--space-1) var(--space-2);
+  overflow-y: auto;
+  width: 100%;
+}
+
+.nodal-optable table {
+  border-collapse: collapse;
+}
+
+.nodal-optable td,
+.nodal-optable th {
+  padding: 0 var(--space-3) 0 0;
+  text-align: left;
+}

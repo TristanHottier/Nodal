@@ -1,0 +1,10 @@
+.nodal-bench {
+  padding: var(--space-4);
+  font-family: var(--font-mono);
+}
+
+.nodal-bench-editor {
+  width: var(--bench-width);
+  height: var(--bench-height);
+  border: var(--border-width) solid var(--color-border-strong);
+}

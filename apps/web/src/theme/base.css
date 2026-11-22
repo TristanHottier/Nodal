@@ -1,0 +1,87 @@
+/* Base styles: reset, page, standard controls. Values come from tokens.css only. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background: var(--color-canvas);
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-panel-raised);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+
+button,
+select {
+  min-height: var(--control-height);
+  padding: 0 var(--space-2);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+input,
+textarea {
+  padding: 0 var(--space-1);
+}
+
+button:hover:not(:disabled),
+select:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+textarea:disabled {
+  cursor: default;
+  color: var(--color-text-muted);
+}
+
+.nodal-button-primary,
+.nodal-button-primary:hover:not(:disabled) {
+  color: var(--color-on-accent);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+
+[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+h1,
+h2,
+h3 {
+  line-height: var(--leading-tight);
+}
+
+.nodal-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+  }
+}

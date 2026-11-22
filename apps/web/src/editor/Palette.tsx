@@ -17,7 +17,7 @@ function Preview({ item }: { item: Item }) {
       width={28}
       height={28}
       viewBox={`${String(x0 - 0.5)} ${String(y0 - 0.5)} ${String(x1 - x0 + 1)} ${String(y1 - y0 + 1)}`}
-      style={{ color: "#1f2937", flex: "none" }}
+      className="nodal-palette-icon"
     >
       <Body />
     </svg>

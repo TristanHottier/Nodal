@@ -75,7 +75,11 @@ export function App() {
     <Editor
       store={store}
       simulation={simulation}
-      status={<span data-testid="engine-status">{text}</span>}
+      status={
+        <span data-testid="engine-status" className="nodal-num">
+          {text}
+        </span>
+      }
     />
   );
 }

@@ -3,14 +3,7 @@ import { useMemo } from "react";
 import { useEditor, useEditorStore } from "./EditorContext";
 import { keepFocus } from "./keepFocus";
 import { useDiagnostics } from "./useDiagnostics";
-
-export const DIAGNOSTICS_CSS = `
-.nodal-problems ul { margin: 0; padding: 0; list-style: none; }
-.nodal-problems button { display: flex; gap: 6px; width: 100%; padding: 3px 4px; font: inherit; text-align: left; border: 0; border-radius: 3px; background: none; cursor: pointer; }
-.nodal-problems button:hover { background: #e2e8f0; }
-.nodal-problems [data-severity="error"] .nodal-marker { color: #dc2626; }
-.nodal-problems [data-severity="warning"] .nodal-marker { color: #b45309; }
-`;
+import "./Diagnostics.css";
 
 export function Diagnostics() {
   const store = useEditorStore();

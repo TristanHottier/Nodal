@@ -23,9 +23,6 @@ export function OpOverlay() {
           x={t.at.x + 0.3}
           y={t.at.y - 0.3}
           fontSize={0.7}
-          fill="#0f766e"
-          stroke="#fff"
-          strokeWidth={0.2}
           paintOrder="stroke"
           strokeLinejoin="round"
         >

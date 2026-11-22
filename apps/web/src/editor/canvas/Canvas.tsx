@@ -16,16 +16,9 @@ import { PartView } from "./PartView";
 import { SelectionBox } from "./SelectionBox";
 import { type CanvasToolHandlers, useCanvasPointer } from "./useCanvasPointer";
 import { WireView } from "./WireView";
+import "./Canvas.css";
 
 export type { CanvasToolHandlers };
-
-const CSS = `
-.nodal-canvas { display: block; width: 100%; height: 100%; touch-action: none; user-select: none; color: #1f2937; background: #fff; }
-.nodal-canvas .selected { color: #2563eb; }
-.nodal-canvas .sim-error { color: #dc2626; }
-.nodal-canvas .nodal-grid-dot { fill: #cbd5e1; }
-.nodal-canvas .nodal-selection-box { fill: rgba(37, 99, 235, 0.1); stroke: #2563eb; stroke-width: 1; stroke-dasharray: 4 3; }
-`;
 
 interface SceneProps {
   doc: Schematic;
@@ -91,7 +84,6 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
 
   return (
     <svg ref={svgRef} data-testid="schematic-canvas" className="nodal-canvas" {...handlers}>
-      <style>{CSS}</style>
       <GridBackground view={view} />
       <g
         transform={`translate(${String(view.x)} ${String(view.y)}) scale(${String(view.zoom * GRID)})`}

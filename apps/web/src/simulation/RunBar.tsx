@@ -3,14 +3,7 @@ import { useState } from "react";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
 import { analysisLabel } from "./AnalysisFields";
 import { useResultsStale, useSimulation, useSimulationStore } from "./SimulationContext";
-
-export const RUNBAR_CSS = `
-.nodal-results { grid-row: 2; grid-column: 1 / span 3; border-top: 1px solid #e5e7eb; background: #fff; }
-.nodal-runbar { display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 13px; }
-.nodal-runbar select, .nodal-runbar button { font: inherit; }
-.nodal-runbar progress { width: 120px; }
-.nodal-runbar [data-failed="true"] { color: #dc2626; }
-`;
+import "./RunBar.css";
 
 export function RunBar() {
   const editor = useEditorStore();
@@ -61,6 +54,7 @@ export function RunBar() {
       ) : (
         <button
           type="button"
+          className="nodal-button-primary"
           onClick={() => {
             void sim.getState().run(editor.getState().getProject(), index);
           }}
@@ -71,9 +65,10 @@ export function RunBar() {
       <progress
         aria-label="Simulation progress"
         max={1}
+        className="nodal-num"
         value={status.kind === "running" ? status.progress : status.kind === "done" ? 1 : 0}
       />
-      <span role="status" data-failed={status.kind === "failed"}>
+      <span role="status" className="nodal-num" data-failed={status.kind === "failed"}>
         {text}
       </span>
     </div>

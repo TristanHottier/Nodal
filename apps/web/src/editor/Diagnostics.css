@@ -1,0 +1,28 @@
+.nodal-problems ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nodal-problems button {
+  display: flex;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: 0;
+  padding: var(--space-1);
+  text-align: left;
+  border: 0;
+  background: none;
+}
+
+.nodal-problems button:hover:not(:disabled) {
+  background: var(--color-panel-raised);
+}
+
+.nodal-problems [data-severity="error"] .nodal-marker {
+  color: var(--color-error);
+}
+
+.nodal-problems [data-severity="warning"] .nodal-marker {
+  color: var(--color-warning);
+}

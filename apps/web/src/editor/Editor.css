@@ -1,0 +1,93 @@
+.nodal-editor {
+  display: grid;
+  grid-template-columns: var(--palette-width) 1fr var(--inspector-width);
+  grid-template-rows: 1fr auto auto;
+  width: 100%;
+  height: 100%;
+}
+
+.nodal-palette {
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  overflow-y: auto;
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-palette button {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1);
+  text-align: left;
+  border-color: transparent;
+  background: none;
+}
+
+.nodal-palette button:hover:not(:disabled) {
+  background: var(--color-panel-raised);
+}
+
+.nodal-palette button[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.nodal-palette-icon {
+  flex: none;
+  color: var(--color-ink);
+}
+
+.nodal-projectbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.nodal-projectbar button {
+  flex: 1 0 auto;
+  justify-content: center;
+  padding: 0 var(--space-1);
+  white-space: nowrap;
+  border-color: var(--color-border-strong);
+}
+
+.nodal-projectbar select {
+  flex: 1 0 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.nodal-palette hr {
+  width: 100%;
+  margin: var(--space-1) 0;
+  border: 0;
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.nodal-canvas-pane {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 0;
+  min-height: 0;
+  background: var(--color-canvas);
+}
+
+.nodal-status {
+  grid-row: 3;
+  grid-column: 1 / span 3;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-status strong {
+  font-weight: var(--weight-strong);
+}

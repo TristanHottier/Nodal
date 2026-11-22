@@ -1,0 +1,73 @@
+.nodal-inspector {
+  grid-row: 1;
+  grid-column: 3;
+  padding: var(--space-2);
+  overflow-y: auto;
+  font-size: var(--text-md);
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-inspector h2,
+.nodal-inspector h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-md);
+  font-weight: var(--weight-strong);
+}
+
+.nodal-inspector h3 {
+  margin-top: var(--space-2);
+}
+
+.nodal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.nodal-field-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nodal-field input,
+.nodal-field textarea,
+.nodal-field select {
+  flex: 1;
+  min-width: 0;
+}
+
+.nodal-field input,
+.nodal-field textarea {
+  min-height: var(--control-height);
+}
+
+.nodal-field [aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.nodal-unit,
+.nodal-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.nodal-error {
+  font-size: var(--text-xs);
+  color: var(--color-error);
+}
+
+.nodal-model {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-1);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-panel-raised);
+}

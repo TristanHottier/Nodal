@@ -82,6 +82,11 @@
   --palette-width: 180px;
   --inspector-width: 260px;
   --waveform-side-width: 320px;
+  --progress-width: 120px;
+  /* Keep equal to WAVEFORM_PANEL_HEIGHT in waveform/WaveformPanel.tsx (Plot sizing). */
+  --waveform-height: 280px;
+  --bench-width: 1200px;
+  --bench-height: 700px;
   --opacity-stale: 0.5;
 }
 
