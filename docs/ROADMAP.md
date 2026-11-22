@@ -62,7 +62,7 @@ M5 is split in two. M5a draws schematics; M5b turns them into circuits that can 
 **Exit:** every v1 device, ground and net label can be placed, moved, rotated, mirrored, copied and deleted, and wired on the grid; component tests cover each edit and its undo/redo; junction-dot tests cover T-junctions and crossings; the Pages build shows the editor.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44952617696 at 87a385a (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44952617696/job/136993656345) runs the component tests (`Editor.test.tsx` places, moves, rotates, mirrors, copies, pastes and deletes each of the 18 palette entries and checks undo and redo after every step; `wireTool.test.tsx` draws wires; `junctions.test.ts` covers T-junctions, crossings and corners) and the Playwright tests on Chromium and Firefox, which draw a resistor wired to ground, add a T-junction and undo it. The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44952617696/job/136994098107) published the editor to https://tristanhottier.github.io/Nodal/, which shows the palette and canvas.
 
-### M5b — Schematic data and netlister · not started
+### M5b — Schematic data and netlister · in progress
 - Parameter inspector with value-notation parsing ([ADR 0009](adr/0009-value-notation.md)).
 - Netlister with diagnostics, using the connectivity rules of ARCHITECTURE §6.1.
 - IndexedDB autosave; `.nodal.json` import/export.

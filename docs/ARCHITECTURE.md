@@ -207,6 +207,7 @@ Detected while solving:
 - Undo/redo: every edit produces a new immutable document (Immer); history keeps snapshots with structural sharing.
 - **Interaction:** the palette picks the Select, Wire or place tool. Clicking with a place tool puts the part or label on the nearest grid point. The wire tool starts a wire on the first click and ends it on a click at a pin, a net label anchor, a wire end or any point of a wire. The wire preview has one bend, and `/` moves it to the other corner. Dragging with Select moves the selection.
 - **Keymap:** `R` rotate, `X` mirror, `Delete` or `Backspace` delete, `Ctrl/Cmd+C` and `Ctrl/Cmd+V` copy and paste, `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` redo, `W` wire tool, `/` toggle the bend, `Enter` or double click finish a wire, `Esc` cancel. The mouse wheel zooms; middle-button drag or `Space` plus drag pans.
+- **Inspector, problems and files:** the right column shows the selected part's fields and edits them with value notation (ADR 0009); a value commits on blur or Enter. Below it, the Problems list shows the netlister diagnostics for the current document, or "No problems". The project bar above the tools has New, Open… and Save as… for `.nodal.json` files; replacing a non-empty document asks for confirmation, and a file that fails validation leaves the document unchanged and reports the reason in the status bar. The document is autosaved to IndexedDB 500 ms after the last edit and on `pagehide`, and restored on load.
 
 ### 6.2 Netlister
 
@@ -273,4 +274,6 @@ A migration maps one version to the next. A file at version v goes through the m
 | Analyses | `cargo test` + `validation/` | Analytic circuits; ngspice golden comparison ([VALIDATION.md](VALIDATION.md)). |
 | Netlister, schema | Vitest | Connectivity edge cases, file migrations. |
 | Deployed shell and editor | Playwright (from M0, editor from M5a) | The production build served under `/Nodal/` loads the worker and `.wasm` and shows the engine version. The editor places a resistor and a ground, wires them, makes a junction dot and undoes it. |
+| Reference schematics | Vitest (`reference.test.ts`) | Loads each of the 31 schematics in `validation/schematics/`, requires zero diagnostics and compares the netlist with the reference IR. |
+| Project round trip | Playwright (from M5b) | Opens `A1.nodal.json`, edits R1 to `2k`, reloads the page (autosave) and exports a file that contains the edit. A file with an unsupported `formatVersion` reports an error and leaves the canvas unchanged. |
 | End to end | Playwright (from M6) | Draw an RC circuit, run transient, check a probed value. |

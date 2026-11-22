@@ -94,6 +94,10 @@ T4 has a 1 kΩ gate resistor `RG` between the pulse source and the gates, and `t
 
 T6 uses `RON` = 100 Ω and `tmax` = 2e-7 s, not the defaults. ngspice-42 can switch a SW model early: `swload.c` reads the control voltage from the previous solution vector, which after a rejected trial step holds the rejected iterate. With the default `tmax`, the switch turned on at a control voltage of about 2.966 V, although `VT` + `VH` = 3.0 V. Nodal switches at the threshold. With `tmax` = 2e-7 s ngspice switches at 3.003 V, and `RON` = 100 Ω slows the on-edge to about 91 µs, so the remaining timing difference of under a microsecond stays inside the tolerance.
 
+### Reference schematics (M5b)
+
+`validation/schematics/` holds one generated `.nodal.json` per reference circuit, 31 in total, each with a drawn layout. `apps/web/src/netlist/reference.test.ts` loads every file and requires zero diagnostics from the netlister. It then compares the resulting netlist with the reference IR using `compareNetlists`. The title and the node names must match exactly.
+
 ## 5. Jacobian tests
 
 For each nonlinear device, in each operating region (diode: reverse, weak and strong forward; BJT: cutoff, active, saturation, reverse; MOSFET: cutoff, triode, saturation, for $V_{ds} < 0$ too):
