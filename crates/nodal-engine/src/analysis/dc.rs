@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::newton::{NewtonConfig, Strategy, Trace, newton_counted, solve_dc_counted};
+use super::newton::{NewtonConfig, Strategy, Trace, fatal_error, newton_counted, solve_dc_counted};
 use super::op::report;
 use crate::circuit::Circuit;
 use crate::error::Error;
@@ -152,7 +152,10 @@ fn solve_point(
         {
             Ok(x) => return Ok((x, state)),
             Err(failure) => {
-                if let Some(error) = failure.error {
+                // A singular iterate is not fatal: fall through to the gmin and
+                // source stepping chain, as ngspice dctrcurv.c does by calling
+                // CKTop after any NIiter error.
+                if let Some(error) = fatal_error(&failure) {
                     return Err(error);
                 }
             }

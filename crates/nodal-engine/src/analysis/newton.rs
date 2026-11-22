@@ -272,7 +272,7 @@ const MAX_SOURCE_STEPS: usize = 10_000;
 /// bug. A singular matrix is not fatal. ngspice `cktop.c` treats any `NIiter`
 /// error, `E_SINGULAR` included, as "no convergence" and goes on to gmin
 /// stepping and source stepping.
-fn fatal_error(failure: &NewtonFailure) -> Option<Error> {
+pub(super) fn fatal_error(failure: &NewtonFailure) -> Option<Error> {
     failure
         .error
         .clone()
