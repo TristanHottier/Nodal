@@ -15,6 +15,13 @@ function setup(parts: Part[], selected: string[], labels: Schematic["labels"] = 
   return store;
 }
 
+/** A part placed away from the others so its pins stay unconnected. */
+const far = (id: string, type: PartType, name: string): Part => ({
+  ...part(id, type, name),
+  x: 50,
+  y: 50,
+});
+
 afterEach(cleanup);
 
 const input = (name: string) => screen.getByRole<HTMLInputElement>("textbox", { name });
@@ -263,5 +270,43 @@ describe("Inspector", () => {
         .getAllByRole("option")
         .map((o) => o.textContent),
     ).toContain("Gone (missing)");
+  });
+  it("selection_change_commits_pending_draft", () => {
+    const store = setup([part("p1", "resistor", "R1"), part("p2", "capacitor", "C1")], ["p1"]);
+    type("Value", "2k");
+    act(() => {
+      store.getState().select(["p2"]);
+    });
+    expect(params(store).value).toBe("2k");
+    expect(store.getState().past).toHaveLength(1);
+  });
+
+  it("selection_change_does_not_commit_empty_name", () => {
+    const store = setup([part("p1", "resistor", "R1"), part("p2", "capacitor", "C1")], ["p1"]);
+    type("Name", "  ");
+    act(() => {
+      store.getState().select(["p2"]);
+    });
+    expect(store.getState().doc.parts[0]?.name).toBe("R1");
+    expect(store.getState().past).toHaveLength(0);
+  });
+
+  it("problems_row_commits_pending_draft", () => {
+    const store = setup([part("p1", "resistor", "R1"), far("p2", "capacitor", "C1")], ["p1"]);
+    type("Value", "2k");
+    fireEvent.click(screen.getByRole("button", { name: "C1 is not connected to anything" }));
+    expect(store.getState().selection).toEqual(["p2"]);
+    expect(params(store).value).toBe("2k");
+    expect(store.getState().past).toHaveLength(1);
+  });
+
+  it("problems_row_of_selected_item_keeps_draft", () => {
+    const store = setup([part("p1", "resistor", "R1")], ["p1"]);
+    type("Value", "2k");
+    fireEvent.click(screen.getByRole("button", { name: "R1 is not connected to anything" }));
+    expect(input("Value").value).toBe("2k");
+    expect(store.getState().past).toHaveLength(0);
+    fireEvent.blur(input("Value"));
+    expect(params(store).value).toBe("2k");
   });
 });

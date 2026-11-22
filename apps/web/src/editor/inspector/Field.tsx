@@ -1,6 +1,6 @@
 // A labelled text input with a local draft. Commits on blur and Enter, Esc restores
 // the stored value. Select fields commit on change and have no draft.
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 export interface FieldProps {
   label: string;
@@ -39,11 +39,25 @@ export function Field({
     setDraft(null);
     setRejected(null);
   }
+  // The latest draft, value and commit callback, for the commit on unmount: React
+  // never calls onBlur on a node that is removed, e.g. when the selection changes.
+  const latest = useRef({ draft, value, onCommit });
+  useEffect(() => {
+    latest.current = { draft, value, onCommit };
+  });
+  useEffect(
+    () => () => {
+      const l = latest.current;
+      if (l.draft !== null && l.draft !== l.value) l.onCommit(l.draft);
+    },
+    [],
+  );
   const hintId = useId();
   const shown = draft ?? value;
   const error = rejected ?? validate?.(shown) ?? null;
 
   const commit = () => {
+    latest.current.draft = null;
     if (draft !== null && draft !== value) setRejected(onCommit(draft) ?? null);
     setDraft(null);
   };
@@ -61,6 +75,7 @@ export function Field({
     onBlur: commit,
     onKeyDown: (e: React.KeyboardEvent) => {
       if (e.key === "Escape") {
+        latest.current.draft = null;
         setDraft(null);
         setRejected(null);
         e.stopPropagation();
