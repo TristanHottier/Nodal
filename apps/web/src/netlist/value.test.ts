@@ -82,6 +82,13 @@ describe("formatValue", () => {
   });
 });
 
+describe("formatValue near 1e15", () => {
+  it("never_drops_a_factor", () => {
+    expect(formatValue(9.99999e14, 4)).toBe("1000000000000000");
+    expect(formatValue(9.99e14, 4)).toBe("999T");
+  });
+});
+
 describe("formatQuantity", () => {
   it("attaches_the_unit_to_the_suffix", () => {
     expect(formatQuantity(2.5, "V")).toBe("2.5 V");
@@ -89,5 +96,17 @@ describe("formatQuantity", () => {
     expect(formatQuantity(1000, "V")).toBe("1 kV");
     expect(formatQuantity(0, "V")).toBe("0 V");
     expect(formatQuantity(1.23456789, "V")).toBe("1.235 V");
+  });
+
+  it("mega_reads_M_in_a_quantity", () => {
+    expect(formatQuantity(1e6, "V")).toBe("1 MV");
+    expect(formatQuantity(2.5e6, "Hz")).toBe("2.5 MHz");
+    expect(formatQuantity(-1e6, "V")).toBe("-1 MV");
+    expect(formatValue(1e6)).toBe("1Meg");
+  });
+
+  it("out_of_range_and_nan", () => {
+    expect(formatQuantity(1e-16, "V")).toBe("1e-16 V");
+    expect(formatQuantity(Number.NaN, "V")).toBe("NaN V");
   });
 });

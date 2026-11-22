@@ -19,6 +19,17 @@ describe("valueAt", () => {
     expect(valueAt(f(1, 100), f(0, 40), 10, true)).toBeCloseTo(20, 10);
   });
 
+  it("value_at_descending_axis", () => {
+    const xs = f(3, 1, 0);
+    const ys = f(30, 10, 0);
+    expect(valueAt(xs, ys, 3, false)).toBe(30);
+    expect(valueAt(xs, ys, 2, false)).toBe(20);
+    expect(valueAt(xs, ys, 0.5, false)).toBe(5);
+    expect(valueAt(xs, ys, 0, false)).toBe(0);
+    expect(valueAt(xs, ys, 3.5, false)).toBeNull();
+    expect(valueAt(xs, ys, -0.5, false)).toBeNull();
+  });
+
   it("value_at_outside_is_null", () => {
     const xs = f(1, 2);
     expect(valueAt(xs, f(1, 2), 0.5, false)).toBeNull();
@@ -47,6 +58,17 @@ describe("cursorReadout", () => {
     expect(out.rows[0]).toEqual({ key: "V(a)", a: 1, b: null, delta: null });
     expect(out.dx).toBeNull();
     expect(cursorReadout(r, [], "linear", 1, 1).inverseDx).toBeNull();
+  });
+
+  it("dc_descending_sweep_readout", () => {
+    const dc: SimResult = {
+      type: "dc",
+      source: "V1",
+      axis: f(4, 2, 0),
+      signals: [{ name: "a", kind: "v", re: f(8, 4, 0) }],
+    };
+    const out = cursorReadout(dc, ["V(a)"], "linear", 3, 1);
+    expect(out.rows).toEqual([{ key: "V(a)", a: 6, b: 2, delta: -4 }]);
   });
 
   it("readout_uses_log_x_for_ac", () => {

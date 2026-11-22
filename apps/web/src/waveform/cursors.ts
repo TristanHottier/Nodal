@@ -2,7 +2,10 @@
 import type { SimResult } from "../engine/results";
 import { type TraceView, traceValues } from "./traces";
 
-/** Interpolated y at x (in log10(x) when `logX`); null outside the range or next to a NaN. */
+/**
+ * Interpolated y at x (in log10(x) when `logX`); null outside the range or next to a NaN.
+ * `xs` may be ascending or descending (a DC sweep with a negative step).
+ */
 export function valueAt(
   xs: Float64Array,
   ys: Float64Array,
@@ -13,12 +16,14 @@ export function valueAt(
   if (n === 0 || Number.isNaN(x)) return null;
   const first = xs[0] as number;
   const last = xs[n - 1] as number;
-  if (x < first || x > last) return null;
+  const ascending = first <= last;
+  if (ascending ? x < first || x > last : x > first || x < last) return null;
   let lo = 0;
   let hi = n - 1;
   while (hi - lo > 1) {
     const mid = (lo + hi) >> 1;
-    if ((xs[mid] as number) <= x) lo = mid;
+    const m = xs[mid] as number;
+    if (ascending ? m <= x : m >= x) lo = mid;
     else hi = mid;
   }
   const x0 = xs[lo] as number;

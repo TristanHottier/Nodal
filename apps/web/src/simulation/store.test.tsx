@@ -1,10 +1,11 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import { newProject } from "@nodal/schema";
 import { afterEach, describe, expect, it } from "vitest";
 import { createEditorStore } from "../editor/store";
 import { EditorProvider } from "../editor/EditorContext";
 import { EngineRunError } from "../engine/client";
 import { project as projectOf, emptyDoc } from "../netlist/testDoc";
-import { SimulationProvider, useResultsStale } from "./SimulationContext";
+import { SimulationProvider, useResetOnProjectLoad, useResultsStale } from "./SimulationContext";
 import { createSimulationStore } from "./store";
 import { dividerProject, fakeRunner, opResult, tranResult } from "./testFixtures";
 
@@ -176,5 +177,50 @@ describe("simulation store", () => {
       editor.getState().setSimulation({ ...editor.getState().project.simulation });
     });
     expect(screen.getByTestId("stale").textContent).toBe("true");
+  });
+
+  it("reset_clears_result_status_and_probes", async () => {
+    const { runner, get } = setup();
+    const done = get().run(dividerProject(), 0);
+    runner.calls[0]?.resolve(opResult(["a"]));
+    await done;
+    get().addProbe("V(a)");
+    get().reset();
+    const s = get();
+    expect(s.status).toEqual({ kind: "idle" });
+    expect([s.result, s.ranDoc, s.ranSimulation, s.ranIr, s.map]).toEqual([
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
+    expect(s.probes).toEqual([]);
+  });
+
+  it("open_project_resets_simulation", async () => {
+    const { runner, store, get } = setup();
+    const editor = createEditorStore({ project: dividerProject() });
+    function Reset() {
+      useResetOnProjectLoad();
+      return null;
+    }
+    render(
+      <EditorProvider store={editor}>
+        <SimulationProvider store={store}>
+          <Reset />
+        </SimulationProvider>
+      </EditorProvider>,
+    );
+    const done = get().run(editor.getState().getProject(), 0);
+    runner.calls[0]?.resolve(opResult(["a"]));
+    await done;
+    expect(get().result).not.toBeNull();
+    act(() => {
+      editor.getState().loadProject(newProject("Other", "2026-01-01T00:00:00.000Z"));
+    });
+    expect(get().result).toBeNull();
+    expect(get().map).toBeNull();
+    expect(get().status).toEqual({ kind: "idle" });
   });
 });

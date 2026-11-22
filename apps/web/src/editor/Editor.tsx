@@ -4,7 +4,7 @@ import type { StoreApi } from "zustand";
 import { EngineClient } from "../engine/client";
 import { RunBar, RUNBAR_CSS } from "../simulation/RunBar";
 import { WAVEFORM_CSS, WaveformPanel } from "../waveform/WaveformPanel";
-import { SimulationProvider } from "../simulation/SimulationContext";
+import { SimulationProvider, useResetOnProjectLoad } from "../simulation/SimulationContext";
 import { createSimulationStore, type SimulationState } from "../simulation/store";
 import { Canvas } from "./canvas/Canvas";
 import { DIAGNOSTICS_CSS } from "./Diagnostics";
@@ -37,6 +37,7 @@ function EditorBody({ status }: { status?: ReactNode }) {
   const place = usePlaceTool();
   const wire = useWireTool();
   const probe = useProbeTool();
+  useResetOnProjectLoad();
   useShortcuts(wire);
   const tool =
     kind === "place"

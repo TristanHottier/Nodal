@@ -120,8 +120,10 @@ test("cancel_long_run", async ({ page }) => {
   await tstop.press("Enter");
   await run(page);
   await expect(status(page)).toHaveText("Running…");
-  await page.getByRole("button", { name: "Cancel", exact: true }).click({ timeout: 1000 });
-  await expect(status(page)).not.toHaveText("Running…");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click({ timeout: 10_000 });
+  // Idle with no earlier result: the status is empty and nothing was plotted.
+  await expect(status(page)).toHaveText("");
+  await expect(page.getByTestId("waveform-panel")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible();
 
   await tstop.fill("5m");

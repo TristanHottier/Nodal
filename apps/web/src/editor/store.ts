@@ -61,6 +61,8 @@ export interface EditorState {
   setModels(models: ProjectModel[]): void;
   /** Analyses and options; like model edits, not part of history. */
   setSimulation(sim: Project["simulation"]): void;
+  /** Bumped by every `loadProject`; lets other stores reset state tied to the old project. */
+  projectGeneration: number;
   /** Replace the whole project and reset history, selection, clipboard and view. */
   loadProject(p: Project): void;
   /** The current project in schema key order, ready to serialize. */
@@ -105,6 +107,7 @@ export function createEditorStore(opts?: {
     view: { x: 0, y: 0, zoom: 1 },
     gestureActive: false,
     statusMessage: null,
+    projectGeneration: 0,
     newId,
 
     commit(next, select) {
@@ -170,6 +173,7 @@ export function createEditorStore(opts?: {
         gestureActive: false,
         tool: { kind: "select" },
         view: { x: 0, y: 0, zoom: 1 },
+        projectGeneration: get().projectGeneration + 1,
       });
     },
     getProject() {

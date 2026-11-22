@@ -26,6 +26,9 @@ interface Pending {
   onProgress: ((fraction: number) => void) | undefined;
 }
 
+const crashError = (error: unknown): Error =>
+  new Error(`Engine crashed (internal error: ${decodeError(error).message})`);
+
 const asError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)));
 
 /** One lazily created, long-lived worker; one run at a time. */
@@ -49,7 +52,9 @@ export class EngineClient {
     }, timeoutMs);
     return promise
       .then((r) => {
-        if (r.type === "error") throw new Error(decodeError(r.error).message);
+        if (r.type === "error") {
+          throw r.fatal ? crashError(r.error) : new Error(decodeError(r.error).message);
+        }
         if (r.type !== "version") throw new Error("unexpected engine response");
         return r.version;
       })
@@ -77,7 +82,10 @@ export class EngineClient {
     signal?.addEventListener("abort", onAbort, { once: true });
     return promise
       .then((r) => {
-        if (r.type === "error") throw new EngineRunError(decodeError(r.error));
+        if (r.type === "error") {
+          if (r.fatal) throw crashError(r.error);
+          throw new EngineRunError(decodeError(r.error));
+        }
         if (r.type !== "result") throw new Error("unexpected engine response");
         return decodeResult(r.meta, r.data);
       })
@@ -152,6 +160,8 @@ export class EngineClient {
     this.pending.delete(msg.id);
     if (this.activeRun === msg.id) this.activeRun = undefined;
     p.resolve(msg);
+    // A trap poisons the wasm instance: replace the worker so the next run starts clean.
+    if (msg.type === "error" && msg.fatal) this.dropWorker(crashError(msg.error));
   }
 
   private dropWorker(reason: Error): void {

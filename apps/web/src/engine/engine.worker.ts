@@ -44,6 +44,7 @@ async function handle(req: WorkerRequest): Promise<void> {
 self.addEventListener("message", (event: MessageEvent<WorkerRequest>) => {
   const req = event.data;
   handle(req).catch((e: unknown) => {
-    reply({ type: "error", id: req.id, error: describe(e) });
+    // wasm throws engine errors as strings; anything else (a trap) leaves the instance unusable.
+    reply({ type: "error", id: req.id, error: describe(e), fatal: typeof e !== "string" });
   });
 });

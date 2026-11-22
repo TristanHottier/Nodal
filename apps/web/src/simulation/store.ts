@@ -31,6 +31,8 @@ export interface SimulationState {
   cancel(): void;
   addProbe(key: string): void;
   removeProbe(key: string): void;
+  /** Cancel any run and forget the result, status, map and probes (a new project was loaded). */
+  reset(): void;
 }
 
 const NO_TARGETS: ErrorTargets = { partIds: [], wireIds: [], labelIds: [] };
@@ -112,6 +114,21 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
         runId += 1;
         runner.cancel();
         set({ status: { kind: "idle" } });
+      },
+
+      reset() {
+        get().cancel();
+        // A run that failed or finished is not running; bump the id so late callbacks are ignored.
+        runId += 1;
+        set({
+          status: { kind: "idle" },
+          result: null,
+          ranDoc: null,
+          ranSimulation: null,
+          ranIr: null,
+          map: null,
+          probes: [],
+        });
       },
 
       addProbe(key) {

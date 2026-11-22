@@ -67,7 +67,10 @@ export function formatValue(n: number, digits = 12): string {
   const exp = Number(e);
   const group = Math.floor(exp / 3) * 3;
   const mantissa = Number(`${m}e${String(exp - group)}`);
-  return `${String(Number(mantissa.toPrecision(digits)))}${SUFFIX_OF_EXPONENT.get(group) ?? ""}`;
+  const suffix = SUFFIX_OF_EXPONENT.get(group);
+  // A value that rounds up to 1e15 has no suffix; never drop the factor.
+  if (suffix === undefined && group !== 0) return String(Number(n.toPrecision(digits)));
+  return `${String(Number(mantissa.toPrecision(digits)))}${suffix ?? ""}`;
 }
 
 /** Parses "t v" pairs separated by ";" or newlines. Monotonic time is checked elsewhere. */
@@ -99,5 +102,6 @@ export function formatQuantity(v: number, unit: string, digits = 4): string {
   const text = formatValue(v, digits);
   const m = /^(-?[\d.]+(?:e[+-]?\d+)?)(.*)$/.exec(text);
   const [, num = text, suffix = ""] = m ?? [];
-  return `${num} ${suffix}${unit}`;
+  // Input notation says "Meg" (SPICE is case-insensitive about m); a quantity reads "1 MV".
+  return `${num} ${suffix === "Meg" ? "M" : suffix}${unit}`;
 }

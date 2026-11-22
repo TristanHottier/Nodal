@@ -188,6 +188,31 @@ describe("EngineClient", () => {
     await expect(p).resolves.toBe("2");
   });
 
+  it("wasm_trap_respawns", async () => {
+    const { workers, client } = setup();
+    const r = client.run("n", 0);
+    const w = nth(workers, 0);
+    w.reply({ type: "error", id: w.lastId(), error: "unreachable", fatal: true });
+    const err: unknown = await r.catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).not.toBeInstanceOf(EngineRunError);
+    expect((err as Error).message).toBe("Engine crashed (internal error: unreachable)");
+    expect(w.terminate).toHaveBeenCalled();
+    client.run("n", 0).catch(() => undefined);
+    expect(workers).toHaveLength(2);
+  });
+
+  it("engine_error_keeps_worker", async () => {
+    const { workers, client } = setup();
+    const r = client.run("n", 0);
+    const w = nth(workers, 0);
+    w.reply({ type: "error", id: w.lastId(), error: "plain failure" });
+    await expect(r).rejects.toBeInstanceOf(EngineRunError);
+    expect(w.terminate).not.toHaveBeenCalled();
+    client.run("n", 0).catch(() => undefined);
+    expect(workers).toHaveLength(1);
+  });
+
   it("messageerror_rejects", async () => {
     const { workers, client } = setup();
     const r = client.run("n", 0);

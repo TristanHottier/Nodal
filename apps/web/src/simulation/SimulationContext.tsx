@@ -4,7 +4,7 @@ import type { StoreApi } from "zustand";
 import { createStore, useStore } from "zustand";
 import type { SimResult } from "../engine/results";
 import type { CircuitMap } from "../netlist/netlister";
-import { useEditor } from "../editor/EditorContext";
+import { useEditor, useEditorStore } from "../editor/EditorContext";
 import type { SimulationState } from "./store";
 
 const SimulationContext = createContext<StoreApi<SimulationState> | null>(null);
@@ -89,4 +89,19 @@ export function useOpView(): OpView | null {
   const simulation = useEditor((s) => s.project.simulation);
   if (!result || !map || result.type !== "op") return null;
   return { result, map, stale: doc !== ranDoc || simulation !== ranSimulation };
+}
+
+/** Resets the simulation whenever a project is loaded (Open, New): nothing from the old one may linger. */
+export function useResetOnProjectLoad(): void {
+  const sim = useContext(SimulationContext);
+  const editor = useEditorStore();
+  useEffect(() => {
+    if (!sim) return;
+    let generation = editor.getState().projectGeneration;
+    return editor.subscribe((s) => {
+      if (s.projectGeneration === generation) return;
+      generation = s.projectGeneration;
+      sim.getState().reset();
+    });
+  }, [sim, editor]);
 }
