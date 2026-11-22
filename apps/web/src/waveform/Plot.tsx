@@ -163,5 +163,15 @@ export function Plot(props: PlotProps) {
     chart.current?.redraw(false);
   }, [props.cursors.a, props.cursors.b]);
 
-  return <div ref={host} className="nodal-plot" style={{ width: "100%", height: props.height }} />;
+  // The axis labels are drawn on the canvas; the attributes make them readable to tests.
+  return (
+    <div
+      ref={host}
+      className="nodal-plot"
+      data-testid="plot"
+      data-x-label={props.xLabel}
+      data-y-label={props.yLabel}
+      style={{ width: "100%", height: props.height }}
+    />
+  );
 }
