@@ -67,7 +67,7 @@
         "id": "p-C1",
         "type": "capacitor",
         "name": "C1",
-        "x": 44,
+        "x": 48,
         "y": 10,
         "rotation": 0,
         "mirror": false,
@@ -79,7 +79,7 @@
         "id": "p-GND3",
         "type": "ground",
         "name": "GND3",
-        "x": 44,
+        "x": 48,
         "y": 13,
         "rotation": 0,
         "mirror": false,
@@ -89,7 +89,7 @@
         "id": "p-S1",
         "type": "switch",
         "name": "S1",
-        "x": 34,
+        "x": 38,
         "y": 28,
         "rotation": 0,
         "mirror": false,
@@ -101,7 +101,7 @@
         "id": "p-GND4",
         "type": "ground",
         "name": "GND4",
-        "x": 34,
+        "x": 38,
         "y": 31,
         "rotation": 0,
         "mirror": false,
@@ -111,7 +111,7 @@
         "id": "p-GND5",
         "type": "ground",
         "name": "GND5",
-        "x": 28,
+        "x": 31,
         "y": 30,
         "rotation": 0,
         "mirror": false,
@@ -153,11 +153,11 @@
             "y": 7
           },
           {
-            "x": 34,
+            "x": 38,
             "y": 7
           },
           {
-            "x": 44,
+            "x": 48,
             "y": 7
           }
         ]
@@ -166,11 +166,11 @@
         "id": "w4",
         "points": [
           {
-            "x": 34,
+            "x": 38,
             "y": 7
           },
           {
-            "x": 34,
+            "x": 38,
             "y": 25
           }
         ]
@@ -196,7 +196,7 @@
             "y": 26
           },
           {
-            "x": 30,
+            "x": 34,
             "y": 26
           }
         ]
@@ -218,11 +218,11 @@
         "id": "w8",
         "points": [
           {
-            "x": 30,
+            "x": 34,
             "y": 30
           },
           {
-            "x": 28,
+            "x": 31,
             "y": 30
           }
         ]
