@@ -18,6 +18,7 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      - run: cargo test -q --release -p nodal-engine --test perf_fixtures -- --ignored
       - run: cargo run -q -p nodal-cli --release -- validate validation --report validation-report.md
       - name: Upload validation report
         if: always()

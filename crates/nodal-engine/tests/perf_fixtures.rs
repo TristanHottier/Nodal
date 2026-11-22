@@ -10,6 +10,7 @@ use nodal_engine::{parse_netlist, simulate};
 type TestResult = Result<(), Box<dyn Error>>;
 
 #[test]
+#[ignore = "slow in debug; run with --release -- --ignored"]
 fn tran50_has_50_nodes_and_10k_points() -> TestResult {
     let text = include_str!("../../../validation/perf/tran50.json");
     let results = simulate(&parse_netlist(text)?)?;
@@ -17,7 +18,11 @@ fn tran50_has_50_nodes_and_10k_points() -> TestResult {
         return Err("expected a tran result".into());
     };
     assert_eq!(r.node_voltages.len(), 50);
-    assert!(r.time.len() >= 10_000, "only {} accepted points", r.time.len());
+    assert!(
+        r.time.len() >= 10_000,
+        "only {} accepted points",
+        r.time.len()
+    );
     Ok(())
 }
 
