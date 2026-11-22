@@ -23,21 +23,34 @@ export function nameError(part: Pick<Part, "type">, name: string): string | null
     : `Must start with ${letter} and use letters, digits and _`;
 }
 
-function numberError(field: ParamField, text: string): string | null {
+const defaultOf = (part: Part, field: ParamField): string =>
+  SYMBOLS[part.type].defaultParams[field.key] ?? "";
+
+function numberError(part: Part, field: ParamField, text: string): string | null {
   if (field.kind === "pwl") {
     const r = parsePwl(text);
     return r.ok ? null : r.error;
   }
-  if (text.trim() === "") return field.kind === "number" ? "Required" : null;
+  if (text.trim() === "") {
+    return field.kind === "number" && defaultOf(part, field) === "" ? "Required" : null;
+  }
   const r = parseValue(text);
   return r.ok ? null : r.error;
 }
 
 /** Options for a ref select, keeping a dangling stored value visible. */
-function withCurrent(names: readonly string[], current: string, extra: boolean) {
+function withCurrent(
+  names: readonly string[],
+  current: string,
+  extra: boolean,
+  all: readonly string[] = names,
+) {
   const options = [NONE, ...names.map((n) => ({ value: n, text: n }))];
   if (current !== "" && !names.includes(current)) {
-    options.push({ value: current, text: `${current} (missing)` });
+    options.push({
+      value: current,
+      text: `${current} (${all.includes(current) ? "wrong type" : "missing"})`,
+    });
   }
   return extra ? [...options, { value: NEW_MODEL, text: "New model…" }] : options;
 }
@@ -105,7 +118,12 @@ export function PartFields({ part }: { part: Part }) {
               key={k}
               label={f.label}
               value={value}
-              options={withCurrent(names, value, true)}
+              options={withCurrent(
+                names,
+                value,
+                true,
+                models.map((m) => m.name),
+              )}
               onChange={(v) => {
                 if (v === NEW_MODEL) newModel(f.modelTypes);
                 else setParam(f.key, v);
@@ -134,7 +152,10 @@ export function PartFields({ part }: { part: Part }) {
             value={value}
             multiline={f.kind === "pwl"}
             {...(f.unit ? { unit: f.unit } : {})}
-            validate={(t) => numberError(f, t)}
+            validate={(t) => numberError(part, f, t)}
+            {...(f.kind === "number" && defaultOf(part, f) !== ""
+              ? { hint: `Empty uses the default (${defaultOf(part, f)})` }
+              : {})}
             onCommit={(t) => {
               setParam(f.key, t);
               return undefined;

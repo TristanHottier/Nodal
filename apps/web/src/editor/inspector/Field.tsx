@@ -32,6 +32,13 @@ export function Field({
 }: FieldProps) {
   const [draft, setDraft] = useState<string | null>(null);
   const [rejected, setRejected] = useState<string | null>(null);
+  const [seen, setSeen] = useState(value);
+  // A stored value that changed under us (undo, redo) wins over a pending draft.
+  if (seen !== value) {
+    setSeen(value);
+    setDraft(null);
+    setRejected(null);
+  }
   const hintId = useId();
   const shown = draft ?? value;
   const error = rejected ?? validate?.(shown) ?? null;

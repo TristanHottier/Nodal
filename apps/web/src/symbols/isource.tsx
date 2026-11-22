@@ -10,7 +10,20 @@ export const isource: SymbolDef = {
     { name: "n", x: 0, y: 3 },
   ],
   bounds: { x0: -2, y0: -3, x1: 2, y1: 3 },
-  defaultParams: { dc: "1m" },
+  defaultParams: {
+    dc: "1m",
+    // Waveform defaults, read only when that waveform is chosen.
+    v1: "0",
+    v2: "1m",
+    tr: "1n",
+    tf: "1n",
+    pw: "0.5m",
+    per: "1m",
+    vo: "0",
+    va: "1m",
+    freq: "1k",
+    pwl: "0 0; 1m 1m",
+  },
   Body: () => (
     <g>
       <g {...STROKE}>

@@ -80,7 +80,8 @@ describe("Inspector", () => {
     expect(params(store).value).toBe("abc");
     expect(screen.getByRole("alert").textContent).toContain("not a number");
     type("Value", "");
-    expect(screen.getByRole("alert").textContent).toBe("Required");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("Empty uses the default (1k)")).toBeTruthy();
   });
 
   it("wave_fields_follow_choice", () => {
@@ -222,5 +223,45 @@ describe("Inspector", () => {
     expect(store.getState().project.models.map((m) => m.name)).toEqual(["DMOD", "Q2N"]);
     fireEvent.click(screen.getByRole("button", { name: "Remove Q2N" }));
     expect(store.getState().project.models.map((m) => m.name)).toEqual(["DMOD"]);
+  });
+
+  it("choosing_pulse_shows_no_errors", () => {
+    setup([part("p1", "vsource", "V1")], ["p1"]);
+    fireEvent.change(select("Waveform"), { target: { value: "pulse" } });
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(input("Period").value).toBe("1m");
+    fireEvent.change(select("Waveform"), { target: { value: "pwl" } });
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+  });
+
+  it("draft_resets_when_stored_value_changes", () => {
+    const store = setup([part("p1", "resistor", "R1", { value: "5k" })], ["p1"]);
+    type("Value", "9k");
+    expect(input("Value").value).toBe("9k");
+    act(() => {
+      store.getState().commit({
+        ...store.getState().doc,
+        parts: [part("p1", "resistor", "R1", { value: "2k" })],
+      });
+    });
+    expect(input("Value").value).toBe("2k");
+  });
+
+  it("wrong_type_model_is_labelled", () => {
+    const store = setup([part("p1", "diode", "D1", { model: "Q1" })], ["p1"]);
+    act(() => {
+      store.getState().setModels([{ name: "Q1", type: "NPN", params: {} }]);
+    });
+    const texts = within(select("Model"))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(texts).toContain("Q1 (wrong type)");
+    cleanup();
+    setup([part("p1", "diode", "D1", { model: "Gone" })], ["p1"]);
+    expect(
+      within(select("Model"))
+        .getAllByRole("option")
+        .map((o) => o.textContent),
+    ).toContain("Gone (missing)");
   });
 });

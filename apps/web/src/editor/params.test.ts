@@ -1,6 +1,6 @@
 import { PART_TYPES, type Part } from "@nodal/schema";
 import { describe, expect, it } from "vitest";
-import { parseValue } from "../netlist/value";
+import { parsePwl, parseValue } from "../netlist/value";
 import { SYMBOLS } from "../symbols/catalog";
 import { PARAM_FIELDS, paramValue } from "./params";
 
@@ -27,7 +27,9 @@ describe("PARAM_FIELDS", () => {
       }
       for (const [k, v] of Object.entries(SYMBOLS[type].defaultParams)) {
         if (v === "") continue;
-        expect(parseValue(v).ok, `${type}.${k}=${v}`).toBe(true);
+        const kind = PARAM_FIELDS[type].find((f) => f.key === k)?.kind;
+        const ok = kind === "pwl" ? parsePwl(v).ok : parseValue(v).ok;
+        expect(ok, `${type}.${k}=${v}`).toBe(true);
       }
     }
   });
