@@ -10,10 +10,21 @@ import { parseValue } from "./value";
 
 export type { Diagnostic, DiagnosticCode } from "./diagnostics";
 
+/** Traces engine names back to schematic items. */
+export interface CircuitMap {
+  /** IR element name (op-amps as "E" + name) to part id. */
+  partOfElement: Map<string, string>;
+  netOfPin: Map<string, string>;
+  netOfWire: Map<string, string>;
+  netOfLabel: Map<string, string>;
+}
+
 export interface NetlistResult {
   /** Null whenever an error diagnostic exists. */
   ir: Netlist | null;
   diagnostics: Diagnostic[];
+  /** Null only for the empty schematic. */
+  map: CircuitMap | null;
 }
 
 const lower = (s: string): string => s.toLowerCase();
@@ -124,7 +135,7 @@ function irIssue(issue: string, named: readonly { part: Part }[]): Diagnostic {
 export function projectToNetlist(project: Project): NetlistResult {
   const doc = project.schematic;
   if (doc.parts.length === 0 && doc.wires.length === 0 && doc.labels.length === 0) {
-    return { ir: null, diagnostics: [] };
+    return { ir: null, diagnostics: [], map: null };
   }
   const diagnostics: Diagnostic[] = [];
   const nets = buildNets(doc);
@@ -164,8 +175,14 @@ export function projectToNetlist(project: Project): NetlistResult {
   const models = convertModels(project, diagnostics);
   checkSweeps(project, diagnostics);
   checkConnections(doc, nets.netOfPin, diagnostics);
+  const map: CircuitMap = {
+    partOfElement: new Map(named.map((n) => [n.element.name, n.part.id])),
+    netOfPin: nets.netOfPin,
+    netOfWire: nets.netOfWire,
+    netOfLabel: nets.netOfLabel,
+  };
 
-  if (diagnostics.some((d) => d.severity === "error")) return { ir: null, diagnostics };
+  if (diagnostics.some((d) => d.severity === "error")) return { ir: null, diagnostics, map };
   const parsed = parseNetlist({
     irVersion: IR_VERSION,
     title: project.name,
@@ -176,7 +193,7 @@ export function projectToNetlist(project: Project): NetlistResult {
   });
   if (!parsed.ok) {
     for (const issue of parsed.issues) diagnostics.push(irIssue(issue, named));
-    return { ir: null, diagnostics };
+    return { ir: null, diagnostics, map };
   }
-  return { ir: parsed.value, diagnostics };
+  return { ir: parsed.value, diagnostics, map };
 }

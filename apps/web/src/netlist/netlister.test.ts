@@ -24,7 +24,7 @@ function divider() {
 
 describe("projectToNetlist", () => {
   it("empty_schematic_has_no_diagnostics", () => {
-    expect(projectToNetlist(project(emptyDoc()))).toEqual({ ir: null, diagnostics: [] });
+    expect(projectToNetlist(project(emptyDoc()))).toEqual({ ir: null, diagnostics: [], map: null });
   });
 
   it("divider_matches_L1", () => {
@@ -475,5 +475,23 @@ describe("projectToNetlist", () => {
     collect(p);
     expect(messages.length).toBeGreaterThanOrEqual(5);
     for (const m of messages) expect(m).toMatch(/^[A-Z]/);
+  });
+
+  it("map_names_opamp_as_E", () => {
+    let d = put(emptyDoc(), "opamp", pt(0, 0), { id: "op", name: "U1" }).doc;
+    d = put(d, "resistor", pt(20, 0), { id: "rr", name: "R1" }).doc;
+    d = put(d, "ground", pt(30, 0), { id: "g" }).doc;
+    const { map } = projectToNetlist(project(d));
+    expect(map?.partOfElement.get("EU1")).toBe("op");
+    expect(map?.partOfElement.get("R1")).toBe("rr");
+    expect([...(map?.partOfElement.values() ?? [])]).not.toContain("g");
+  });
+
+  it("map_present_with_errors", () => {
+    const r = projectToNetlist(project(put(emptyDoc(), "resistor", pt(0, 0), { id: "r1" }).doc));
+    expect(r.ir).toBeNull();
+    expect(r.map).not.toBeNull();
+    expect(r.map?.partOfElement.get("R1")).toBe("r1");
+    expect(projectToNetlist(project(emptyDoc())).map).toBeNull();
   });
 });

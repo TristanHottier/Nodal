@@ -29,6 +29,10 @@ class UnionFind {
 export interface NetResult {
   /** Key `<partId>:<pinName>`, value the net name (`"0"` for ground). */
   netOfPin: Map<string, string>;
+  /** Wire id to net name. */
+  netOfWire: Map<string, string>;
+  /** Label id to net name. */
+  netOfLabel: Map<string, string>;
   diagnostics: Diagnostic[];
 }
 
@@ -164,5 +168,24 @@ export function buildNets(doc: Schematic): NetResult {
     }
     netOfPin.set(pin.id, name);
   });
-  return { netOfPin, diagnostics };
+  // Wires and labels are named like their pins; one with no pin gets its own generated name.
+  const nameOf = (index: number): string => {
+    const root = uf.find(index);
+    let name = nameOfNet.get(root);
+    if (name === undefined) {
+      do name = generated(++counter);
+      while (taken.has(lower(name)));
+      nameOfNet.set(root, name);
+    }
+    return name;
+  };
+  const netOfWire = new Map<string, string>();
+  doc.wires.forEach((w, i) => {
+    netOfWire.set(w.id, nameOf(wireBase + i));
+  });
+  const netOfLabel = new Map<string, string>();
+  doc.labels.forEach((l, i) => {
+    netOfLabel.set(l.id, nameOf(labelBase + i));
+  });
+  return { netOfPin, netOfWire, netOfLabel, diagnostics };
 }

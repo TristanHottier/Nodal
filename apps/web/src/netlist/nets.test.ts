@@ -149,4 +149,27 @@ describe("buildNets", () => {
     const n = buildNets(doc).netOfPin;
     expect([n.get("d1:a"), n.get("d1:k")]).toEqual(["AN", "CA"]);
   });
+
+  it("wires_and_labels_get_their_net", () => {
+    // T-junction, a crossing without dot, and two wires joined by a label.
+    let d = r1();
+    d = put(d, "resistor", pt(10, 0), { id: "r2" }).doc;
+    d = wire(d, pt(0, -3), pt(0, -6), pt(10, -6), pt(10, -3)); // w0: R1.1 - R2.1
+    d = wire(d, pt(5, -6), pt(5, -9)); // w1: T onto w0
+    d = wire(d, pt(2, -9), pt(2, -4), pt(4, -4)); // w2: floating, apart from w0
+    d = wire(d, pt(0, 3), pt(0, 6)); // w3: R1.2, label SIG
+    d = wire(d, pt(10, 3), pt(10, 6)); // w4: R2.2, label SIG
+    d = label(d, pt(0, 6), "SIG", "l1");
+    d = label(d, pt(10, 6), "SIG", "l2");
+    const r = buildNets(d);
+    const w = d.wires.map((x) => r.netOfWire.get(x.id));
+    expect(w[0]).toBe(r.netOfPin.get("r1:1"));
+    expect(w[1]).toBe(r.netOfPin.get("r1:1"));
+    expect(w[2]).not.toBe(w[0]);
+    expect(w[3]).toBe("SIG");
+    expect(w[4]).toBe("SIG");
+    expect(r.netOfLabel.get("l1")).toBe("SIG");
+    expect(r.netOfLabel.get("l2")).toBe("SIG");
+    expect(w[3]).toBe(r.netOfPin.get("r1:2"));
+  });
 });
