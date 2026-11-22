@@ -71,7 +71,7 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4495261769
 **Exit:** every reference circuit in `validation/circuits/` has a schematic in `validation/schematics/` that loads in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires; a project survives export, import and a page reload.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44972529504 at 531aa35 (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44972529504/job/137055209655) runs `reference.test.ts` (31 schematics in `validation/schematics/`, zero diagnostics, netlist equivalent to the reference IR with exact title and node names, plus a test that the schematic and reference id sets match), `reference.editor.test.tsx` (each schematic loads in the editor with every part rendered and "No problems"), the netlister tests (`nets.test.ts` covers T-junctions, crossings without dots and labels joining separate wires) and the Playwright round trip on Chromium and Firefox (open A1, edit R1, reload, export). The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44972529504/job/137055688336) published the editor to https://tristanhottier.github.io/Nodal/.
 
-### M6 — Simulation in the browser · not started
+### M6 — Simulation in the browser · in progress
 - `nodal-wasm` in a Web Worker: run, progress, cancel.
 - Analysis setup panel; operating-point values overlaid on the schematic.
 - Waveform viewer: probes, multiple traces, cursors, Bode view.
@@ -79,6 +79,8 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4497252950
 - Playwright smoke test.
 
 **Exit:** draw → simulate → plot works end to end for all four analyses; the browser results for circuits T1 and A1 match the CLI output to a relative difference ≤ 1e-12 (native and wasm32 builds may differ in the last bits of `exp` and `ln`).
+Built so far, tested locally and not yet by CI: the worker engine with progress and cancel (terminate and respawn), the analysis setup panel and run bar, operating-point tags and per-part values, engine errors on the schematic, the waveform viewer (probes, derived resistor currents, two cursors, Bode pair, operating-point table), `parity.test.ts` (T1-trap, T1-gear and A1 results through the worker protocol equal the CLI output with maximum relative difference 0) and `simulate.spec.ts` (operating point, transient with cursor, Bode, DC sweep, cancel, error highlight on Chromium and Firefox).
+Evidence: pending. To fill after the push: the CI run with the web job running `parity.test.ts` and `simulate.spec.ts`, the gzipped WASM size, the deploy job, and A1 run on the published site.
 
 ### M7 — v1 release · not started
 - Performance budget met (below); if dense LU misses it, add the sparse backend ([ADR 0003](adr/0003-linear-solver.md)).

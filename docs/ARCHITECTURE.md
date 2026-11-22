@@ -188,10 +188,26 @@ Detected while solving:
 
 ## 5. WASM boundary (`nodal-wasm`)
 
-- One exported entry point: `run(netlist_json: &str, analysis_index: u32) -> Result`.
-- Results cross the boundary as `Float64Array`s, transferred (not copied) to the main thread.
-- The engine reports progress (fraction of `tstop` or sweep done) through a callback every N accepted points.
-- Cancel = terminate and respawn the worker. No `SharedArrayBuffer`, so no cross-origin isolation headers are needed. GitHub Pages can't set those headers anyway ([ADR 0010](adr/0010-github-pages-hosting.md)).
+**Entry points.** `engine_version() -> String` and `run(netlist_json: &str, analysis_index: u32, on_progress: &js_sys::Function) -> Result<RunOutput, JsValue>`. `run` parses the netlist JSON, runs analysis number `analysis_index` of it through `nodal_engine::simulate_analysis` and encodes the result. `on_progress` receives fractions in `[0, 1]` (of `tstop` or of the sweep), at most once per 0.01 of progress and always for 1.0. Exceptions thrown by the callback are ignored. The code is in `crates/nodal-wasm/src/lib.rs` and `encode.rs`.
+
+**Result.** `RunOutput` has a `meta` getter and a `take_data()` method. `meta` is JSON:
+
+```json
+{ "type": "tran", "source": null, "points": 501,
+  "signals": [ { "name": "out", "kind": "v" }, { "name": "V1", "kind": "i" } ] }
+```
+
+`type` is `op`, `dc`, `ac` or `tran`. `source` is the swept source of a DC sweep and `null` otherwise. `kind` is `v` for a node voltage and `i` for a branch current. `take_data()` moves the data out as one flat `Float64Array`:
+
+- The axis comes first: `points` values (sweep values, frequencies or times). An operating point has no axis.
+- Then each signal in `signals` order, node voltages before branch currents, each group in name order. A signal has `points` real values and, for AC only, `points` imaginary values right after them.
+- The total length is `axis + signals × points × (2 for ac, otherwise 1)`. `decodeResult` in `apps/web/src/engine/results.ts` checks it and returns views of the buffer.
+
+**Errors.** On failure `run` throws a string that holds JSON: `{ "message": "…", "elements": ["V1", "V2"], "nodes": ["N001"] }`. `elements` and `nodes` name the circuit objects the engine blames, sorted and without duplicates. Errors without a location (parse errors, invalid input) have empty lists. The frontend maps them back to schematic items (`simulation/errorTargets.ts`).
+
+**Worker protocol.** `apps/web/src/engine/engine.worker.ts` is a long-lived module worker that calls `init()` once. Requests are `{ type: "version", id }` and `{ type: "run", id, netlist, analysisIndex }`. Responses carry the same `id`: `version`, `progress` (`fraction`), `result` (`meta` and `data`) or `error` (the raw thrown value). The `data` buffer is transferred to the main thread, not copied. `EngineClient` (`client.ts`) runs one analysis at a time and creates the worker on first use.
+
+**Cancel** is terminate and respawn: `EngineClient.cancel()` terminates the worker and rejects the pending run with `CancelledError`, and the next run starts a fresh worker. There is no `SharedArrayBuffer`, so no cross-origin isolation headers are needed. GitHub Pages can't set those headers anyway ([ADR 0010](adr/0010-github-pages-hosting.md)).
 
 ## 6. Frontend (`apps/web`)
 
@@ -251,7 +267,14 @@ Drawn from scratch as SVG, IEC 60617 style, pins on grid ([ADR 0007](adr/0007-ie
 
 ### 6.4 Waveform viewer
 
-uPlot. Click a net to probe its voltage; click a two-terminal part to probe its current. Transient and DC sweep use linear axes. AC shows magnitude (dB) and phase (degrees) against log frequency. Cursors give readouts and deltas.
+The code is in `apps/web/src/waveform/` and `apps/web/src/simulation/`. The run bar above the results picks an analysis, runs or cancels it, and shows a progress bar and a status ("Running…", "Done", "Out of date, run again", or the engine error). The Analyses panel in the inspector (shown when nothing is selected) edits the analyses and options of the project.
+
+- **Probes.** The Probe tool (`P`) adds a signal: a click on a wire or net label probes the net voltage, and a click on a part probes its current. A signal can also be added from the Signal list in the results panel. Each probe is a chip with a color and a remove button. After a run that has no matching probes, the first node voltage is probed (not for an operating point).
+- **Derived resistor currents.** The engine reports no branch current for resistors. `withDerivedCurrents` adds `I(R)` as `(V(n+) - V(n-)) / R` for each resistor, positive from the first node through the resistor to the second.
+- **Plots.** uPlot draws thin traces. Transient and DC sweep use one plot with a linear x axis (time, or the swept source name). AC shows two plots, magnitude in dB and phase in degrees, against log frequency.
+- **Cursors.** Click the plot to set cursor A and Shift+click to set cursor B, or type a value in the Cursor A and Cursor B inputs (value notation, for example `1m`). The readout table shows each probe at A, at B and the difference, plus Δx and 1/Δx. Values are interpolated between samples and formatted with `formatQuantity` (4 significant digits and an engineering suffix, for example `632.1 mV`); AC rows are in dB and degrees.
+- **Operating point.** The result is drawn on the schematic as a voltage tag at each net, and the inspector of a selected part lists its current and pin voltages. The results panel also has a table of all operating-point signals. Tags and values dim when the schematic or settings changed after the run.
+- **Errors.** A failed run lists the engine message in the status and marks the involved parts, wires and labels with the `sim-error` class (red on the canvas).
 
 ## 7. Project file (`.nodal.json`)
 
@@ -276,4 +299,5 @@ A migration maps one version to the next. A file at version v goes through the m
 | Deployed shell and editor | Playwright (from M0, editor from M5a) | The production build served under `/Nodal/` loads the worker and `.wasm` and shows the engine version. The editor places a resistor and a ground, wires them, makes a junction dot and undoes it. |
 | Reference schematics | Vitest (`reference.test.ts`) | Loads each of the 31 schematics in `validation/schematics/`, requires zero diagnostics and compares the netlist with the reference IR. |
 | Project round trip | Playwright (from M5b) | Opens `A1.nodal.json`, edits R1 to `2k`, reloads the page (autosave) and exports a file that contains the edit. A file with an unsupported `formatVersion` reports an error and leaves the canvas unchanged. |
-| End to end | Playwright (from M6) | Draw an RC circuit, run transient, check a probed value. |
+| Engine parity | Vitest (`parity.test.ts`) | The wasm engine run through the worker protocol gives T1-trap, T1-gear and A1 results bit-identical to the CLI (maximum relative difference 0). |
+| Simulation end to end | Playwright (`simulate.spec.ts`, M6) | On Chromium and Firefox with the production build: draw a divider and read its operating-point tags; run T1-trap, probe `out` and read `632.1 mV` at 1 ms; run A1 and read about −3.01 dB at 159.155 Hz on the Bode pair; run the N1 sweep; cancel a long transient and run again; show a source-loop error on both sources. |
