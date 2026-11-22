@@ -31,6 +31,7 @@ export function Inspector() {
         </>
       ) : (
         <>
+          <h2 className="nodal-visually-hidden">Project</h2>
           {selection.length > 1 ? <p>{String(selection.length)} items selected</p> : null}
           <ProjectFields />
           <ModelEditor />

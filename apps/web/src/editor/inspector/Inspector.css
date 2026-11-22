@@ -78,3 +78,14 @@
 [aria-label="Operating point"][data-stale="true"] {
   opacity: var(--opacity-stale);
 }
+
+/* The checkbox is 13 px; its label row is at least one control tall (WCAG 2.5.8) and clear of the Remove button. */
+.nodal-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--control-height);
+  min-width: var(--control-height);
+  margin-bottom: var(--space-1);
+  cursor: pointer;
+}

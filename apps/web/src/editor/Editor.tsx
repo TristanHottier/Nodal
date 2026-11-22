@@ -23,7 +23,7 @@ import "./Editor.css";
 function StatusBar({ status }: { status?: ReactNode }) {
   const message = useEditor((s) => s.statusMessage);
   return (
-    <div className="nodal-status">
+    <footer className="nodal-status">
       <strong>Nodal</strong> {status}
       {message === null ? null : (
         <>
@@ -32,7 +32,7 @@ function StatusBar({ status }: { status?: ReactNode }) {
         </>
       )}
       <ThemeSelect />
-    </div>
+    </footer>
   );
 }
 
@@ -49,9 +49,10 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
   return (
     <div className="nodal-editor nodal-editor-readonly">
       <NarrowNotice />
-      <div className="nodal-canvas-pane">
+      <main className="nodal-canvas-pane">
+        <h1 className="nodal-visually-hidden">Nodal</h1>
         <Canvas readOnly />
-      </div>
+      </main>
       <StatusBar status={status} />
     </div>
   );
@@ -75,14 +76,15 @@ function EditorBody({ status }: { status?: ReactNode }) {
   return (
     <div className="nodal-editor">
       <Palette />
-      <div className="nodal-canvas-pane">
+      <main className="nodal-canvas-pane">
+        <h1 className="nodal-visually-hidden">Nodal</h1>
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
-      </div>
+      </main>
       <Inspector />
-      <div className="nodal-results">
+      <section className="nodal-results" aria-label="Results">
         <RunBar />
         <WaveformPanel />
-      </div>
+      </section>
       <StatusBar status={status} />
     </div>
   );

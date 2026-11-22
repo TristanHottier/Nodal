@@ -28,7 +28,7 @@
   --color-focus: oklch(0.5 0.17 258);
   /* Semantic (exempt from 60/30/10) */
   --color-error: oklch(0.52 0.2 27);
-  --color-warning: oklch(0.56 0.12 70);
+  --color-warning: oklch(0.52 0.1 70);
   --color-success: oklch(0.52 0.12 150);
   --color-op-tag: oklch(0.46 0.075 195);
   /* Brand mark: cyan to mint, outside the 60/30/10 split (ADR 0012) */

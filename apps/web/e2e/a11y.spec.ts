@@ -51,6 +51,29 @@ test("the read-only view below 1024 px has no axe violations", async ({ page }) 
   expect(await scan(page), "read-only view").toEqual([]);
 });
 
+test("the page has one main landmark, one h1 and ordered headings", async ({ page }) => {
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  const { violations } = await new AxeBuilder({ page })
+    .withRules(["landmark-one-main", "page-has-heading-one", "region", "heading-order"])
+    .analyze();
+  expect(violations.map((v) => v.id)).toEqual([]);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nodal");
+});
+
+test("the uic checkbox with its label is at least 24x24 px", async ({ page }) => {
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  const box = await page.locator("label.nodal-check").first().boundingBox();
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(24);
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(24);
+});
+
 test("Tab reaches every button, select, input and the canvas, each with a visible outline", async ({
   page,
 }) => {

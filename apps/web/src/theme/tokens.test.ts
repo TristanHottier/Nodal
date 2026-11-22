@@ -18,7 +18,13 @@ const css = readFileSync(fileURLToPath(new URL("./tokens.css", import.meta.url))
 const themes = parseTokens(css);
 
 const TEXT_ON = ["--color-canvas", "--color-panel", "--color-panel-raised"];
-const TEXT = ["--color-text", "--color-text-muted", "--color-error", "--color-op-tag"];
+const TEXT = [
+  "--color-text",
+  "--color-text-muted",
+  "--color-error",
+  "--color-warning",
+  "--color-op-tag",
+];
 const UI = ["--color-accent", "--color-focus", "--color-border-strong", "--color-ink"];
 const TRACES = [1, 2, 3, 4, 5, 6].map((n) => `--color-trace-${String(n)}`);
 const BRAND = ["--color-brand-1", "--color-brand-2"];
@@ -73,7 +79,7 @@ describe("tokens.css", () => {
         for (const bg of ["--color-canvas", "--color-panel"])
           for (const fg of BRAND) expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
         // The ring sits --focus-offset outside the control, so it meets the panel, not the accent fill.
-        for (const fg of ["--color-warning", "--color-success"])
+        for (const fg of ["--color-success"])
           expect(ratio(fg, "--color-panel"), fg).toBeGreaterThanOrEqual(3);
         for (const fg of [...TRACES, ...CURSORS])
           expect(ratio(fg, "--color-plot-bg"), fg).toBeGreaterThanOrEqual(3);

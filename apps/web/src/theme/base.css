@@ -75,6 +75,19 @@ h3 {
   line-height: var(--leading-tight);
 }
 
+/* Text for assistive technology only; takes no space and does not move the layout. */
+.nodal-visually-hidden {
+  position: absolute;
+  width: var(--border-width);
+  height: var(--border-width);
+  margin: calc(-1 * var(--border-width));
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
 .nodal-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;

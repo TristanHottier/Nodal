@@ -172,7 +172,7 @@ export function AnalysisFields({ analysis: a, sources, onChange }: Props) {
               onChange={(e) => {
                 onChange({ ...a, uic: e.target.checked });
               }}
-            />{" "}
+            />
             uic
           </label>
         </>
