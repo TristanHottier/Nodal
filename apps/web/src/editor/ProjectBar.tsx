@@ -12,8 +12,13 @@ export function ProjectBar() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const mayReplace = (): boolean => {
-    const { doc } = store.getState();
-    const empty = doc.parts.length === 0 && doc.wires.length === 0 && doc.labels.length === 0;
+    const { doc, project } = store.getState();
+    const empty =
+      doc.parts.length === 0 &&
+      doc.wires.length === 0 &&
+      doc.labels.length === 0 &&
+      project.models.length === 0 &&
+      project.name === "Untitled";
     return empty || window.confirm(CONFIRM);
   };
 

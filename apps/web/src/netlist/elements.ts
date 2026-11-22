@@ -113,7 +113,7 @@ function checkName(part: Part, kind: string, ctx: ElementContext): boolean {
   ctx.report({
     severity: "error",
     code: "bad-name",
-    message: `part name "${part.name}" must start with ${kind} and use only letters, digits and underscore`,
+    message: `Part name "${part.name}" must start with ${kind} and use only letters, digits and underscore`,
     itemIds: [part.id],
   });
   return false;

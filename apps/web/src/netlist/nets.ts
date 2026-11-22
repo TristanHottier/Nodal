@@ -35,10 +35,11 @@ export interface NetResult {
 const key = (p: Point): string => `${String(p.x)},${String(p.y)}`;
 const lower = (s: string): string => s.toLowerCase();
 
-function labelProblem(text: string): string | undefined {
+/** What is wrong with a label text, as a phrase that follows "Label", or null. */
+export function labelProblem(text: string): string | null {
   if (!nodeNameRegex.test(text)) return "must use only letters, digits and underscore";
   if (text === "0" || lower(text) === "gnd") return "is reserved for ground";
-  return undefined;
+  return null;
 }
 
 /** Generated name: N001 ... N999, then N1000 and up. */
@@ -95,11 +96,11 @@ export function buildNets(doc: Schematic): NetResult {
   const validLabels: number[] = [];
   doc.labels.forEach((l, i) => {
     const problem = labelProblem(l.text);
-    if (problem !== undefined) {
+    if (problem !== null) {
       diagnostics.push({
         severity: "error",
         code: "bad-label",
-        message: `label "${l.text}" ${problem}`,
+        message: `Label "${l.text}" ${problem}`,
         itemIds: [l.id],
       });
       return;
@@ -133,7 +134,7 @@ export function buildNets(doc: Schematic): NetResult {
         diagnostics.push({
           severity: "error",
           code: "label-conflict",
-          message: `net label ${texts.join(", ")} is on the ground net`,
+          message: `Net label ${texts.join(", ")} is on the ground net`,
           itemIds,
         });
       }
@@ -143,7 +144,7 @@ export function buildNets(doc: Schematic): NetResult {
         diagnostics.push({
           severity: "error",
           code: "label-conflict",
-          message: `one net carries different labels: ${texts.join(", ")}`,
+          message: `One net carries different labels: ${texts.join(", ")}`,
           itemIds,
         });
       }

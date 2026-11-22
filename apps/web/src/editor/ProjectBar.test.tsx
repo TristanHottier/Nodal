@@ -115,4 +115,21 @@ describe("ProjectBar", () => {
     const blob = createObjectURL.mock.calls[0]?.[0];
     expect(blob?.size).toBeGreaterThan(0);
   });
+  it("models_alone_count_as_content", () => {
+    setup(false);
+    store.getState().setModels([{ name: "DM", type: "D", params: {} }]);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    fireEvent.click(screen.getByRole("button", { name: "New" }));
+    expect(confirm).toHaveBeenCalledWith(MSG);
+    expect(store.getState().project.models).toHaveLength(1);
+  });
+
+  it("a_renamed_project_counts_as_content", () => {
+    setup(false);
+    store.getState().setProjectName("My circuit");
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    fireEvent.click(screen.getByRole("button", { name: "New" }));
+    expect(confirm).toHaveBeenCalledWith(MSG);
+    expect(store.getState().project.name).toBe("My circuit");
+  });
 });

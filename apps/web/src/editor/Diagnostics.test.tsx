@@ -45,7 +45,7 @@ describe("Diagnostics", () => {
     );
     const rows = within(screen.getByRole("list")).getAllByRole("button");
     expect(rows.map((b) => [b.getAttribute("data-severity"), b.textContent])).toEqual([
-      ["error", "✖the schematic has no ground symbol"],
+      ["error", "✖The schematic has no ground symbol"],
       ["warning", "⚠R1 is not connected to anything"],
     ]);
     expect(screen.getByRole("button", { name: "R1 is not connected to anything" })).toBe(rows[1]);

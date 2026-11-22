@@ -164,7 +164,7 @@ export function PartFields({ part }: { part: Part }) {
             {...(f.unit ? { unit: f.unit } : {})}
             validate={(t) => numberError(part, f, t)}
             {...(f.kind === "number" && defaultOf(part, f) !== ""
-              ? { hint: `Empty uses the default (${defaultOf(part, f)})` }
+              ? { emptyHint: `Empty uses the default (${defaultOf(part, f)})` }
               : {})}
             onCommit={(t) => {
               setParam(f.key, t);

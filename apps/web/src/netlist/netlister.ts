@@ -29,7 +29,7 @@ function convertModels(project: Project, diagnostics: Diagnostic[]) {
         diagnostics.push({
           severity: "error",
           code: "invalid-model",
-          message: `model ${m.name} ${key}: ${r.error}`,
+          message: `Model ${m.name} ${key}: ${r.error}`,
           itemIds: [],
         });
       }
@@ -65,7 +65,7 @@ function checkDuplicates(named: { part: Part; element: RawElement }[], out: Diag
     out.push({
       severity: "error",
       code: "duplicate-name",
-      message: `duplicate element name ignoring case: ${parts.map(irName).join(", ")}`,
+      message: `Duplicate element name ignoring case: ${parts.map(irName).join(", ")}`,
       itemIds: parts.map((p) => p.id).sort(),
     });
   }
@@ -146,12 +146,12 @@ export function projectToNetlist(project: Project): NetlistResult {
     diagnostics.push({
       severity: "error",
       code: "no-ground",
-      message: "the schematic has no ground symbol",
+      message: "The schematic has no ground symbol",
       itemIds: [],
     });
   }
   for (const { part, element } of named) {
-    if (element.kind === "Q" || element.kind === "M") continue;
+    if (element.kind === "Q" || element.kind === "M" || part.type === "opamp") continue;
     if (element.nodes[0] === element.nodes[1]) {
       diagnostics.push({
         severity: "error",

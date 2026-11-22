@@ -18,8 +18,8 @@ const CSS = `
 .nodal-palette button { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font: inherit; text-align: left; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
 .nodal-palette button:hover { background: #e2e8f0; }
 .nodal-palette button[aria-pressed="true"] { background: #dbeafe; border-color: #2563eb; }
-.nodal-projectbar { display: flex; gap: 4px; }
-.nodal-projectbar button { flex: 1; justify-content: center; }
+.nodal-projectbar { display: flex; flex-wrap: wrap; gap: 4px; }
+.nodal-projectbar button { flex: 1 0 auto; justify-content: center; padding: 3px 4px; white-space: nowrap; }
 .nodal-palette hr { width: 100%; border: 0; border-top: 1px solid #e5e7eb; margin: 4px 0; }
 .nodal-canvas-pane { grid-row: 1; grid-column: 2; min-width: 0; min-height: 0; }
 .nodal-status { grid-row: 2; grid-column: 1 / span 3; padding: 4px 10px; font-size: 12px; border-top: 1px solid #e5e7eb; background: #f8fafc; }

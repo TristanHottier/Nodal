@@ -173,7 +173,13 @@ describe("Inspector", () => {
     fireEvent.blur(el);
     expect(store.getState().doc.labels[0]?.text).toBe("OUT");
     type("Text", "a b");
-    expect(screen.getByRole("alert").textContent).toBe("Use letters, digits and _");
+    expect(screen.getByRole("alert").textContent).toBe(
+      "Label must use only letters, digits and underscore",
+    );
+    type("Text", "GnD");
+    expect(screen.getByRole("alert").textContent).toBe("Label is reserved for ground");
+    type("Text", "0");
+    expect(screen.getByRole("alert").textContent).toBe("Label is reserved for ground");
     const empty = type("Text", "");
     fireEvent.blur(empty);
     expect(store.getState().doc.labels[0]?.text).toBe("OUT");
@@ -317,5 +323,13 @@ describe("Inspector", () => {
     expect(screen.getByRole("alert").textContent).toBe("Must be > 0");
     type("Value", "2k");
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+  it("default_hint_shows_only_while_the_field_is_empty", () => {
+    setup([part("p1", "resistor", "R1")], ["p1"]);
+    expect(screen.queryByText(/Empty uses the default/)).toBeNull();
+    type("Value", "");
+    expect(screen.getByText("Empty uses the default (1k)")).toBeTruthy();
+    type("Value", "2k");
+    expect(screen.queryByText(/Empty uses the default/)).toBeNull();
   });
 });

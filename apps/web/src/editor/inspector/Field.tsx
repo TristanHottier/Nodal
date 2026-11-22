@@ -9,6 +9,8 @@ export interface FieldProps {
   unit?: string;
   placeholder?: string;
   hint?: string;
+  /** Shown only while the field is empty. */
+  emptyHint?: string;
   multiline?: boolean;
   /** Error for the displayed text, computed live. */
   validate?: (text: string) => string | null;
@@ -26,6 +28,7 @@ export function Field({
   unit,
   placeholder,
   hint,
+  emptyHint,
   multiline,
   validate,
   onCommit,
@@ -54,6 +57,7 @@ export function Field({
   );
   const hintId = useId();
   const shown = draft ?? value;
+  const hintText = hint ?? (shown.trim() === "" ? emptyHint : undefined);
   const error = rejected ?? validate?.(shown) ?? null;
 
   const commit = () => {
@@ -65,7 +69,7 @@ export function Field({
   const common = {
     "aria-label": label,
     "aria-invalid": error !== null,
-    "aria-describedby": hint ? hintId : undefined,
+    "aria-describedby": hintText ? hintId : undefined,
     value: shown,
     placeholder,
     onChange: (e: { target: { value: string } }) => {
@@ -93,9 +97,9 @@ export function Field({
         {multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />}
         {unit ? <span className="nodal-unit">{unit}</span> : null}
       </div>
-      {hint ? (
+      {hintText ? (
         <small id={hintId} className="nodal-hint">
-          {hint}
+          {hintText}
         </small>
       ) : null}
       {error ? (

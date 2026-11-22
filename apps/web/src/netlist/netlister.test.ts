@@ -1,6 +1,7 @@
 import { optionsSchema, parseNetlist, type Project } from "@nodal/schema";
 import { describe, expect, it } from "vitest";
 import l1Json from "../../../../validation/circuits/L1.json?raw";
+import { pinPositions } from "../editor/geometry";
 import { compareNetlists } from "./equivalence";
 import { projectToNetlist } from "./netlister";
 import { emptyDoc, label, pt, put, putAll, putTagged, project, wire } from "./testDoc";
@@ -220,7 +221,7 @@ describe("projectToNetlist", () => {
     p.models = [{ name: "DM", type: "D", params: { IS: "1x" } }];
     const r = projectToNetlist(p);
     expect(r.diagnostics.map((x) => [x.code, x.message])).toEqual([
-      ["invalid-model", "model DM IS: not a number: 1x"],
+      ["invalid-model", "Model DM IS: not a number: 1x"],
     ]);
   });
 
@@ -433,5 +434,46 @@ describe("projectToNetlist", () => {
       expect(bad[0]?.message).toContain("model DM");
       expect(bad[0]?.message).not.toMatch(/models\.\d/);
     });
+  });
+  it("opamp_with_grounded_output_is_not_a_shorted_element", () => {
+    let d = putTagged(
+      emptyDoc(),
+      "opamp",
+      pt(0, 0),
+      { inn: "a", inp: "b" },
+      { name: "U1", id: "u" },
+    ).doc;
+    d = put(d, "ground", pt(0, 40)).doc;
+    const op = d.parts.find((x) => x.id === "u");
+    const out = op && pinPositions(op).find((q) => q.name === "out");
+    if (!out) throw new Error("pin missing");
+    d = put(d, "ground", out.at, { id: "g2" }).doc;
+    expect(codes(project(d))).not.toContain("shorted-element");
+  });
+
+  it("messages_start_with_a_capital_letter", () => {
+    const messages: string[] = [];
+    const collect = (p: Project) => {
+      messages.push(...projectToNetlist(p).diagnostics.map((x) => x.message));
+    };
+    collect(project(put(emptyDoc(), "resistor", pt(0, 0)).doc));
+    let d = putTagged(
+      emptyDoc(),
+      "resistor",
+      pt(0, 0),
+      { "1": "a", "2": "gnd" },
+      { name: "X1" },
+    ).doc;
+    d = putTagged(d, "resistor", pt(20, 0), { "1": "a", "2": "b" }, { name: "R7" }).doc;
+    d = putTagged(d, "resistor", pt(40, 0), { "1": "a", "2": "b" }, { name: "r7" }).doc;
+    d = label(d, pt(0, 40), "p");
+    d = label(d, pt(0, 40), "q");
+    d = put(d, "ground", pt(0, 60)).doc;
+    d = label(d, pt(0, 60), "Z");
+    const p = project(d);
+    p.models = [{ name: "DM", type: "D", params: { IS: "1x" } }];
+    collect(p);
+    expect(messages.length).toBeGreaterThanOrEqual(5);
+    for (const m of messages) expect(m).toMatch(/^[A-Z]/);
   });
 });
