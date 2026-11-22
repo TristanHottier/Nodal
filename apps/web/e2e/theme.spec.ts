@@ -20,7 +20,7 @@ async function recordAtDomReady(page: Page) {
   });
 }
 
-async function lightCanvas(browser: Browser): Promise<string | null> {
+async function lightCanvas(browser: Browser): Promise<string | null | undefined> {
   const context = await browser.newContext({ colorScheme: "light" });
   const page = await context.newPage();
   await recordAtDomReady(page);

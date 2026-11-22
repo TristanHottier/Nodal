@@ -134,7 +134,7 @@ describe("Editor below 1024 px", () => {
     sim.getState().setCursors("tran", { a: 0.5, b: null });
     flip(false);
     flip(true);
-    expect((screen.getByLabelText("Analysis to run") as HTMLSelectElement).value).toBe("1");
+    expect(screen.getByLabelText<HTMLSelectElement>("Analysis to run").value).toBe("1");
     expect(sim.getState().cursors.cursors.a).toBe(0.5);
   });
 
