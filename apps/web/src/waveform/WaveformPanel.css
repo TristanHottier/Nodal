@@ -118,6 +118,13 @@
   vertical-align: baseline;
 }
 
-.nodal-waveform[data-stale="true"] {
+/* Stale results: dim the plots and mark the values (muted and italic). Controls, labels and
+   chips stay at full contrast because the user can still operate them. */
+.nodal-waveform[data-stale="true"] .nodal-plot {
   opacity: var(--opacity-stale);
+}
+
+.nodal-waveform[data-stale="true"] td.nodal-num {
+  font-style: italic;
+  color: var(--color-text-muted);
 }

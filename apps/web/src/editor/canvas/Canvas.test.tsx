@@ -394,6 +394,40 @@ describe("Canvas", () => {
       expect(screen.getByTestId("wire-wC").getAttribute("class")).toContain("probed");
     });
 
+    it("probed_wire_colors_go_when_the_results_are_stale", () => {
+      cleanup();
+      const sim = createSimulationStore({ runner: fakeRunner() });
+      const editor = createEditorStore({ doc: DOC });
+      render(
+        <EditorProvider store={editor}>
+          <SimulationProvider store={sim}>
+            <Canvas />
+          </SimulationProvider>
+        </EditorProvider>,
+      );
+      act(() => {
+        sim.setState({
+          status: { kind: "done" },
+          result: { type: "op", axis: new Float64Array(0), signals: [] },
+          ranDoc: editor.getState().doc,
+          ranSimulation: editor.getState().project.simulation,
+          probes: ["V(in)"],
+          map: {
+            partOfElement: new Map(),
+            netOfPin: new Map(),
+            netOfWire: new Map([["wA", "in"]]),
+            netOfLabel: new Map(),
+          },
+        });
+      });
+      expect(screen.getByTestId("wire-wA").getAttribute("class")).toContain("probed");
+      const doc = editor.getState().doc;
+      act(() => {
+        editor.getState().commit({ ...doc, labels: [...doc.labels] });
+      });
+      expect(screen.getByTestId("wire-wA").getAttribute("class")).not.toContain("probed");
+    });
+
     it("selected_wire_keeps_both_classes", () => {
       mount("wB");
       const cls = screen.getByTestId("wire-wB").getAttribute("class") ?? "";

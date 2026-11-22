@@ -55,22 +55,30 @@ export function useErrorIds(): Set<string> {
   return ids;
 }
 
-/** Trace color slot of each wire on a probed net. Empty outside a provider. */
+/** Trace color slot of each wire on a probed net. Empty outside a provider and while results are stale. */
 export function useProbeSlots(): ReadonlyMap<string, number> {
   const store = useContext(SimulationContext) ?? NO_RESULT;
   const map = useStore(store, (s) => s.map);
   const probes = useStore(store, (s) => s.probes);
-  return useMemo(() => wireProbeSlots(map, probes), [map, probes]);
+  // After an edit the last run's net map can name the wrong wires, so the colors go with it.
+  const stale = useStaleOf(store);
+  return useMemo(() => (stale ? NO_SLOTS : wireProbeSlots(map, probes)), [map, probes, stale]);
+}
+
+const NO_SLOTS: ReadonlyMap<string, number> = new Map();
+
+function useStaleOf(store: StoreApi<SimulationState>): boolean {
+  const ranDoc = useStore(store, (s) => s.ranDoc);
+  const ranSimulation = useStore(store, (s) => s.ranSimulation);
+  const hasResult = useStore(store, (s) => s.result !== null);
+  const doc = useEditor((s) => s.doc);
+  const simulation = useEditor((s) => s.project.simulation);
+  return hasResult && (doc !== ranDoc || simulation !== ranSimulation);
 }
 
 /** True when a result exists and the schematic or simulation settings changed since it ran. */
 export function useResultsStale(): boolean {
-  const ranDoc = useSimulation((s) => s.ranDoc);
-  const ranSimulation = useSimulation((s) => s.ranSimulation);
-  const hasResult = useSimulation((s) => s.result !== null);
-  const doc = useEditor((s) => s.doc);
-  const simulation = useEditor((s) => s.project.simulation);
-  return hasResult && (doc !== ranDoc || simulation !== ranSimulation);
+  return useStaleOf(useSimulationStore());
 }
 
 /** What the schematic and inspector need to show operating-point values. */

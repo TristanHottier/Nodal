@@ -44,6 +44,45 @@ for (const theme of ["light", "dark"] as const) {
   });
 }
 
+for (const theme of ["light", "dark"] as const) {
+  test(`axe finds no violations in the stale state, ${theme} theme`, async ({ page }) => {
+    await page.goto("./");
+    await page.getByLabel("Theme").selectOption(theme);
+    await page.getByLabel("Open example").selectOption("ce-amplifier");
+    const parts = page.locator('[data-testid^="part-"]');
+    await expect(parts.first()).toBeVisible();
+    const status = page.locator(".nodal-runbar").getByRole("status");
+    const run = page.getByRole("button", { name: "Run", exact: true });
+
+    // Operating point: the op tags, the part's operating-point values and the op table go stale.
+    await run.click();
+    await expect(status).toHaveText("Done");
+    await parts.first().click();
+    await page.keyboard.press("r");
+    await expect(status).toHaveText("Out of date, run again");
+    await expect(page.locator(".nodal-op-tags")).toHaveAttribute("data-stale", "true");
+    expect(await scan(page), "stale operating point").toEqual([]);
+
+    // AC sweep: the plots, chips, cursor inputs and readout go stale.
+    await page.getByLabel("Analysis to run").selectOption({ index: 1 });
+    await run.click();
+    await expect(status).toHaveText("Done");
+    await expect(page.getByTestId("waveform-panel").getByTestId("plot")).toHaveCount(2);
+    await page.keyboard.press("r");
+    await expect(status).toHaveText("Out of date, run again");
+    await expect(page.getByTestId("waveform-panel")).toHaveAttribute("data-stale", "true");
+    const stale = await new AxeBuilder({ page })
+      .include('[data-testid="waveform-panel"]')
+      .include(".nodal-inspector")
+      .withTags(TAGS)
+      .analyze();
+    expect(
+      stale.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) })),
+      "stale waveform panel and inspector",
+    ).toEqual([]);
+  });
+}
+
 test("the read-only view below 1024 px has no axe violations", async ({ page }) => {
   await page.setViewportSize({ width: 800, height: 700 });
   await page.goto("./");

@@ -75,8 +75,10 @@
   background: var(--color-panel-raised);
 }
 
-[aria-label="Operating point"][data-stale="true"] {
-  opacity: var(--opacity-stale);
+/* Stale operating-point values: muted and italic, still readable (4.5:1). */
+.nodal-inspector section[data-stale="true"] .nodal-num {
+  font-style: italic;
+  color: var(--color-text-muted);
 }
 
 /* The checkbox is 13 px; its label row is at least one control tall (WCAG 2.5.8) and clear of the Remove button. */
