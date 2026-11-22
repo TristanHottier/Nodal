@@ -1,6 +1,7 @@
 import { newProject, serializeProject } from "@nodal/schema";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EXAMPLES } from "../examples";
 import { emptyDoc, put, pt } from "../netlist/testDoc";
 import { Editor } from "./Editor";
 import { makeStore, type Store } from "./testUtils";
@@ -131,5 +132,41 @@ describe("ProjectBar", () => {
     fireEvent.click(screen.getByRole("button", { name: "New" }));
     expect(confirm).toHaveBeenCalledWith(MSG);
     expect(store.getState().project.name).toBe("My circuit");
+  });
+
+  it("lists_examples_in_order", () => {
+    setup(false);
+    const select = screen.getByRole("combobox", { name: "Open example" });
+    const options = Array.from(select.querySelectorAll("option"));
+    expect(options.map((o) => o.textContent)).toEqual([
+      "Examples…",
+      ...EXAMPLES.map((x) => x.title),
+    ]);
+    expect(options[0]?.disabled).toBe(true);
+    expect(options[1]?.title).toBe(EXAMPLES[0]?.summary);
+  });
+
+  it("opens_example", () => {
+    setup(false);
+    store.getState().setStatusMessage("old");
+    const select = screen.getByRole<HTMLSelectElement>("combobox", { name: "Open example" });
+    const ex = EXAMPLES[1];
+    if (!ex) throw new Error("no example");
+    fireEvent.change(select, { target: { value: ex.id } });
+    expect(store.getState().project.name).toBe(ex.load().name);
+    expect(store.getState().doc.parts.length).toBeGreaterThan(0);
+    expect(store.getState().statusMessage).toBeNull();
+    expect(select.value).toBe("");
+  });
+
+  it("example_asks_before_replacing", () => {
+    setup(true);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const select = screen.getByRole<HTMLSelectElement>("combobox", { name: "Open example" });
+    fireEvent.change(select, { target: { value: "divider" } });
+    expect(confirm).toHaveBeenCalledWith(MSG);
+    expect(store.getState().project.name).toBe("Untitled");
+    expect(store.getState().doc.parts).toHaveLength(1);
+    expect(select.value).toBe("");
   });
 });

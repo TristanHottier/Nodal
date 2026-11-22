@@ -1,6 +1,7 @@
 // New, Open… and Save as… for `.nodal.json` files, shown above the tools.
 import { newProject } from "@nodal/schema";
 import { useRef } from "react";
+import { EXAMPLES } from "../examples";
 import { downloadProject, readProjectFile } from "../storage/files";
 import { useEditorStore } from "./EditorContext";
 import { keepFocus } from "./keepFocus";
@@ -69,6 +70,27 @@ export function ProjectBar() {
       >
         Save as…
       </button>
+      <select
+        aria-label="Open example"
+        value=""
+        onChange={(e) => {
+          const example = EXAMPLES.find((x) => x.id === e.currentTarget.value);
+          e.currentTarget.value = "";
+          if (!example || !mayReplace()) return;
+          const s = store.getState();
+          s.loadProject(example.load());
+          s.setStatusMessage(null);
+        }}
+      >
+        <option value="" disabled>
+          Examples…
+        </option>
+        {EXAMPLES.map((x) => (
+          <option key={x.id} value={x.id} title={x.summary}>
+            {x.title}
+          </option>
+        ))}
+      </select>
       <input
         ref={fileInput}
         type="file"
