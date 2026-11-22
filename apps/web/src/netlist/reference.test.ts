@@ -29,6 +29,16 @@ const schematics = read(
   ".nodal.json",
 );
 
+/** Sorted node names used by the elements, ground excluded. */
+function nodeNames(
+  elements: readonly { nodes: readonly string[]; controlNodes?: readonly string[] }[],
+): string[] {
+  const names = new Set<string>();
+  for (const e of elements) for (const n of [...e.nodes, ...(e.controlNodes ?? [])]) names.add(n);
+  names.delete("0");
+  return [...names].sort();
+}
+
 describe("reference schematics", () => {
   it.each([...schematics.keys()].sort())("%s_netlists_to_its_reference", (id) => {
     const referenceText = references.get(id);
@@ -46,8 +56,22 @@ describe("reference schematics", () => {
     const reference = parseNetlist(JSON.parse(referenceText ?? "null"));
     if (!reference.ok) throw new Error(`${id} reference: ${reference.issues.join("; ")}`);
     expect(compareNetlists(ir, reference.value), `${id} differences`).toEqual([]);
+    expect(ir.title, `${id} title`).toBe(reference.value.title);
+    expect(nodeNames(ir.elements), `${id} node names`).toEqual(nodeNames(reference.value.elements));
   });
 
-  // Task 9 turns this into a real check once every reference circuit has a schematic.
-  it.todo("every_reference_circuit_has_a_schematic");
+  it("every_reference_circuit_has_a_schematic", () => {
+    const referenceIds = [...references.keys()].sort();
+    const schematicIds = [...schematics.keys()].sort();
+    expect(referenceIds).toHaveLength(31);
+    expect(
+      referenceIds.filter((id) => !schematics.has(id)),
+      "reference circuits without a schematic",
+    ).toEqual([]);
+    expect(
+      schematicIds.filter((id) => !references.has(id)),
+      "schematics without a reference circuit",
+    ).toEqual([]);
+    expect(schematicIds).toEqual(referenceIds);
+  });
 });

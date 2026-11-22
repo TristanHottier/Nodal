@@ -1,0 +1,339 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "A4 inverting op-amp with feedback RC",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VS",
+        "type": "vsource",
+        "name": "VS",
+        "x": 8,
+        "y": 24,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "acMag": "1",
+          "acPhase": "0"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RIN",
+        "type": "resistor",
+        "name": "RIN",
+        "x": 16,
+        "y": 21,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-RF",
+        "type": "resistor",
+        "name": "RF",
+        "x": 38,
+        "y": 12,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-CF",
+        "type": "capacitor",
+        "name": "CF",
+        "x": 38,
+        "y": 6,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1n"
+        }
+      },
+      {
+        "id": "p-E1",
+        "type": "vcvs",
+        "name": "E1",
+        "x": 40,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "1e6"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 40,
+        "y": 31,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RL",
+        "type": "resistor",
+        "name": "RL",
+        "x": 54,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 54,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 34,
+        "y": 26,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 21
+          },
+          {
+            "x": 13,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 10,
+            "y": 21
+          },
+          {
+            "x": 10,
+            "y": 18
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 19,
+            "y": 21
+          },
+          {
+            "x": 28,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 28,
+            "y": 6
+          },
+          {
+            "x": 28,
+            "y": 30
+          },
+          {
+            "x": 36,
+            "y": 30
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 28,
+            "y": 12
+          },
+          {
+            "x": 35,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 28,
+            "y": 6
+          },
+          {
+            "x": 35,
+            "y": 6
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 28,
+            "y": 9
+          },
+          {
+            "x": 31,
+            "y": 9
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 36,
+            "y": 26
+          },
+          {
+            "x": 34,
+            "y": 26
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 41,
+            "y": 12
+          },
+          {
+            "x": 48,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 41,
+            "y": 6
+          },
+          {
+            "x": 48,
+            "y": 6
+          },
+          {
+            "x": 48,
+            "y": 22
+          },
+          {
+            "x": 54,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 40,
+            "y": 25
+          },
+          {
+            "x": 40,
+            "y": 22
+          },
+          {
+            "x": 48,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 51,
+            "y": 22
+          },
+          {
+            "x": 51,
+            "y": 19
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 10,
+        "y": 18,
+        "rotation": 0
+      },
+      {
+        "id": "l-inm",
+        "text": "inm",
+        "x": 31,
+        "y": 9,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 51,
+        "y": 19,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "ac",
+        "sweep": "dec",
+        "points": 10,
+        "fstart": 1,
+        "fstop": 100000000
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "A2 series RLC band-pass",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 10,
+        "y": 20,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "acMag": "1",
+          "acPhase": "0"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 10,
+        "y": 23,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-L1",
+        "type": "inductor",
+        "name": "L1",
+        "x": 22,
+        "y": 17,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10m"
+        }
+      },
+      {
+        "id": "p-C1",
+        "type": "capacitor",
+        "name": "C1",
+        "x": 34,
+        "y": 17,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1u"
+        }
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 46,
+        "y": 20,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "10"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 46,
+        "y": 23,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 10,
+            "y": 17
+          },
+          {
+            "x": 19,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 14,
+            "y": 17
+          },
+          {
+            "x": 14,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 25,
+            "y": 17
+          },
+          {
+            "x": 31,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 28,
+            "y": 17
+          },
+          {
+            "x": 28,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 37,
+            "y": 17
+          },
+          {
+            "x": 46,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 40,
+            "y": 17
+          },
+          {
+            "x": 40,
+            "y": 14
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 14,
+        "y": 14,
+        "rotation": 0
+      },
+      {
+        "id": "l-a",
+        "text": "a",
+        "x": 28,
+        "y": 14,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 40,
+        "y": 14,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "ac",
+        "sweep": "dec",
+        "points": 100,
+        "fstart": 100,
+        "fstop": 10000
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

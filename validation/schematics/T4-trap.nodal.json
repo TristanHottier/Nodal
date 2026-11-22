@@ -1,0 +1,403 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "T4 CMOS inverter with gate resistor and load capacitor (trap)",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VDD",
+        "type": "vsource",
+        "name": "VDD",
+        "x": 8,
+        "y": 11,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "5"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 14,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-VIN",
+        "type": "vsource",
+        "name": "VIN",
+        "x": 8,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "wave": "pulse",
+          "v1": "0",
+          "v2": "5",
+          "td": "1e-9",
+          "tr": "1e-9",
+          "tf": "1e-9",
+          "pw": "2e-8",
+          "per": "4e-8"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 8,
+        "y": 33,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RG",
+        "type": "resistor",
+        "name": "RG",
+        "x": 20,
+        "y": 24,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-MP",
+        "type": "pmos",
+        "name": "MP",
+        "x": 40,
+        "y": 14,
+        "rotation": 180,
+        "mirror": true,
+        "params": {
+          "model": "PM",
+          "w": "0.00001",
+          "l": "1u"
+        }
+      },
+      {
+        "id": "p-MN",
+        "type": "nmos",
+        "name": "MN",
+        "x": 40,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "NM",
+          "w": "0.00001",
+          "l": "1u"
+        }
+      },
+      {
+        "id": "p-CL",
+        "type": "capacitor",
+        "name": "CL",
+        "x": 54,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "100f"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 42,
+        "y": 36,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 54,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 8
+          },
+          {
+            "x": 46,
+            "y": 8
+          },
+          {
+            "x": 46,
+            "y": 14
+          },
+          {
+            "x": 44,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 42,
+            "y": 11
+          },
+          {
+            "x": 42,
+            "y": 8
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 20,
+            "y": 8
+          },
+          {
+            "x": 20,
+            "y": 5
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 42,
+            "y": 17
+          },
+          {
+            "x": 42,
+            "y": 27
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 42,
+            "y": 22
+          },
+          {
+            "x": 54,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 48,
+            "y": 22
+          },
+          {
+            "x": 48,
+            "y": 19
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 37,
+            "y": 14
+          },
+          {
+            "x": 34,
+            "y": 14
+          },
+          {
+            "x": 34,
+            "y": 30
+          },
+          {
+            "x": 37,
+            "y": 30
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 8,
+            "y": 27
+          },
+          {
+            "x": 8,
+            "y": 24
+          },
+          {
+            "x": 17,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 12,
+            "y": 24
+          },
+          {
+            "x": 12,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 23,
+            "y": 24
+          },
+          {
+            "x": 34,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 28,
+            "y": 24
+          },
+          {
+            "x": 28,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 42,
+            "y": 33
+          },
+          {
+            "x": 42,
+            "y": 36
+          }
+        ]
+      },
+      {
+        "id": "w13",
+        "points": [
+          {
+            "x": 44,
+            "y": 30
+          },
+          {
+            "x": 46,
+            "y": 30
+          },
+          {
+            "x": 46,
+            "y": 36
+          },
+          {
+            "x": 42,
+            "y": 36
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-vdd",
+        "text": "vdd",
+        "x": 20,
+        "y": 5,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 48,
+        "y": 19,
+        "rotation": 0
+      },
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 12,
+        "y": 21,
+        "rotation": 0
+      },
+      {
+        "id": "l-g",
+        "text": "g",
+        "x": 28,
+        "y": 21,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "NM",
+      "type": "NMOS",
+      "params": {
+        "VTO": "1",
+        "KP": "0.0001",
+        "CGSO": "1e-10",
+        "CGDO": "1e-10"
+      }
+    },
+    {
+      "name": "PM",
+      "type": "PMOS",
+      "params": {
+        "VTO": "-1",
+        "KP": "0.00005",
+        "CGSO": "1e-10",
+        "CGDO": "1e-10"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "tran",
+        "tstep": 1e-10,
+        "tstop": 8e-8,
+        "tmax": 1e-11
+      }
+    ],
+    "options": {
+      "temp": 27,
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18,
+      "method": "trap"
+    }
+  }
+}

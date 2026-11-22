@@ -1,0 +1,285 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "A5 forward and reverse biased diodes",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 8,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "5",
+          "acMag": "1",
+          "acPhase": "0"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 20,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-D1",
+        "type": "diode",
+        "name": "D1",
+        "x": 30,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "DF"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 30,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R2",
+        "type": "resistor",
+        "name": "R2",
+        "x": 20,
+        "y": 31,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-D2",
+        "type": "diode",
+        "name": "D2",
+        "x": 30,
+        "y": 34,
+        "rotation": 180,
+        "mirror": false,
+        "params": {
+          "model": "DR"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 30,
+        "y": 37,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 19
+          },
+          {
+            "x": 14,
+            "y": 19
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 14,
+            "y": 13
+          },
+          {
+            "x": 14,
+            "y": 31
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 14,
+            "y": 13
+          },
+          {
+            "x": 17,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 14,
+            "y": 31
+          },
+          {
+            "x": 17,
+            "y": 31
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 11,
+            "y": 19
+          },
+          {
+            "x": 11,
+            "y": 16
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 23,
+            "y": 13
+          },
+          {
+            "x": 30,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 26,
+            "y": 13
+          },
+          {
+            "x": 26,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 23,
+            "y": 31
+          },
+          {
+            "x": 30,
+            "y": 31
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 26,
+            "y": 31
+          },
+          {
+            "x": 26,
+            "y": 28
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 11,
+        "y": 16,
+        "rotation": 0
+      },
+      {
+        "id": "l-a",
+        "text": "a",
+        "x": 26,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-b",
+        "text": "b",
+        "x": 26,
+        "y": 28,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "DF",
+      "type": "D",
+      "params": {
+        "IS": "1e-14",
+        "RS": "10",
+        "CJO": "2e-12",
+        "VJ": "0.7",
+        "M": "0.4",
+        "TT": "1e-8"
+      }
+    },
+    {
+      "name": "DR",
+      "type": "D",
+      "params": {
+        "IS": "1e-14",
+        "CJO": "5e-12",
+        "VJ": "0.7",
+        "M": "0.5"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "ac",
+        "sweep": "dec",
+        "points": 10,
+        "fstart": 1000,
+        "fstop": 10000000000
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}
