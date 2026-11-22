@@ -62,13 +62,14 @@ M5 is split in two. M5a draws schematics; M5b turns them into circuits that can 
 **Exit:** every v1 device, ground and net label can be placed, moved, rotated, mirrored, copied and deleted, and wired on the grid; component tests cover each edit and its undo/redo; junction-dot tests cover T-junctions and crossings; the Pages build shows the editor.
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44952617696 at 87a385a (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44952617696/job/136993656345) runs the component tests (`Editor.test.tsx` places, moves, rotates, mirrors, copies, pastes and deletes each of the 18 palette entries and checks undo and redo after every step; `wireTool.test.tsx` draws wires; `junctions.test.ts` covers T-junctions, crossings and corners) and the Playwright tests on Chromium and Firefox, which draw a resistor wired to ground, add a T-junction and undo it. The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44952617696/job/136994098107) published the editor to https://tristanhottier.github.io/Nodal/, which shows the palette and canvas.
 
-### M5b — Schematic data and netlister · in progress
+### M5b — Schematic data and netlister · done
 - Parameter inspector with value-notation parsing ([ADR 0009](adr/0009-value-notation.md)).
 - Netlister with diagnostics, using the connectivity rules of ARCHITECTURE §6.1.
 - IndexedDB autosave; `.nodal.json` import/export.
 - Reference circuits as generated `.nodal.json` schematics with layout, in `validation/schematics/`.
 
 **Exit:** every reference circuit in `validation/circuits/` has a schematic in `validation/schematics/` that loads in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires; a project survives export, import and a page reload.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44972529504 at 531aa35 (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44972529504/job/137055209655) runs `reference.test.ts` (31 schematics in `validation/schematics/`, zero diagnostics, netlist equivalent to the reference IR with exact title and node names, plus a test that the schematic and reference id sets match), `reference.editor.test.tsx` (each schematic loads in the editor with every part rendered and "No problems"), the netlister tests (`nets.test.ts` covers T-junctions, crossings without dots and labels joining separate wires) and the Playwright round trip on Chromium and Firefox (open A1, edit R1, reload, export). The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44972529504/job/137055688336) published the editor to https://tristanhottier.github.io/Nodal/.
 
 ### M6 — Simulation in the browser · not started
 - `nodal-wasm` in a Web Worker: run, progress, cancel.

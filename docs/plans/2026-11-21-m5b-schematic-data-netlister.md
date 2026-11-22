@@ -48,11 +48,11 @@
 - ROADMAP §M5b: add the bullet "Reference circuits as generated `.nodal.json` schematics with layout, in `validation/schematics/`." and replace the exit with: "**Exit:** every reference circuit in `validation/circuits/` has a schematic in `validation/schematics/` that loads in the editor, and its netlist is equivalent (same topology and values) to the reference IR; netlister tests cover T-junctions, crossings without dots, and labels joining separate wires; a project survives export, import and a page reload."
 - ARCHITECTURE §7: the file shape above (with `models`), the migration rule, and that model parameters and part parameters are stored as the strings the user typed.
 
-- [ ] **Step 1:** Write `project.test.ts`: `accepts_new_project`, `roundtrip_serialize_parse`, `rejects_wrong_format`, `rejects_future_version` (message contains "format version 2"), `rejects_non_integer_version`, `applies_migrations_in_order` (injected table 0→1 on a `formatVersion: 0` file), `missing_migration_step_is_an_error`, `rejects_empty_analyses`, `rejects_unknown_model_param` (`BV` on a `D` model is rejected, as in the IR fixture `model-bv-rejected`; `IS` on an `NMOS` model is accepted), `rejects_duplicate_model_names_ignoring_case`, `reports_issue_path` (bad wire inside `schematic` → error mentions `schematic.wires.0`).
-- [ ] **Step 2:** `pnpm --filter @nodal/schema test`. Expected: FAIL.
-- [ ] **Step 3:** Implement; edit ROADMAP and ARCHITECTURE; humanizer on the prose.
-- [ ] **Step 4:** `pnpm --filter @nodal/schema test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS (the IR tests are unchanged).
-- [ ] **Step 5:** Commit `feat(schema): project file schema with migrations`.
+- [x] **Step 1:** Write `project.test.ts`: `accepts_new_project`, `roundtrip_serialize_parse`, `rejects_wrong_format`, `rejects_future_version` (message contains "format version 2"), `rejects_non_integer_version`, `applies_migrations_in_order` (injected table 0→1 on a `formatVersion: 0` file), `missing_migration_step_is_an_error`, `rejects_empty_analyses`, `rejects_unknown_model_param` (`BV` on a `D` model is rejected, as in the IR fixture `model-bv-rejected`; `IS` on an `NMOS` model is accepted), `rejects_duplicate_model_names_ignoring_case`, `reports_issue_path` (bad wire inside `schematic` → error mentions `schematic.wires.0`).
+- [x] **Step 2:** `pnpm --filter @nodal/schema test`. Expected: FAIL.
+- [x] **Step 3:** Implement; edit ROADMAP and ARCHITECTURE; humanizer on the prose.
+- [x] **Step 4:** `pnpm --filter @nodal/schema test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS (the IR tests are unchanged).
+- [x] **Step 5:** Commit `feat(schema): project file schema with migrations`.
 
 ### Task 2: Value notation and the parameter table
 
@@ -76,9 +76,9 @@
 | nmos, pmos | `model` modelRef (`NMOS` / `PMOS`); `w`, `l` optionalNumber (m) |
 | ground | none |
 
-- [ ] **Step 1:** Write tests. `value.test.ts`: `plain_numbers` (`"5"`, `"-2.5"`, `".5"`, `"1e3"`, `"+1E-3"`), `suffix_values_are_correctly_rounded` (`"10u" → 1e-5`, `"4.7k" → 4700`, `"100n" → 1e-7`, `"2.2µ"` and `"2.2μ" → 2.2e-6`, `"1M" → 1e6`, `"1m" → 1e-3`, `"1meg"` and `"1Meg" → 1e6`, `"1T" → 1e12`, `"3f" → 3e-15`; all with `toBe`), `rejects` (`""`, `"1MEG"`, `"1e3k"`, `"4,7k"`, `"1 k"`, `"k"`, `"1kk"`, `"1e999"`), `pwl_pairs` (`"0 0; 1m 5\n2m 0"`), `pwl_rejects_odd_count`. `params.test.ts`: `every_part_type_has_fields` (keys of `PARAM_FIELDS` equal `PART_TYPES`), `defaults_parse` (every non-empty default of every symbol parses or is a model/source name), `param_value_falls_back_to_default`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): value notation parser and parameter table`.
+- [x] **Step 1:** Write tests. `value.test.ts`: `plain_numbers` (`"5"`, `"-2.5"`, `".5"`, `"1e3"`, `"+1E-3"`), `suffix_values_are_correctly_rounded` (`"10u" → 1e-5`, `"4.7k" → 4700`, `"100n" → 1e-7`, `"2.2µ"` and `"2.2μ" → 2.2e-6`, `"1M" → 1e6`, `"1m" → 1e-3`, `"1meg"` and `"1Meg" → 1e6`, `"1T" → 1e12`, `"3f" → 3e-15`; all with `toBe`), `rejects` (`""`, `"1MEG"`, `"1e3k"`, `"4,7k"`, `"1 k"`, `"k"`, `"1kk"`, `"1e999"`), `pwl_pairs` (`"0 0; 1m 5\n2m 0"`), `pwl_rejects_odd_count`. `params.test.ts`: `every_part_type_has_fields` (keys of `PARAM_FIELDS` equal `PART_TYPES`), `defaults_parse` (every non-empty default of every symbol parses or is a model/source name), `param_value_falls_back_to_default`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): value notation parser and parameter table`.
 
 ### Task 3: Netlister and netlist equivalence
 
@@ -101,10 +101,10 @@
   - `title` = project name; `analyses`, `options` from `project.simulation`. If there are no errors, `parseNetlist` must accept the IR, otherwise one `ir-invalid` error carries its message.
   - `compareNetlists`: both inputs already parsed. Compare title, element set by name ignoring case (kind, every numeric and string field, waveform, model name, control source), nodes through one growing bijection with `"0" ↔ "0"`, models by name (type, params), analyses and options with deep equality.
 
-- [ ] **Step 1:** Write tests (fixtures built with M5a `addPart`/`addWire`/`addLabel` and a `project()` helper). `nets.test.ts`: `t_junction_connects`, `crossing_without_dot_does_not_connect`, `labels_join_separate_wires`, `labels_join_ignoring_case`, `label_conflict_on_one_net`, `ground_forces_zero`, `generated_names_skip_labels`, `wire_end_on_bend_connects`, `pin_on_wire_interior_connects`. `netlister.test.ts`: `divider_matches_L1` (V, two R, ground, labels in and out → compare with `validation/circuits/L1.json` read via `fs` → no differences), `every_part_type_maps` (one of each type in a valid circuit; checks kind, node order, control nodes, op-amp `E` form), `ac_and_waveforms_map` (pulse, sin with omitted optional fields, pwl), `missing_model_and_type_mismatch`, `renamed_control_source_reports`, `sweep_source_must_exist`, `bad_and_duplicate_names`, `shorted_and_dangling`, `no_ground`, `invalid_value_names_part_and_key`, `ir_null_on_error`. `equivalence.test.ts`: `identical_is_equal`, `renamed_nodes_are_equal`, `non_bijective_renaming_differs` (two nets mapped onto one), `value_difference_reported`, `element_order_ignored`, `missing_model_reported`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement; update ARCHITECTURE §6.2 with the diagnostics list and naming rules; humanizer.
-- [ ] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): netlister with diagnostics`.
+- [x] **Step 1:** Write tests (fixtures built with M5a `addPart`/`addWire`/`addLabel` and a `project()` helper). `nets.test.ts`: `t_junction_connects`, `crossing_without_dot_does_not_connect`, `labels_join_separate_wires`, `labels_join_ignoring_case`, `label_conflict_on_one_net`, `ground_forces_zero`, `generated_names_skip_labels`, `wire_end_on_bend_connects`, `pin_on_wire_interior_connects`. `netlister.test.ts`: `divider_matches_L1` (V, two R, ground, labels in and out → compare with `validation/circuits/L1.json` read via `fs` → no differences), `every_part_type_maps` (one of each type in a valid circuit; checks kind, node order, control nodes, op-amp `E` form), `ac_and_waveforms_map` (pulse, sin with omitted optional fields, pwl), `missing_model_and_type_mismatch`, `renamed_control_source_reports`, `sweep_source_must_exist`, `bad_and_duplicate_names`, `shorted_and_dangling`, `no_ground`, `invalid_value_names_part_and_key`, `ir_null_on_error`. `equivalence.test.ts`: `identical_is_equal`, `renamed_nodes_are_equal`, `non_bijective_renaming_differs` (two nets mapped onto one), `value_difference_reported`, `element_order_ignored`, `missing_model_reported`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement; update ARCHITECTURE §6.2 with the diagnostics list and naming rules; humanizer.
+- [x] **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): netlister with diagnostics`.
 
 ### Task 4: Store carries the project; parameter edits
 
@@ -118,9 +118,9 @@
   - `EditorState` gains `project: Omit<Project, "schematic">`, `setProjectName(name)`, `setModels(models)` (not in history), `loadProject(p: Project)` (sets `doc` and `project`, clears history, selection, clipboard, `pasteCount`, and resets the view), `getProject(): Project`. `createEditorStore` accepts `project?: Project` (default `newProject("Untitled", new Date().toISOString())`); the existing `doc` option keeps working.
 - Part and label property edits go through `commit`, one history entry each.
 
-- [ ] **Step 1:** Tests: `properties.test.ts` (`set_name`, `set_param_and_clear`, `noop_same_object`, `label_text`), `models.test.ts` (`add_names_unique`, `rename`, `type_change_drops_params`, `set_and_clear_param`, `remove`), `store.test.ts` additions (`load_project_resets_history`, `get_project_roundtrip`, `model_edits_not_in_history`, `property_edit_is_undoable`).
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): project state and parameter edits`.
+- [x] **Step 1:** Tests: `properties.test.ts` (`set_name`, `set_param_and_clear`, `noop_same_object`, `label_text`), `models.test.ts` (`add_names_unique`, `rename`, `type_change_drops_params`, `set_and_clear_param`, `remove`), `store.test.ts` additions (`load_project_resets_history`, `get_project_roundtrip`, `model_edits_not_in_history`, `property_edit_is_undoable`).
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): project state and parameter edits`.
 
 ### Task 5: Parameter inspector
 
@@ -134,10 +134,10 @@
   - Nothing or several selected: project name, then the model library (`ModelEditor`: one card per model with name, type select, and the `PARAM_SPECS[type]` keys as optional fields with range hints from `describeRange`, plus Remove).
   - Text inputs commit on blur and on Enter (one history entry); Esc reverts the input. Inputs carry `aria-label` = the field label. Keyboard shortcuts already ignore inputs (M5a).
 
-- [ ] **Step 1:** Write `Inspector.test.tsx`: `shows_part_fields` (resistor → Name, Value), `edit_value_commits_once_and_undoes` (type `2k`, blur → `params.value === "2k"`, one history entry, Ctrl+Z restores), `enter_commits_escape_reverts`, `invalid_value_shows_error_and_is_stored`, `wave_fields_follow_choice` (vsource: choose `pulse` → pulse fields appear), `model_select_and_new_model` (diode → New model → `DMOD` exists and is selected), `ccvs_source_select_lists_vsources`, `bad_name_shows_rule`, `label_text_edit`, `project_panel_when_nothing_selected`, `model_editor_param_range_hint`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Render the inspector for a vsource with pulse and a model card in Chromium (Playwright screenshot, not committed) and look at it.
-- [ ] **Step 6:** Commit `feat(web): parameter inspector`.
+- [x] **Step 1:** Write `Inspector.test.tsx`: `shows_part_fields` (resistor → Name, Value), `edit_value_commits_once_and_undoes` (type `2k`, blur → `params.value === "2k"`, one history entry, Ctrl+Z restores), `enter_commits_escape_reverts`, `invalid_value_shows_error_and_is_stored`, `wave_fields_follow_choice` (vsource: choose `pulse` → pulse fields appear), `model_select_and_new_model` (diode → New model → `DMOD` exists and is selected), `ccvs_source_select_lists_vsources`, `bad_name_shows_rule`, `label_text_edit`, `project_panel_when_nothing_selected`, `model_editor_param_range_hint`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Render the inspector for a vsource with pulse and a model card in Chromium (Playwright screenshot, not committed) and look at it.
+- [x] **Step 6:** Commit `feat(web): parameter inspector`.
 
 ### Task 6: Diagnostics panel, project toolbar, import and export
 
@@ -151,9 +151,9 @@
   - `files.ts`: `readProjectFile(file: Blob): Promise<{ ok: true; project: Project } | { ok: false; error: string }>` (text → `JSON.parse` with a clear error → `parseProject`), `downloadProject(p: Project, doc?: Document): void` (Blob `application/json`, file name `<name with characters outside [A-Za-z0-9 _-] replaced by _>.nodal.json`).
   - `<ProjectBar />` at the top of the palette column: buttons "New", "Open…" (hidden `<input type="file" accept=".json,.nodal.json">`), "Save as…". New and Open ask `window.confirm("Replace the current project? Export it first if you want to keep it.")` when the document is not empty, then call `loadProject`. Open errors appear in the status bar (`data-testid="project-message"`).
 
-- [ ] **Step 1:** Tests: `files.test.ts` (`reads_valid_file`, `bad_json_error`, `future_version_error`, `download_uses_safe_name` with stubbed `URL.createObjectURL`), `Diagnostics.test.tsx` (`no_problems`, `lists_and_selects`), `ProjectBar.test.tsx` (`open_asks_before_replacing`, `open_loads_project`, `open_error_shown`, `new_resets`, `save_as_downloads_current_project`).
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): diagnostics, import and export`.
+- [x] **Step 1:** Tests: `files.test.ts` (`reads_valid_file`, `bad_json_error`, `future_version_error`, `download_uses_safe_name` with stubbed `URL.createObjectURL`), `Diagnostics.test.tsx` (`no_problems`, `lists_and_selects`), `ProjectBar.test.tsx` (`open_asks_before_replacing`, `open_loads_project`, `open_error_shown`, `new_resets`, `save_as_downloads_current_project`).
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): diagnostics, import and export`.
 
 ### Task 7: IndexedDB autosave
 
@@ -165,9 +165,9 @@
   - `autosave.ts`: `startAutosave(store: StoreApi<EditorState>, kv: KvStore, opts?: { delayMs?: number }): Promise<{ message: string | null; stop(): void }>`. On start: read key `"current"`; if present, `parseProject`; valid → `loadProject`; invalid → copy the raw record to `"current-invalid-<ISO time>"`, leave the editor empty, return the message "The autosaved project could not be loaded (<error>). A copy was kept in browser storage." Then subscribe: after any change of `doc` or `project`, write `getProject()` to `"current"` once `delayMs` (default 500) has passed without further changes. A failed write sets the status message "Autosave failed: <error>".
 - The status bar shows the returned message.
 
-- [ ] **Step 1:** Tests with `fake-indexeddb` and fake timers: `restores_saved_project`, `debounces_writes`, `corrupt_autosave_is_kept_and_reported` (garbage, a future `formatVersion`, and a project with a diagonal wire each: editor empty, message set, backup key holds the record, `"current"` untouched until the first edit), `write_failure_reported`.
-- [ ] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm install --frozen-lockfile && pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
-- [ ] **Step 5:** Commit `feat(web): autosave to IndexedDB`.
+- [x] **Step 1:** Tests with `fake-indexeddb` and fake timers: `restores_saved_project`, `debounces_writes`, `corrupt_autosave_is_kept_and_reported` (garbage, a future `formatVersion`, and a project with a diagonal wire each: editor empty, message set, backup key holds the record, `"current"` untouched until the first edit), `write_failure_reported`.
+- [x] **Step 2:** Run, expect FAIL. **Step 3:** Implement. **Step 4:** `pnpm install --frozen-lockfile && pnpm --filter @nodal/web test && pnpm typecheck && pnpm lint && pnpm format:check`. Expected: PASS.
+- [x] **Step 5:** Commit `feat(web): autosave to IndexedDB`.
 
 ### Task 8: Reference schematics L1–L5, N1–N6 and the exit test
 
@@ -179,11 +179,11 @@
 - Each file: `name` = the reference `title`, `createdAt` = `"2026-11-21T00:00:00.000Z"`, part names = the reference element names, every non-ground net labelled with the reference node name, models and `simulation` copied from the reference with model params as strings that parse to the same numbers, values written in value notation where it reads naturally (`1k`, `10u`), otherwise plain (`1e-5`).
 - Layout rules: signal flow left to right; supplies on the left or top; one ground symbol under each grounded pin group; parts at least 2 grid units apart; no wire through a part body; no wire crossing unless unavoidable (then no dot); labels on short stubs, readable; the whole circuit within 120 × 80 grid units. L4 (24 elements) may use a repeated ladder pattern.
 
-- [ ] **Step 1:** Write `reference.test.ts`. Run: FAIL (no schematics).
-- [ ] **Step 2:** Author the thirteen files (a throwaway generator script outside the repo is fine; the committed artifacts are the JSON files, formatted by Prettier).
-- [ ] **Step 3:** `pnpm --filter @nodal/web exec vitest run src/netlist/reference.test.ts`. Expected: PASS for all thirteen.
-- [ ] **Step 4:** Open each file in the built app (Playwright: Open… with `setInputFiles`, screenshot the canvas) and look at every screenshot against the layout rules. Fix what reads badly. Screenshots are not committed.
-- [ ] **Step 5:** `pnpm test && pnpm format:check`. Commit `test(validation): reference schematics for L1–L5 and N1–N6`.
+- [x] **Step 1:** Write `reference.test.ts`. Run: FAIL (no schematics).
+- [x] **Step 2:** Author the thirteen files (a throwaway generator script outside the repo is fine; the committed artifacts are the JSON files, formatted by Prettier).
+- [x] **Step 3:** `pnpm --filter @nodal/web exec vitest run src/netlist/reference.test.ts`. Expected: PASS for all thirteen.
+- [x] **Step 4:** Open each file in the built app (Playwright: Open… with `setInputFiles`, screenshot the canvas) and look at every screenshot against the layout rules. Fix what reads badly. Screenshots are not committed.
+- [x] **Step 5:** `pnpm test && pnpm format:check`. Commit `test(validation): reference schematics for L1–L5 and N1–N6`.
 
 ### Task 9: Reference schematics A1–A6 and T1–T6
 
@@ -191,18 +191,18 @@
 
 - Same rules as Task 8. The `-trap` and `-gear` files of one circuit share the schematic and differ only in `name` and `simulation.options.method`. A4 keeps the reference VCVS macro (a `vcvs` part, not the op-amp symbol) so the element names match.
 
-- [ ] **Step 1:** Make `every_reference_circuit_has_a_schematic` real. Run: FAIL (18 missing).
-- [ ] **Step 2:** Author the files. **Step 3:** `pnpm --filter @nodal/web exec vitest run src/netlist/reference.test.ts`. Expected: 31 schematics pass.
-- [ ] **Step 4:** Visual check as in Task 8 Step 4.
-- [ ] **Step 5:** `pnpm test && pnpm format:check`. Commit `test(validation): reference schematics for A1–A6 and T1–T6`.
+- [x] **Step 1:** Make `every_reference_circuit_has_a_schematic` real. Run: FAIL (18 missing).
+- [x] **Step 2:** Author the files. **Step 3:** `pnpm --filter @nodal/web exec vitest run src/netlist/reference.test.ts`. Expected: 31 schematics pass.
+- [x] **Step 4:** Visual check as in Task 8 Step 4.
+- [x] **Step 5:** `pnpm test && pnpm format:check`. Commit `test(validation): reference schematics for A1–A6 and T1–T6`.
 
 ### Task 10: End-to-end test, docs and close M5b
 
 **Files:** Create `apps/web/e2e/project.spec.ts`. Modify `docs/ARCHITECTURE.md` (§6.1 inspector and toolbar summary; §8 rows), `docs/VALIDATION.md` (a line on `validation/schematics/`), `README.md`, `docs/ROADMAP.md`.
 
-- [ ] **Step 1:** Write `project.spec.ts` (Chromium and Firefox, production build): `open_reference_edit_reload_export`: Open… `validation/schematics/A1.nodal.json`; expect its parts on the canvas and "No problems"; select `R1`, set Value to `2k`, blur; reload the page; expect `R1` value `2k` (autosave); Save as… → the download parses with `formatVersion` 1 and `R1` value `"2k"`. `bad_file_reports_error`: open a file with `formatVersion: 99` → the status bar names version 99 and the canvas is unchanged.
-- [ ] **Step 2:** `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e`. Expected: PASS (with the M0 and M5a specs).
-- [ ] **Step 3:** Update the docs (README status: M5b done, the editor saves and loads projects and checks them, still no simulation in the browser; VALIDATION: reference schematics and how they are checked; ROADMAP M5b status in progress until CI evidence exists). Humanizer on the prose.
-- [ ] **Step 4:** Full local check: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e && cargo test --workspace`. Expected: PASS.
-- [ ] **Step 5:** Commit `test(web): project round trip end to end`, push, wait for CI, check the Pages site.
-- [ ] **Step 6:** Fill the ROADMAP evidence (CI run, the web job running `reference.test.ts` over 31 schematics and the e2e round trip, the deploy job), set M5b to **done**, update the session notes' Status, commit `docs: close M5b`, push.
+- [x] **Step 1:** Write `project.spec.ts` (Chromium and Firefox, production build): `open_reference_edit_reload_export`: Open… `validation/schematics/A1.nodal.json`; expect its parts on the canvas and "No problems"; select `R1`, set Value to `2k`, blur; reload the page; expect `R1` value `2k` (autosave); Save as… → the download parses with `formatVersion` 1 and `R1` value `"2k"`. `bad_file_reports_error`: open a file with `formatVersion: 99` → the status bar names version 99 and the canvas is unchanged.
+- [x] **Step 2:** `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e`. Expected: PASS (with the M0 and M5a specs).
+- [x] **Step 3:** Update the docs (README status: M5b done, the editor saves and loads projects and checks them, still no simulation in the browser; VALIDATION: reference schematics and how they are checked; ROADMAP M5b status in progress until CI evidence exists). Humanizer on the prose.
+- [x] **Step 4:** Full local check: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm --filter @nodal/web build && pnpm --filter @nodal/web e2e && cargo test --workspace`. Expected: PASS.
+- [x] **Step 5:** Commit `test(web): project round trip end to end`, push, wait for CI, check the Pages site.
+- [x] **Step 6:** Fill the ROADMAP evidence (CI run, the web job running `reference.test.ts` over 31 schematics and the e2e round trip, the deploy job), set M5b to **done**, update the session notes' Status, commit `docs: close M5b`, push.

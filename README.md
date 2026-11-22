@@ -2,7 +2,7 @@
 
 Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
 
-> **Status: pre-alpha. M5b in progress: the web app is a schematic editor. You can draw, edit values, check problems, save and load project files, and your work is autosaved. It does not simulate in the browser yet. The CLI runs DC operating point, DC sweep, AC small-signal and transient analysis (M4).**
+> **Status: pre-alpha. M5b done: the web app is a schematic editor. You can draw, edit values, check problems, save and load project files, and your work is autosaved. It does not simulate in the browser yet. The CLI runs DC operating point, DC sweep, AC small-signal and transient analysis (M4).**
 > Live editor: https://tristanhottier.github.io/Nodal/
 > The repository holds the workspaces, CI, a schematic editor in the web app (place parts, draw wires, edit values, check problems, save and load project files, autosave), and the engine: DC operating point, DC sweep, AC small-signal analysis (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis) for R, L, C, V, I, E, G, H and F elements plus diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient. Circuits T1 to T6 match ngspice-42 for both integration methods within the tolerance in the validation docs. `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`. The browser does not simulate yet. Nothing else described below exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
 
