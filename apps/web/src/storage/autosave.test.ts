@@ -13,19 +13,8 @@ const fakeTimers = () => vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clea
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
-
-function withPart(p: Project): Project {
-  return {
-    ...p,
-    schematic: {
-      ...p.schematic,
-      parts: [
-        { id: "r1", type: "resistor", ref: "R1", at: { x: 0, y: 0 }, rotation: 0, mirror: false },
-      ] as never,
-    },
-  };
-}
 
 describe("startAutosave", () => {
   it("restores_saved_project", async () => {
@@ -127,7 +116,7 @@ describe("startAutosave", () => {
   });
 
   const diagonal = {
-    ...withPart(newProject("Bad", T0)),
+    ...newProject("Bad", T0),
     schematic: {
       ...newProject("Bad", T0).schematic,
       wires: [
@@ -206,5 +195,97 @@ describe("startAutosave", () => {
     await vi.advanceTimersByTimeAsync(2000);
     expect(put).not.toHaveBeenCalled();
     h.stop();
+  });
+  it("failure_message_clears_after_a_successful_write", async () => {
+    fakeTimers();
+    let fail = true;
+    const kv: KvStore = {
+      get: () => Promise.resolve(undefined),
+      put: () => (fail ? Promise.reject(new Error("quota exceeded")) : Promise.resolve()),
+    };
+    const store = createEditorStore();
+    const h = await startAutosave(store, kv);
+    store.getState().setProjectName("A");
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.waitFor(() => {
+      expect(store.getState().statusMessage).toBe("Autosave failed: quota exceeded");
+    });
+    fail = false;
+    store.getState().setProjectName("B");
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.waitFor(() => {
+      expect(store.getState().statusMessage).toBeNull();
+    });
+    h.stop();
+  });
+
+  it("success_keeps_an_unrelated_status_message", async () => {
+    fakeTimers();
+    const kv = await freshKv();
+    const store = createEditorStore();
+    const h = await startAutosave(store, kv);
+    store.getState().setStatusMessage("Could not open x.json: nope");
+    store.getState().setProjectName("A");
+    await vi.advanceTimersByTimeAsync(600);
+    expect(store.getState().statusMessage).toBe("Could not open x.json: nope");
+    h.stop();
+  });
+
+  describe("two tabs", () => {
+    const PAUSED =
+      "Nodal is open in another tab; autosave is paused here. Reload this tab to continue here.";
+
+    it("the_newest_tab_keeps_saving_and_the_older_one_pauses", async () => {
+      fakeTimers();
+      const kv = await freshKv();
+      const first = createEditorStore();
+      const second = createEditorStore();
+      const a = await startAutosave(first, kv);
+      const b = await startAutosave(second, kv);
+      await vi.advanceTimersByTimeAsync(10);
+      await vi.waitFor(() => {
+        expect(first.getState().statusMessage).toBe(PAUSED);
+      });
+      expect(second.getState().statusMessage).toBeNull();
+
+      first.getState().setProjectName("Old tab");
+      await vi.advanceTimersByTimeAsync(600);
+      expect(await kv.get("current")).toBeUndefined();
+
+      second.getState().setProjectName("New tab");
+      await vi.advanceTimersByTimeAsync(600);
+      expect(((await kv.get("current")) as Project).name).toBe("New tab");
+      a.stop();
+      b.stop();
+    });
+
+    it("a_pending_write_is_dropped_when_another_tab_takes_over", async () => {
+      fakeTimers();
+      const kv = await freshKv();
+      const first = createEditorStore();
+      const a = await startAutosave(first, kv);
+      first.getState().setProjectName("Pending");
+      const b = await startAutosave(createEditorStore(), kv);
+      await vi.waitFor(() => {
+        expect(first.getState().statusMessage).toBe(PAUSED);
+      });
+      await vi.advanceTimersByTimeAsync(600);
+      window.dispatchEvent(new Event("pagehide"));
+      expect(await kv.get("current")).toBeUndefined();
+      a.stop();
+      b.stop();
+    });
+
+    it("stop_closes_the_channel", async () => {
+      fakeTimers();
+      const kv = await freshKv();
+      const first = createEditorStore();
+      const a = await startAutosave(first, kv);
+      a.stop();
+      const b = await startAutosave(createEditorStore(), kv);
+      await vi.advanceTimersByTimeAsync(10);
+      expect(first.getState().statusMessage).toBeNull();
+      b.stop();
+    });
   });
 });
