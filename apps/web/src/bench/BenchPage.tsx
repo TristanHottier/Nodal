@@ -44,7 +44,7 @@ function EditorBench({ onRow }: { onRow: (row: BenchRow) => void }) {
         if (!(svg instanceof SVGSVGElement)) throw new Error("canvas not found");
         // Let the first render settle before timing.
         await new Promise((r) => setTimeout(r, 500));
-        const [pan, zoom] = await runPanZoom(svg, FRAMES);
+        const [pan, zoom] = await runPanZoom(svg, FRAMES, () => store.getState().view);
         if (!pan || !zoom) throw new Error("no frame stats");
         const total = {
           fps: (2 * FRAMES) / (FRAMES / pan.fps + FRAMES / zoom.fps),
@@ -64,7 +64,7 @@ function EditorBench({ onRow }: { onRow: (row: BenchRow) => void }) {
     return () => {
       live.cancelled = true;
     };
-  }, [onRow]);
+  }, [onRow, store]);
 
   return (
     <div ref={host} style={{ width: 1200, height: 700, border: "1px solid #ccc" }}>

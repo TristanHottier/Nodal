@@ -52,16 +52,40 @@ const pointer = (type: string, x: number, y: number): PointerEvent =>
     clientY: y,
   });
 
-/** Drag pan (middle button) of `frames` frames, then alternating wheel zoom of `frames` frames. */
-export async function runPanZoom(svg: SVGSVGElement, frames: number): Promise<FrameStats[]> {
+export interface ViewLike {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+const sameView = (a: ViewLike, b: ViewLike): boolean =>
+  a.x === b.x && a.y === b.y && a.zoom === b.zoom;
+
+/**
+ * Drag pan (middle button) of `frames` frames, then alternating wheel zoom of `frames` frames.
+ * `getView` reads the editor view. Each phase must move it away from where the phase started at
+ * some point (the alternating zoom ends where it began), else the run would time idle events.
+ */
+export async function runPanZoom(
+  svg: SVGSVGElement,
+  frames: number,
+  getView: () => ViewLike,
+): Promise<FrameStats[]> {
   const rect = svg.getBoundingClientRect();
   const cx = rect.left + rect.width / 2;
   const cy = rect.top + rect.height / 2;
   svg.dispatchEvent(pointer("pointerdown", cx, cy));
+  let start = { ...getView() };
+  const seen = { moved: false };
+  const hasMoved = (): boolean => seen.moved;
   const pan = await measureFrames((i) => {
     svg.dispatchEvent(pointer("pointermove", cx + (i % 60) * 4, cy + (i % 40) * 3));
+    if (!sameView(start, getView())) seen.moved = true;
   }, frames);
   svg.dispatchEvent(pointer("pointerup", cx, cy));
+  if (!hasMoved()) throw new Error("view did not change");
+  start = { ...getView() };
+  seen.moved = false;
   const zoom = await measureFrames((i) => {
     svg.dispatchEvent(
       new WheelEvent("wheel", {
@@ -72,6 +96,8 @@ export async function runPanZoom(svg: SVGSVGElement, frames: number): Promise<Fr
         clientY: cy,
       }),
     );
+    if (!sameView(start, getView())) seen.moved = true;
   }, frames);
+  if (!hasMoved()) throw new Error("view did not change");
   return [pan, zoom];
 }
