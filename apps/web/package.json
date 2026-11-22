@@ -12,6 +12,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "e2e": "playwright test --project=chromium --project=firefox",
+    "e2e:visual": "playwright test --project=visual",
     "e2e:perf": "playwright test --project=perf --workers=1",
     "guide:screenshots": "playwright test --config=playwright.guide.config.ts"
   },
