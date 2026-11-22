@@ -49,6 +49,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      # The parity test runs the CLI (cargo run) against the browser engine.
+      - run: cargo build -p nodal-cli
       - run: pnpm test
       - run: pnpm --filter @nodal/web build
       - run: node scripts/check-base-path.mjs apps/web/dist
