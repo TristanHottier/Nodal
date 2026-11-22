@@ -4,6 +4,7 @@
 - Date: 2026-11-22
 
 ## Context
+
 Through M7 each milestone added its own CSS, mostly browser defaults with a few slate and blue values typed into components. ROADMAP M8 asks for one coherent design with light and dark themes, a 60/30/10 color split, WCAG 2.2 AA contrast, CVD-safe traces and a token file as the only source of raw values. The product record is `apps/web/PRODUCT.md`: the main users are EE students checking lab circuits on a laptop.
 
 The app is an Operate surface: an editor people work in. Layout, navigation and controls stay standard. The visual world may supply type, palette, density and one signature move, and nothing else.
@@ -16,16 +17,18 @@ Four directions were compared, and Tristan chose the first on 2026-11-22:
 4. Category standard: neutral greys and one blue, like most schematic editors.
 
 ## Decision
+
 ### Palette
 
 Colors are OKLCH custom properties in `apps/web/src/theme/tokens.css`.
+
 - Light theme: a cool white-ABS board for the canvas and page (the 60 %), pale grey plastic panels for the palette column, inspector, run bar and status bar (the 30 %), and rail blue as the only accent (the 10 %: primary actions, selection, focus). Rail red is used only for errors.
 - Dark theme: a black "carbon" board with the same roles, the rails lifted for contrast. The theme follows `prefers-color-scheme`, with a manual choice stored per browser.
 - Semantic colors (error, warning, success, op tags) and the waveform palette are tokens but sit outside the 60/30/10 split.
 
 ### Brand mark
 
-The logo is an "N" of two vertical strokes and a diagonal, with a node ring at each end, drawn in a cyan-to-mint gradient. It stays apart from the UI palette: rail blue remains the only accent, and the two logo colors are brand tokens (`--color-brand-1`, `--color-brand-2`) outside the 60/30/10 split, like the semantic colors. The dark theme keeps values close to the original artwork. The light theme darkens both stops, since the raw colors reach only 1.4:1 to 1.7:1 on white, so each stop meets 3:1 against the canvas and the panel. A unit test checks both themes. The wordmark is outlined paths, so it needs no font. The original raster is kept in `docs/brand/logo-source.png`.
+The logo is an "N" of two vertical strokes and a diagonal, with a node ring at each end, drawn in a gradient from cyan on the left to mint on the right. It stays apart from the UI palette: rail blue remains the only accent, and the two logo colors are brand tokens (`--color-brand-1`, `--color-brand-2`) outside the 60/30/10 split, like the semantic colors. The dark theme keeps values close to the original artwork. The light theme darkens both stops, since the raw colors reach only 1.4:1 to 1.7:1 on white, so each stop meets 3:1 against the canvas and the panel. A unit test checks both themes. The wordmark is outlined paths, so it needs no font; the outlines come from Poppins Bold (SIL Open Font License 1.1, https://fonts.google.com/specimen/Poppins). The original raster is kept in `docs/brand/logo-source.png`.
 
 ### Traces
 
@@ -49,21 +52,24 @@ When a node voltage is probed, its net's wires on the schematic take that trace'
 
 ### Further rules
 
-
 - Stale results stay visibly marked until the next run.
 - Nothing is labelled twice.
 
 ## Consequences
+
 Positive:
+
 - One file holds every color and size, and tests check its contrast and CVD separation directly.
 - No web fonts, so first paint does not wait for a font request.
 - The signature move links the schematic to the plot without adding any control.
 
 Negative:
+
 - System font stacks render a little differently on each OS, so visual-regression baselines are tied to the CI runner.
 - Two blues on screen (the accent and trace 1) can meet on a probed wire. Selection wins on a selected wire, so the user always sees what is selected.
 - The dark block is written twice in `tokens.css`, once for the stored choice and once for the system choice. A test checks that the two copies match.
 
 ## Alternatives considered
+
 - Datasheet, Graphite console and the category standard, described above.
 - A self-hosted UI font for identical rendering everywhere: rejected, because it adds a font request on the first screen, a layout shift risk, and a third asset to keep current.

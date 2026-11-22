@@ -1,5 +1,5 @@
 // The Nodal "N": two vertical strokes and a diagonal, a node ring at each outer end.
-// The gradient runs cyan (top left) to mint (bottom right) through the brand tokens, not the UI accent.
+// The gradient runs cyan (left) to mint (right) through the brand tokens, not the UI accent.
 import { useId } from "react";
 
 export interface LogoProps {
@@ -12,14 +12,14 @@ export interface LogoProps {
 /** Shapes of the mark on the 32 x 32 grid; `fill` is the gradient URL. */
 export function MarkShapes({ paint }: { paint: string }) {
   return (
-    <g fill="none" stroke={paint} strokeWidth={3.2} strokeLinecap="butt">
-      <path d="M5.2 10V22M26.8 10V22M8.5 8.5L23.5 23.5" />
-      <g strokeWidth={2.6}>
-        <circle cx={5.2} cy={5.2} r={3.4} />
-        <circle cx={26.8} cy={5.2} r={3.4} />
-        <circle cx={5.2} cy={26.8} r={3.4} />
-        <circle cx={26.8} cy={26.8} r={3.4} />
-      </g>
+    <g fill="none" stroke={paint} strokeWidth={2.4}>
+      <path d="M5.2 10V22M26.8 10V22" />
+      {/* The diagonal is a hollow band: two parallel strokes, open at the free ends. */}
+      <path strokeWidth={1.8} d="M8.6 6L23.6 21M8.6 12.3L22.6 26.3" />
+      <circle cx={5.2} cy={5.2} r={3.4} />
+      <circle cx={26.8} cy={5.2} r={3.4} />
+      <circle cx={5.2} cy={26.8} r={3.4} />
+      <circle cx={26.8} cy={26.8} r={3.4} />
     </g>
   );
 }
@@ -27,7 +27,7 @@ export function MarkShapes({ paint }: { paint: string }) {
 /** Gradient stops shared by the mark and the full logo. */
 export function BrandGradient({ id }: { id: string }) {
   return (
-    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={32} y2={32}>
+    <linearGradient id={id} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={32} y2={8}>
       <stop offset="0" stopColor="var(--color-brand-1)" />
       <stop offset="1" stopColor="var(--color-brand-2)" />
     </linearGradient>
