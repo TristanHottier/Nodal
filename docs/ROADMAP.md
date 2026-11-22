@@ -81,12 +81,13 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4497252950
 **Exit:** draw → simulate → plot works end to end for all four analyses; the browser results for circuits T1 and A1 match the CLI output to a relative difference ≤ 1e-12 (native and wasm32 builds may differ in the last bits of `exp` and `ln`).
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44990835762 at 27d142b (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44990835762/job/137111306571) runs `parity.test.ts`, which calls the wasm `run` entry point directly with the same IR as the CLI and finds a largest relative difference of 0 for T1-trap, T1-gear and A1 (the limit is 1e-12). The same job runs `simulate.spec.ts` on Chromium and Firefox: it draws a divider and reads its operating-point tags, runs T1-trap and reads `V(out)` at a cursor, runs A1 and reads the Bode magnitude at 159.155 Hz, plots the N1 DC sweep, cancels a long transient and reruns it, and highlights both sources of a source loop. The optimized WASM is 216.45 kB gzipped (faer linked). The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44990835762/job/137111971790) published the app to https://tristanhottier.github.io/Nodal/, where A1 opens, runs and shows the Bode pair.
 
-### M7 — v1 content and performance · not started
+### M7 — v1 content and performance · done
 - Performance budget met (below); if dense LU misses it, add the sparse backend ([ADR 0003](adr/0003-linear-solver.md)).
 - Example projects: divider, RC/RLC filters, half- and full-wave rectifiers, common-emitter amplifier, CMOS inverter, op-amp inverting amplifier.
 - User guide in `docs/`; README status updated with what v1 does, backed by the validation results.
 
 **Exit:** budget met; examples load and simulate. The `v1.0.0` tag moves to M8, so v1 ships with the final design.
+Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/45001613473 at 9fb3ac1 (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/45001613473/job/137144178009) runs `pnpm --filter @nodal/web e2e:perf`, which opens `bench.html` in headless Chromium on GitHub Actions `ubuntu-latest` with optimized WASM: the 50-node transient (`validation/perf/tran50.json`, at least 10,000 accepted points) takes a median of 409.0 ms of 5 runs against 1,000 ms, the AC sweep (1,001 frequencies) 47.4 ms against 200 ms, and editor pan and zoom with 500 parts runs at 60.0 fps with 0 slow frames of 240. The optimized WASM is 246,484 bytes gzipped. The same job runs `examples.test.ts`, which netlists the eight examples, runs every analysis of each in the wasm engine and checks one expected value per example. The measurement on a laptop in desktop Chrome is pending (https://tristanhottier.github.io/Nodal/bench.html).
 
 ### Performance budget (checked in M7, desktop Chrome on a mid-range laptop)
 
