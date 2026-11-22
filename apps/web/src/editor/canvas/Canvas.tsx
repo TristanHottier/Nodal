@@ -52,14 +52,23 @@ const Scene = memo(function Scene({ doc, selected, errorIds, dots, probeSlots }:
   );
 });
 
-export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?: ReactNode }) {
+export function Canvas({
+  tool,
+  overlay,
+  readOnly = false,
+}: {
+  tool?: CanvasToolHandlers;
+  overlay?: ReactNode;
+  /** Pan and zoom only: no selection, drag, tool or edit. */
+  readOnly?: boolean;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const doc = useEditor((s) => s.doc);
   const selection = useEditor((s) => s.selection);
   const view = useEditor((s) => s.view);
   const errorIds = useErrorIds();
   const probeSlots = useProbeSlots();
-  const { preview, handlers } = useCanvasPointer(svgRef, tool);
+  const { preview, handlers } = useCanvasPointer(svgRef, tool, readOnly);
 
   const shown = useMemo(
     () => (preview?.kind === "drag" ? moveItems(doc, selection, preview.delta) : doc),
@@ -98,6 +107,7 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
       tabIndex={0}
       role="application"
       aria-label="Schematic canvas"
+      {...(readOnly ? { "aria-readonly": true } : {})}
       {...handlers}
     >
       <GridBackground view={view} />

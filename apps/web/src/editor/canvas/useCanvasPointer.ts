@@ -47,6 +47,7 @@ const isTyping = (t: EventTarget | null) =>
 export function useCanvasPointer(
   svgRef: RefObject<SVGSVGElement | null>,
   tool?: CanvasToolHandlers,
+  readOnly = false,
 ) {
   const store = useEditorStore();
   const gesture = useRef<Gesture>(null);
@@ -109,7 +110,8 @@ export function useCanvasPointer(
 
   const onPointerDown = (e: RPointerEvent<SVGSVGElement>) => {
     const s = store.getState();
-    const panning = e.button === 1 || (e.button === 0 && space.current);
+    // Read-only: every press pans; no selection, drag or tool.
+    const panning = e.button === 1 || (e.button === 0 && (space.current || readOnly));
     if (!panning && e.button !== 0) return;
     const el = e.currentTarget;
     if (typeof el.setPointerCapture === "function") {
@@ -155,7 +157,7 @@ export function useCanvasPointer(
     const g = gesture.current;
     const s = store.getState();
     if (!g) {
-      if (s.tool.kind !== "select") tool?.onPointerMove(snap(locate(e)), e);
+      if (!readOnly && s.tool.kind !== "select") tool?.onPointerMove(snap(locate(e)), e);
       return;
     }
     if (g.kind === "pan") {
@@ -204,7 +206,8 @@ export function useCanvasPointer(
   };
 
   const onDoubleClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (store.getState().tool.kind !== "select") tool?.onDoubleClick?.(snap(locate(e)));
+    if (!readOnly && store.getState().tool.kind !== "select")
+      tool?.onDoubleClick?.(snap(locate(e)));
   };
 
   return {
@@ -217,7 +220,7 @@ export function useCanvasPointer(
       onLostPointerCapture: cancel,
       onDoubleClick,
       onPointerLeave: () => {
-        tool?.onPointerLeave?.();
+        if (!readOnly) tool?.onPointerLeave?.();
       },
     },
   };
