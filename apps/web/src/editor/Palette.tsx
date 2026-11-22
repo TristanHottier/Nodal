@@ -1,6 +1,7 @@
 // Tool and symbol palette: Select, Wire, and one button per placeable item.
 import { LABEL_SYMBOL, PALETTE, SYMBOLS } from "../symbols/catalog";
 import { useEditor, useEditorStore } from "./EditorContext";
+import { keepFocus } from "./keepFocus";
 import { ProjectBar } from "./ProjectBar";
 import type { Tool } from "./store";
 
@@ -24,13 +25,6 @@ function Preview({ item }: { item: Item }) {
 }
 
 const itemName = (item: Item) => (item === "label" ? "net label" : SYMBOLS[item].label);
-
-// Mouse down must not focus a button: the canvas ignores Space aimed at a
-// focused button (so Space+drag would stop panning), and releasing Space would
-// click it again. Keyboard focus with Tab is unaffected.
-const keepFocus = (e: React.MouseEvent) => {
-  e.preventDefault();
-};
 
 export function Palette() {
   const store = useEditorStore();

@@ -1,6 +1,7 @@
 // Problems list: netlister diagnostics, errors first. Clicking a row selects its items.
 import { useMemo } from "react";
 import { useEditor, useEditorStore } from "./EditorContext";
+import { keepFocus } from "./keepFocus";
 import { useDiagnostics } from "./useDiagnostics";
 
 export const DIAGNOSTICS_CSS = `
@@ -9,7 +10,6 @@ export const DIAGNOSTICS_CSS = `
 .nodal-problems button:hover { background: #e2e8f0; }
 .nodal-problems [data-severity="error"] .nodal-marker { color: #dc2626; }
 .nodal-problems [data-severity="warning"] .nodal-marker { color: #b45309; }
-.nodal-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 `;
 
 export function Diagnostics() {
@@ -39,9 +39,7 @@ export function Diagnostics() {
               <button
                 type="button"
                 data-severity={d.severity}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                }}
+                onMouseDown={keepFocus}
                 onClick={() => {
                   choose(d.itemIds);
                 }}
@@ -49,7 +47,6 @@ export function Diagnostics() {
                 <span aria-hidden="true" className="nodal-marker">
                   {d.severity === "error" ? "✖" : "⚠"}
                 </span>
-                <span className="nodal-visually-hidden">{d.severity}: </span>
                 <span>{d.message}</span>
               </button>
             </li>

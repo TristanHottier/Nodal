@@ -3,13 +3,9 @@ import { newProject } from "@nodal/schema";
 import { useRef } from "react";
 import { downloadProject, readProjectFile } from "../storage/files";
 import { useEditorStore } from "./EditorContext";
+import { keepFocus } from "./keepFocus";
 
 const CONFIRM = "Replace the current project? Export it first if you want to keep it.";
-
-// Same reason as in the palette: do not take focus from the canvas.
-const keepFocus = (e: React.MouseEvent) => {
-  e.preventDefault();
-};
 
 export function ProjectBar() {
   const store = useEditorStore();

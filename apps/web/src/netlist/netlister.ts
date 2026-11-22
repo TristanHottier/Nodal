@@ -105,6 +105,9 @@ function checkConnections(
 
 export function projectToNetlist(project: Project): NetlistResult {
   const doc = project.schematic;
+  if (doc.parts.length === 0 && doc.wires.length === 0 && doc.labels.length === 0) {
+    return { ir: null, diagnostics: [] };
+  }
   const diagnostics: Diagnostic[] = [];
   const nets = buildNets(doc);
   diagnostics.push(...nets.diagnostics);

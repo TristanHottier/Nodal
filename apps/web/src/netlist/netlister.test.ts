@@ -22,6 +22,10 @@ function divider() {
 }
 
 describe("projectToNetlist", () => {
+  it("empty_schematic_has_no_diagnostics", () => {
+    expect(projectToNetlist(project(emptyDoc()))).toEqual({ ir: null, diagnostics: [] });
+  });
+
   it("divider_matches_L1", () => {
     const p = {
       ...project(divider()),
@@ -376,7 +380,7 @@ describe("projectToNetlist", () => {
   });
 
   it("ir_null_on_error", () => {
-    expect(codes(project(emptyDoc()))).toEqual(["no-ground"]);
+    expect(codes(project(put(emptyDoc(), "resistor", pt(0, 0)).doc))).toContain("no-ground");
     let d = putTagged(
       emptyDoc(),
       "vsource",

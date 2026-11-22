@@ -44,17 +44,23 @@ describe("Diagnostics", () => {
       </EditorProvider>,
     );
     const rows = within(screen.getByRole("list")).getAllByRole("button");
-    expect(rows.length).toBeGreaterThan(0);
-    const withItems = rows.find((b) => b.getAttribute("data-severity") !== null);
-    expect(withItems).toBeTruthy();
-    // Errors come before warnings.
-    const sev = rows.map((b) => b.getAttribute("data-severity"));
-    const firstWarning = sev.indexOf("warning");
-    if (firstWarning >= 0) expect(sev.slice(firstWarning)).not.toContain("error");
-    const target = rows.find((b) => /R1|resistor|unconnected|dangling/i.test(b.textContent));
-    expect(target).toBeTruthy();
-    if (!target) return;
-    fireEvent.click(target);
-    expect(store.getState().selection).toContain(r.id);
+    expect(rows.map((b) => [b.getAttribute("data-severity"), b.textContent])).toEqual([
+      ["error", "✖the schematic has no ground symbol"],
+      ["warning", "⚠R1 is not connected to anything"],
+    ]);
+    expect(screen.getByRole("button", { name: "R1 is not connected to anything" })).toBe(rows[1]);
+    fireEvent.click(rows[0] as HTMLElement);
+    expect(store.getState().selection).toEqual([]);
+    fireEvent.click(rows[1] as HTMLElement);
+    expect(store.getState().selection).toEqual([r.id]);
+  });
+
+  it("fresh_editor_has_no_problems", () => {
+    render(
+      <EditorProvider store={makeStore()}>
+        <Diagnostics />
+      </EditorProvider>,
+    );
+    expect(screen.getByText("No problems")).toBeTruthy();
   });
 });
