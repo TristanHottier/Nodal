@@ -79,6 +79,11 @@ test("Bode view of the CE amplifier", async ({ page }) => {
   // Analyses are [op, ac, tran].
   await runAnalysis(page, 1);
   await expect(page.getByTestId("waveform-panel").getByTestId("plot")).toHaveCount(2);
+  // The default probe is the flat base node; show the amplifier output instead.
+  await page.getByLabel("Signal", { exact: true }).selectOption("V(out)");
+  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("button", { name: "Remove V(b)" }).click();
+  await expect(page.locator('[data-probe="V(out)"]')).toBeVisible();
   const setCursor = async (label: string, text: string) => {
     const input = page.getByLabel(label, { exact: true });
     await input.fill(text);

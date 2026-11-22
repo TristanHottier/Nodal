@@ -32,7 +32,7 @@ Keyboard shortcuts work on the canvas and are ignored while you type in a field:
 | Key | Action |
 |---|---|
 | `R` | Rotate the part being placed, or the selection, by 90 degrees |
-| `X` | Mirror the part being placed, or the selection |
+| `X` | Mirror the part being placed, or the selection (it does nothing to a net label) |
 | `W` | Wire tool |
 | `P` | Probe tool |
 | `Esc` | Cancel the wire in progress, then return to the Select tool, then clear the selection |
@@ -44,7 +44,7 @@ The Select tool is the default. Click a part to select it, Shift+click to add or
 
 ### Wires
 
-Press `W` or choose Wire. Click a pin to start, then click to fix each corner. The preview between clicks is an L shape that runs horizontally first. Press `/` to switch it to vertical first. The wire ends when you click a pin, a net label anchor, the end of another wire or a point on another wire. You can also end it with Enter or a double click, which keeps the points you have clicked so far. `Esc` discards a wire in progress.
+Press `W` or choose Wire. A wire starts wherever you click, so click a pin to start from it, then click to fix each corner. The preview between clicks is an L shape that runs horizontally first. Press `/` to switch it to vertical first. The wire ends when you click a pin, a net label anchor, the end of another wire or a point on another wire. You can also end it with Enter or a double click, which keeps the points you have clicked so far. `Esc` discards a wire in progress.
 
 A wire is one conductor. Bends and crossings are not connections. Two wires join only where one ends on the other or on a pin.
 
