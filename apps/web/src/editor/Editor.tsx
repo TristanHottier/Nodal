@@ -3,6 +3,7 @@ import { type ReactNode, useState } from "react";
 import type { StoreApi } from "zustand";
 import { EngineClient } from "../engine/client";
 import { RunBar, RUNBAR_CSS } from "../simulation/RunBar";
+import { WAVEFORM_CSS, WaveformPanel } from "../waveform/WaveformPanel";
 import { SimulationProvider } from "../simulation/SimulationContext";
 import { createSimulationStore, type SimulationState } from "../simulation/store";
 import { Canvas } from "./canvas/Canvas";
@@ -12,6 +13,7 @@ import { Inspector, INSPECTOR_CSS } from "./inspector/Inspector";
 import { Palette } from "./Palette";
 import type { EditorState } from "./store";
 import { usePlaceTool } from "./tools/place";
+import { useProbeTool } from "./tools/probe";
 import { useWireTool } from "./tools/wire";
 import { useShortcuts } from "./useShortcuts";
 
@@ -34,11 +36,19 @@ function EditorBody({ status }: { status?: ReactNode }) {
   const message = useEditor((s) => s.statusMessage);
   const place = usePlaceTool();
   const wire = useWireTool();
+  const probe = useProbeTool();
   useShortcuts(wire);
-  const tool = kind === "place" ? place : kind === "wire" ? wire : undefined;
+  const tool =
+    kind === "place"
+      ? place
+      : kind === "wire"
+        ? wire
+        : kind === "probe"
+          ? { handlers: probe, overlay: null }
+          : undefined;
   return (
     <div className="nodal-editor">
-      <style>{CSS + INSPECTOR_CSS + DIAGNOSTICS_CSS + RUNBAR_CSS}</style>
+      <style>{CSS + INSPECTOR_CSS + DIAGNOSTICS_CSS + RUNBAR_CSS + WAVEFORM_CSS}</style>
       <Palette />
       <div className="nodal-canvas-pane">
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
@@ -46,6 +56,7 @@ function EditorBody({ status }: { status?: ReactNode }) {
       <Inspector />
       <div className="nodal-results">
         <RunBar />
+        <WaveformPanel />
       </div>
       <div className="nodal-status">
         <strong>Nodal</strong> {status}

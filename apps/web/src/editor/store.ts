@@ -14,7 +14,8 @@ import { type Clip, copyItems, pasteClip } from "./model/edits";
 export type Tool =
   | { kind: "select" }
   | { kind: "place"; item: PartType | "label"; rotation: Rotation; mirror: boolean }
-  | { kind: "wire" };
+  | { kind: "wire" }
+  | { kind: "probe" };
 
 /** Screen offset in px of the grid origin, and zoom factor. */
 export interface View {

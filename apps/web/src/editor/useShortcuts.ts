@@ -68,6 +68,9 @@ export function useShortcuts(wire?: WireControl): void {
       } else if (k === "w") {
         handled();
         s.setTool({ kind: "wire" });
+      } else if (k === "p") {
+        handled();
+        s.setTool({ kind: "probe" });
       } else if (k === "enter" && active) {
         handled();
         finish?.();

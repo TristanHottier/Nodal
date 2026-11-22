@@ -58,6 +58,17 @@ export function Palette() {
       >
         Wire
       </button>
+      <button
+        type="button"
+        onMouseDown={keepFocus}
+        aria-label="Probe"
+        aria-pressed={tool.kind === "probe"}
+        onClick={() => {
+          choose({ kind: "probe" });
+        }}
+      >
+        Probe
+      </button>
       <hr />
       {PALETTE.map((item) => (
         <button

@@ -43,7 +43,7 @@ describe("Editor", () => {
     const toolButtons = screen
       .getAllByRole("button")
       .filter((b) => b.closest(".nodal-palette") && !b.closest(".nodal-projectbar"));
-    expect(toolButtons).toHaveLength(PALETTE.length + 2);
+    expect(toolButtons).toHaveLength(PALETTE.length + 3);
     fireEvent.click(screen.getByRole("button", { name: "Wire" }));
     expect(screen.getByRole("button", { name: "Wire" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe(
