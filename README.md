@@ -40,7 +40,7 @@ Measured by `pnpm --filter @nodal/web e2e:perf`, which opens `bench.html` in hea
 | Editor pan and zoom, 500 parts | 60 fps | 60.0 fps, 0 slow frames (> 25 ms) of 240 |
 | WASM module, gzipped | < 1 MB | 246,484 bytes |
 
-The test passes with a mean of at least 58 fps and at most 5 % slow frames, to allow for timer jitter. The measurement on a laptop in desktop Chrome is still pending; anyone can run it at https://tristanhottier.github.io/Nodal/bench.html.
+The test passes with a mean of at least 58 fps and at most 5 % slow frames, to allow for timer jitter. On Tristan's laptop in desktop Chrome (2026-11-22, deployed app at 93c38f1) the same page gave a transient median of 599.6 ms (samples 572.6 to 860.3 ms), an AC median of 82.1 ms, and 60.3 fps for pan and zoom with 7 slow frames of 240. Anyone can run it at https://tristanhottier.github.io/Nodal/bench.html.
 
 ## What v1 will do
 
