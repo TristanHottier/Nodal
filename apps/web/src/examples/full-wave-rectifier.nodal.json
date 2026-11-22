@@ -1,0 +1,369 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Full-wave bridge rectifier: 10 V 50 Hz, four 1N4148-like diodes, floating 1 k\u03a9 with 100 \u00b5F load",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 10,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "wave": "sin",
+          "vo": "0",
+          "va": "10",
+          "freq": "50"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 10,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-D1",
+        "type": "diode",
+        "name": "D1",
+        "x": 24,
+        "y": 12,
+        "rotation": 180,
+        "mirror": false,
+        "params": {
+          "model": "DM"
+        }
+      },
+      {
+        "id": "p-D3",
+        "type": "diode",
+        "name": "D3",
+        "x": 24,
+        "y": 20,
+        "rotation": 180,
+        "mirror": false,
+        "params": {
+          "model": "DM"
+        }
+      },
+      {
+        "id": "p-D2",
+        "type": "diode",
+        "name": "D2",
+        "x": 34,
+        "y": 12,
+        "rotation": 180,
+        "mirror": false,
+        "params": {
+          "model": "DM"
+        }
+      },
+      {
+        "id": "p-D4",
+        "type": "diode",
+        "name": "D4",
+        "x": 34,
+        "y": 20,
+        "rotation": 180,
+        "mirror": false,
+        "params": {
+          "model": "DM"
+        }
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 44,
+        "y": 18,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-C1",
+        "type": "capacitor",
+        "name": "C1",
+        "x": 50,
+        "y": 18,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "100u"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 38,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 10,
+            "y": 16
+          },
+          {
+            "x": 24,
+            "y": 16
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 24,
+            "y": 15
+          },
+          {
+            "x": 24,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 34,
+            "y": 15
+          },
+          {
+            "x": 34,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 34,
+            "y": 16
+          },
+          {
+            "x": 38,
+            "y": 16
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 24,
+            "y": 8
+          },
+          {
+            "x": 50,
+            "y": 8
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 24,
+            "y": 9
+          },
+          {
+            "x": 24,
+            "y": 8
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 34,
+            "y": 9
+          },
+          {
+            "x": 34,
+            "y": 8
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 44,
+            "y": 8
+          },
+          {
+            "x": 44,
+            "y": 15
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 50,
+            "y": 8
+          },
+          {
+            "x": 50,
+            "y": 15
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 24,
+            "y": 28
+          },
+          {
+            "x": 50,
+            "y": 28
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 24,
+            "y": 23
+          },
+          {
+            "x": 24,
+            "y": 28
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 34,
+            "y": 23
+          },
+          {
+            "x": 34,
+            "y": 28
+          }
+        ]
+      },
+      {
+        "id": "w13",
+        "points": [
+          {
+            "x": 44,
+            "y": 28
+          },
+          {
+            "x": 44,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w14",
+        "points": [
+          {
+            "x": 50,
+            "y": 28
+          },
+          {
+            "x": 50,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w15",
+        "points": [
+          {
+            "x": 30,
+            "y": 8
+          },
+          {
+            "x": 30,
+            "y": 5
+          }
+        ]
+      },
+      {
+        "id": "w16",
+        "points": [
+          {
+            "x": 30,
+            "y": 28
+          },
+          {
+            "x": 30,
+            "y": 31
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-outp",
+        "text": "outp",
+        "x": 30,
+        "y": 5,
+        "rotation": 0
+      },
+      {
+        "id": "l-outn",
+        "text": "outn",
+        "x": 30,
+        "y": 31,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "DM",
+      "type": "D",
+      "params": {
+        "IS": "2.52n",
+        "N": "1.752",
+        "RS": "0.568",
+        "CJO": "4p",
+        "VJ": "0.5",
+        "M": "0.4",
+        "TT": "20n"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "tran",
+        "tstep": 1e-5,
+        "tstop": 0.06
+      }
+    ],
+    "options": {}
+  }
+}

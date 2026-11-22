@@ -1,0 +1,213 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Inverting amplifier: ideal op-amp, 1 k\u03a9 in, 10 k\u03a9 feedback, gain -10",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VS",
+        "type": "vsource",
+        "name": "VS",
+        "x": 8,
+        "y": 26,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0.5",
+          "wave": "sin",
+          "vo": "0",
+          "va": "0.5",
+          "freq": "1k"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 29,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RIN",
+        "type": "resistor",
+        "name": "RIN",
+        "x": 20,
+        "y": 23,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-RF",
+        "type": "resistor",
+        "name": "RF",
+        "x": 39,
+        "y": 15,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-U1",
+        "type": "opamp",
+        "name": "U1",
+        "x": 40,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "1e9"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 33,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 23
+          },
+          {
+            "x": 17,
+            "y": 23
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 12,
+            "y": 23
+          },
+          {
+            "x": 12,
+            "y": 20
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 23,
+            "y": 23
+          },
+          {
+            "x": 36,
+            "y": 23
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 30,
+            "y": 23
+          },
+          {
+            "x": 30,
+            "y": 15
+          },
+          {
+            "x": 36,
+            "y": 15
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 42,
+            "y": 15
+          },
+          {
+            "x": 48,
+            "y": 15
+          },
+          {
+            "x": 48,
+            "y": 25
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 44,
+            "y": 25
+          },
+          {
+            "x": 52,
+            "y": 25
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 36,
+            "y": 27
+          },
+          {
+            "x": 33,
+            "y": 27
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 12,
+        "y": 20,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 52,
+        "y": 25,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      },
+      {
+        "type": "tran",
+        "tstep": 1e-5,
+        "tstop": 0.003
+      }
+    ],
+    "options": {}
+  }
+}

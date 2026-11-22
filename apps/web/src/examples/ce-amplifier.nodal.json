@@ -1,0 +1,579 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Common-emitter amplifier: NPN, divider bias, bypassed emitter, about 40 dB midband gain",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VCC",
+        "type": "vsource",
+        "name": "VCC",
+        "x": 8,
+        "y": 10,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "12"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-VS",
+        "type": "vsource",
+        "name": "VS",
+        "x": 8,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "acMag": "1",
+          "acPhase": "0",
+          "wave": "sin",
+          "vo": "0",
+          "va": "10m",
+          "freq": "1k"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 8,
+        "y": 33,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RS",
+        "type": "resistor",
+        "name": "RS",
+        "x": 16,
+        "y": 27,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-CIN",
+        "type": "capacitor",
+        "name": "CIN",
+        "x": 26,
+        "y": 27,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10u"
+        }
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 34,
+        "y": 15,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "47k"
+        }
+      },
+      {
+        "id": "p-R2",
+        "type": "resistor",
+        "name": "R2",
+        "x": 34,
+        "y": 38,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 34,
+        "y": 41,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RC",
+        "type": "resistor",
+        "name": "RC",
+        "x": 46,
+        "y": 15,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "4.7k"
+        }
+      },
+      {
+        "id": "p-Q1",
+        "type": "npn",
+        "name": "Q1",
+        "x": 44,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "QMOD"
+        }
+      },
+      {
+        "id": "p-RE",
+        "type": "resistor",
+        "name": "RE",
+        "x": 46,
+        "y": 38,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-CE",
+        "type": "capacitor",
+        "name": "CE",
+        "x": 52,
+        "y": 38,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "100u"
+        }
+      },
+      {
+        "id": "p-COUT",
+        "type": "capacitor",
+        "name": "COUT",
+        "x": 58,
+        "y": 22,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "10u"
+        }
+      },
+      {
+        "id": "p-RL",
+        "type": "resistor",
+        "name": "RL",
+        "x": 66,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 66,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-GND5",
+        "type": "ground",
+        "name": "GND5",
+        "x": 49,
+        "y": 41,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 7
+          },
+          {
+            "x": 34,
+            "y": 7
+          },
+          {
+            "x": 46,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 34,
+            "y": 7
+          },
+          {
+            "x": 34,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 46,
+            "y": 7
+          },
+          {
+            "x": 46,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 20,
+            "y": 7
+          },
+          {
+            "x": 20,
+            "y": 4
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 8,
+            "y": 27
+          },
+          {
+            "x": 13,
+            "y": 27
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 10,
+            "y": 27
+          },
+          {
+            "x": 10,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 19,
+            "y": 27
+          },
+          {
+            "x": 23,
+            "y": 27
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 21,
+            "y": 27
+          },
+          {
+            "x": 21,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 29,
+            "y": 27
+          },
+          {
+            "x": 34,
+            "y": 27
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 34,
+            "y": 18
+          },
+          {
+            "x": 34,
+            "y": 35
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 34,
+            "y": 30
+          },
+          {
+            "x": 41,
+            "y": 30
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 37,
+            "y": 30
+          },
+          {
+            "x": 37,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w13",
+        "points": [
+          {
+            "x": 46,
+            "y": 18
+          },
+          {
+            "x": 46,
+            "y": 27
+          }
+        ]
+      },
+      {
+        "id": "w14",
+        "points": [
+          {
+            "x": 46,
+            "y": 22
+          },
+          {
+            "x": 55,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w15",
+        "points": [
+          {
+            "x": 50,
+            "y": 22
+          },
+          {
+            "x": 50,
+            "y": 19
+          }
+        ]
+      },
+      {
+        "id": "w16",
+        "points": [
+          {
+            "x": 46,
+            "y": 33
+          },
+          {
+            "x": 46,
+            "y": 35
+          },
+          {
+            "x": 52,
+            "y": 35
+          }
+        ]
+      },
+      {
+        "id": "w17",
+        "points": [
+          {
+            "x": 52,
+            "y": 35
+          },
+          {
+            "x": 52,
+            "y": 32
+          }
+        ]
+      },
+      {
+        "id": "w18",
+        "points": [
+          {
+            "x": 46,
+            "y": 41
+          },
+          {
+            "x": 49,
+            "y": 41
+          },
+          {
+            "x": 52,
+            "y": 41
+          }
+        ]
+      },
+      {
+        "id": "w19",
+        "points": [
+          {
+            "x": 61,
+            "y": 22
+          },
+          {
+            "x": 66,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w20",
+        "points": [
+          {
+            "x": 63,
+            "y": 22
+          },
+          {
+            "x": 63,
+            "y": 19
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-vcc",
+        "text": "vcc",
+        "x": 20,
+        "y": 4,
+        "rotation": 0
+      },
+      {
+        "id": "l-s",
+        "text": "s",
+        "x": 10,
+        "y": 24,
+        "rotation": 0
+      },
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 21,
+        "y": 24,
+        "rotation": 0
+      },
+      {
+        "id": "l-b",
+        "text": "b",
+        "x": 37,
+        "y": 33,
+        "rotation": 0
+      },
+      {
+        "id": "l-c",
+        "text": "c",
+        "x": 50,
+        "y": 19,
+        "rotation": 0
+      },
+      {
+        "id": "l-e",
+        "text": "e",
+        "x": 52,
+        "y": 32,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 63,
+        "y": 19,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "QMOD",
+      "type": "NPN",
+      "params": {
+        "IS": "1e-15",
+        "BF": "200",
+        "VAF": "100",
+        "CJE": "1e-11",
+        "VJE": "0.75",
+        "MJE": "0.33",
+        "CJC": "5e-12",
+        "VJC": "0.75",
+        "MJC": "0.33",
+        "TF": "3e-10",
+        "TR": "1e-8"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      },
+      {
+        "type": "ac",
+        "sweep": "dec",
+        "points": 20,
+        "fstart": 10,
+        "fstop": 10000000.0
+      },
+      {
+        "type": "tran",
+        "tstep": 1e-5,
+        "tstop": 0.005
+      }
+    ],
+    "options": {
+      "reltol": 1e-6,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}
