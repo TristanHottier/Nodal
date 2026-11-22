@@ -10,7 +10,12 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      // The performance budget is measured on Chromium only.
+      testIgnore: /perf\.spec\.ts/,
+    },
   ],
   webServer: {
     // Production build served under the /Nodal/ base path, as on GitHub Pages.

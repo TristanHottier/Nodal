@@ -12,6 +12,14 @@ export default defineConfig({
       ),
     },
   },
+  build: {
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL("index.html", import.meta.url)),
+        bench: fileURLToPath(new URL("bench.html", import.meta.url)),
+      },
+    },
+  },
   worker: { format: "es" },
   test: {
     environment: "jsdom",

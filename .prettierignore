@@ -8,3 +8,4 @@ playwright-report/
 .superpowers/
 pnpm-lock.yaml
 *.md
+validation/perf/
