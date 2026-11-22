@@ -1,6 +1,10 @@
 import type { Part, Schematic } from "@nodal/schema";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { SimulationProvider } from "../../simulation/SimulationContext";
+import { createSimulationStore } from "../../simulation/store";
+import { fakeRunner } from "../../simulation/testFixtures";
 import { EditorProvider } from "../EditorContext";
 import { createEditorStore } from "../store";
 import { Canvas } from "./Canvas";
@@ -243,5 +247,34 @@ describe("Canvas", () => {
     fireEvent.pointerMove(svg, { ...ptr, clientX: 37 + 880, clientY: -53 + 880 });
     fireEvent.pointerUp(svg, { ...ptr, clientX: 37 + 880, clientY: -53 + 880 });
     expect(store.getState().doc.parts[0]).toMatchObject({ x: 11, y: 11 });
+  });
+
+  it("failed_status_marks_items", () => {
+    cleanup();
+    const sim = createSimulationStore({ runner: fakeRunner() });
+    const editor = createEditorStore({ doc: DOC });
+    render(
+      <EditorProvider store={editor}>
+        <SimulationProvider store={sim}>
+          <Canvas />
+        </SimulationProvider>
+      </EditorProvider>,
+    );
+    expect(screen.getByTestId("wire-wA").getAttribute("class")).not.toContain("sim-error");
+    act(() => {
+      sim.setState({
+        status: {
+          kind: "failed",
+          message: "x",
+          partIds: ["R1"],
+          wireIds: ["wB"],
+          labelIds: ["L1"],
+        },
+      });
+    });
+    expect(screen.getByTestId("part-R1").getAttribute("class")).toContain("sim-error");
+    expect(screen.getByTestId("wire-wB").getAttribute("class")).toContain("sim-error");
+    expect(screen.getByTestId("label-L1").getAttribute("class")).toContain("sim-error");
+    expect(screen.getByTestId("wire-wA").getAttribute("class")).not.toContain("sim-error");
   });
 });

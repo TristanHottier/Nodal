@@ -67,12 +67,10 @@ describe("simulation store", () => {
       new EngineRunError({ message: "singular matrix", elements: ["R1"], nodes: ["a"] }),
     );
     await done;
-    expect(get().status).toEqual({
+    expect(get().status).toMatchObject({
       kind: "failed",
       message: "singular matrix",
-      partIds: [],
-      wireIds: [],
-      labelIds: [],
+      partIds: ["r1"],
     });
     expect(get().result).toBeNull();
   });

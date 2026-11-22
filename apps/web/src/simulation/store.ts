@@ -3,14 +3,11 @@
 import type { Netlist, Project, Schematic } from "@nodal/schema";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { CancelledError, EngineRunError, type EngineRunner } from "../engine/client";
-import { type EngineErrorInfo, type SimResult, signalKey } from "../engine/results";
+import { type SimResult, signalKey } from "../engine/results";
 import { type CircuitMap, projectToNetlist } from "../netlist/netlister";
+import { type ErrorTargets, errorTargets } from "./errorTargets";
 
-export interface ErrorTargets {
-  partIds: string[];
-  wireIds: string[];
-  labelIds: string[];
-}
+export type { ErrorTargets };
 
 export type RunStatus =
   | { kind: "idle" }
@@ -37,16 +34,7 @@ export interface SimulationState {
 
 const NO_TARGETS: ErrorTargets = { partIds: [], wireIds: [], labelIds: [] };
 
-/* eslint-disable @typescript-eslint/no-unused-vars -- stubs until Tasks 7 and 9 */
-// replaced in Task 7
-function targetsFor(
-  _info: EngineErrorInfo,
-  _map: CircuitMap | null,
-  _doc: Schematic,
-): ErrorTargets {
-  return { ...NO_TARGETS };
-}
-
+/* eslint-disable @typescript-eslint/no-unused-vars -- stub until Task 9 */
 // replaced in Task 9
 function deriveCurrents(result: SimResult, _ir: Netlist): SimResult {
   return result;
@@ -85,11 +73,13 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
         const errors = diagnostics.filter((d) => d.severity === "error");
         if (errors.length > 0 || !ir) {
           const ids = new Set(errors.flatMap((d) => d.itemIds));
-          const parts = new Set(project.schematic.parts.map((p) => p.id));
+          const { parts, wires, labels } = project.schematic;
+          const of = (items: { id: string }[]) => new Set(items.map((i) => i.id));
+          const [partSet, wireSet, labelSet] = [of(parts), of(wires), of(labels)];
           fail("Fix the problems listed before simulating", {
-            partIds: [...ids].filter((i) => parts.has(i)),
-            wireIds: [],
-            labelIds: [...ids].filter((i) => !parts.has(i)),
+            partIds: [...ids].filter((i) => partSet.has(i)),
+            wireIds: [...ids].filter((i) => wireSet.has(i)),
+            labelIds: [...ids].filter((i) => labelSet.has(i)),
           });
           return;
         }
@@ -117,7 +107,8 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
         } catch (e) {
           if (id !== runId) return;
           if (e instanceof CancelledError) set({ status: { kind: "idle" } });
-          else if (e instanceof EngineRunError) fail(e.message, targetsFor(e.info, map, ranDoc));
+          else if (e instanceof EngineRunError)
+            fail(e.message, map ? errorTargets(e.info, map, ranDoc) : NO_TARGETS);
           else fail(e instanceof Error ? e.message : String(e));
         }
       },
