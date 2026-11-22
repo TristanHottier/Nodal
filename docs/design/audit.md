@@ -66,3 +66,21 @@ Pass with two gaps. The token file is the single source of raw values, the detec
 2. [P2] A3, A4, A6.
 3. [P3] A7 to A10 if time allows.
 4. Re-run the audit.
+
+## Re-audit
+
+Date: 2026-11-22, after the Task 10 fixes. Method: the same Playwright checks and DOM measurements as above, plus the new specs, axe with the WCAG tags and with the best-practice rules `landmark-one-main`, `page-has-heading-one`, `region` and `heading-order`, and `impeccable detect --json apps/web/src` (`[]`, exit 0).
+
+**Must-fix: 0.** The audit health score is 18 of 20 (responsive 2 to 4, accessibility 3 to 4, performance still 3 for the single chunk).
+
+| Finding | Result |
+|---------|--------|
+| A1 Examples select overflow | Fixed. The select now ends inside the palette at 1024 and 1280 px, and its focus ring shows in full. |
+| A2 Inspector fieldset overflow | Fixed. `min-width: 0` on `.nodal-model`; no control passes the panel edge with a part selected or with the analysis editor open. |
+| A3 13 px checkbox | Fixed. The label row is at least 25x25 px, with a gap before Remove. A new spec measures it. |
+| A4 Landmarks and h1 | Fixed. One `main`, one hidden `h1`, a hidden `h2` for the empty inspector, a footer and a labelled Results section. All four axe rules pass at 1280 and 800 px. |
+| A5 Test gap | Fixed. `responsive.spec.ts` now checks every button, select, input and textarea against its panel at 1024 and 1280 px. Before the fixes it failed in Chromium and Firefox. |
+| A6 Warning contrast | Fixed. Light warning is oklch 0.52 0.1 70 and sits in the 4.5:1 group of `tokens.test.ts`. |
+| A7 to A10 | Not fixed; reasons in the plan's "Findings not fixed" list. |
+
+Tests after the fixes: 615 unit tests, 58 of 58 e2e (Chromium and Firefox), lint and typecheck clean. The locally rendered visual baselines differ from the CI renders and were already failing before these changes; the editor and analysis baselines were re-rendered locally for the intended changes and the CI renders will replace them.

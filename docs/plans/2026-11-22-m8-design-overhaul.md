@@ -220,3 +220,20 @@ Run in the main session with the impeccable skill (subagents only where its refe
 ## Rulings (filled in during execution)
 
 ## Findings not fixed (filled in during Task 10)
+
+Fixed in Task 10: C1/A1, C2/A2, C7/A3 (uic row), A4, A5, A6. Not fixed:
+
+- C3 (logo reads as part of the Examples row): moving the mark needs a header layout decision, not a small change.
+- C4 (inspector default is Models, Analyses below the fold): reordering the empty-state inspector changes behaviour, so it needs the owner's call.
+- C5 (palette labels wrap to three lines at 1024 px; tool modes look like plain text): icons and shortcut hints add visible content and copy.
+- C6 (schematic cut off when the waveform panel opens at 1024x768): a refit on panel open is new canvas behaviour.
+- C8 (probed wire and selection hues are close in light): ADR 0012 already records it; a dash or weight change is a design decision.
+- C9 (empty progress bar, unlabelled analysis select): changes the run bar's content.
+- C10 (1 px traces, two axis ticks): the uPlot setup is covered by the M7 perf budget and was not re-measured.
+- C11 (ragged unit column): a shared Field layout change that moves every inspector input; needs fresh baselines for little gain.
+- C12 (no first-run prompt, no way to load an example below 1024 px): needs new copy, which M8 excludes.
+- C13 (chrome is near-default controls): needs a decision from the owner.
+- A7 (disabled and muted look the same): passes contrast; a distinct disabled style is a design choice.
+- A8 (one 515 kB chunk): informational; the CI Lighthouse job covers load.
+- A9 (120 ms theme-change transition shows mid-blend greys in a manual screenshot): within the 150 ms limit and 0 ms under reduced motion.
+- A10 (11 px hints): set by ADR 0012's type scale.
