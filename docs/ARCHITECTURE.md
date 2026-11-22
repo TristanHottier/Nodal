@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the planned design. Sections describe intent until the roadmap marks the matching milestone done. Decisions and their reasons live in [`adr/`](adr/).
+This document describes the design of Nodal. Sections for milestones the roadmap has not marked done describe intent. Decisions and their reasons live in [`adr/`](adr/).
 
 ## 1. Repository layout
 
@@ -281,6 +281,19 @@ The code is in `apps/web/src/waveform/` and `apps/web/src/simulation/`. The run 
 - **Examples.** `apps/web/src/examples/` holds eight projects (divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter, inverting op-amp) as `.nodal.json` files, listed in `index.ts`. The "Open example" select in the project bar loads one, with the same replace confirmation as Open. `examples.test.ts` checks that each netlists without diagnostics, that every analysis runs in the wasm engine, and one expected value per example.
 - **Benchmark page.** `apps/web/bench.html` (`src/bench/`) is a second Vite entry that runs the performance cases in the browser: a transient and an AC run of `validation/perf/tran50.json` in the engine, and pan and zoom of a generated 500-part project in the `<Editor>`. `pnpm --filter @nodal/web e2e:perf` runs it in the Playwright `perf` project and checks the budget of the roadmap.
 - **Canvas culling.** `editor/canvas/cull.ts` limits rendering to the parts, wires and labels near the visible world box, which is snapped to coarse cells so that the rendered lists change only when the view crosses a cell border.
+
+### 6.6 Theme and design tokens
+
+The visual design is "Solderless" ([ADR 0012](adr/0012-solderless-visual-design.md)); `apps/web/DESIGN.md` is its description for anyone adding screens.
+
+- **One token file.** `apps/web/src/theme/tokens.css` holds every color (OKLCH), type size, space, radius, elevation, duration and panel width as a CSS custom property. `base.css` styles the standard controls from those tokens. No other CSS or component file contains a color literal or a `px`, `rem` or `em` value; `theme/noRawValues.test.ts` scans `src` and fails on one. `theme/color.ts` and the tests are the exceptions.
+- **Themes.** The light values sit on `:root` and `[data-theme="light"]`. The dark values sit under `[data-theme="dark"]` and again under `@media (prefers-color-scheme: dark)` for `:root:not([data-theme="light"])`, so the default follows the OS. A test checks that the two dark blocks match.
+- **Theme select.** `theme/ThemeSelect.tsx` is the status-bar select with System, Light and Dark. `theme/theme.ts` stores the choice in `localStorage` and sets or removes `data-theme` on `<html>`. The uPlot setup needs token values in JavaScript. It reads them with `theme/cssVar.ts` and rebuilds the plot when `useResolvedTheme` reports a change.
+- **Tests on the tokens.** `theme/tokens.test.ts` parses the file and checks text contrast (4.5:1), UI and focus contrast (3:1) and the separation of the six trace colors under simulated color-vision deficiencies, in both themes.
+- **Probed nets.** A net with a probe draws its wires in the trace's color. Selection and error colors take precedence.
+- **Stale results.** After an edit that follows a run, operating-point tags, the inspector values and the plots are dimmed with `--opacity-stale`, and the run bar says "Out of date, run again".
+- **Narrow windows.** From 1280 px down to 1024 px the palette and inspector use the `-narrow` width tokens. Below 1024 px the editor is read-only: pan and zoom work, and a notice explains why. `e2e/responsive.spec.ts` covers both.
+- **Quality gates.** `e2e/a11y.spec.ts` runs axe-core (WCAG 2.2 AA) on the editor, inspector, analysis panel and waveform viewer in both themes. `e2e/visual.spec.ts` compares screenshots of the main views in both themes with baselines rendered by CI. The `lighthouse` CI job audits the deployed Pages URL on mobile and desktop. The impeccable critique and audit are in `docs/design/`.
 
 ## 7. Project file (`.nodal.json`)
 

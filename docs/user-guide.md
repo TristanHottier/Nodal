@@ -12,6 +12,12 @@ The fastest way to see the app work is an example. The project bar at the top of
 
 The window has four areas. The left column holds the project bar, the tools and the parts. The canvas is in the middle. The inspector is on the right. The run bar and results sit under the canvas, and the status bar is at the bottom.
 
+### Theme and window size
+
+The Theme select in the status bar has System, Light and Dark. System follows your operating system and is the default. Your choice is stored in this browser.
+
+The editor works in windows from 1024 px wide up, and the side columns get narrower between 1024 and 1280 px. In a window narrower than 1024 px, Nodal shows the schematic read-only: you can pan and zoom, and a notice says "Nodal's editor needs a window at least 1024 px wide. The schematic is shown read-only." Widen the window to edit again.
+
 To simulate an example, choose an analysis in the run bar (the menu left of the Run button) and press Run.
 
 ## Drawing
@@ -143,7 +149,7 @@ After an operating-point run, each net shows its voltage next to it on the schem
 
 ### Waveforms
 
-DC sweep and transient runs draw one plot, with the swept source or time on the x axis. After a run, the first node voltage is shown. To add more signals, use the Signal menu and the Add button in the results panel, or press `P` and click a wire or net label for a node voltage, or a part for its current. The Probe tool needs a finished run. Each signal appears as a coloured chip, and the x on the chip removes it. Resistor currents are computed from the node voltages, with the sign positive from the first pin to the second.
+DC sweep and transient runs draw one plot, with the swept source or time on the x axis. After a run, the first node voltage is shown. To add more signals, use the Signal menu and the Add button in the results panel, or press `P` and click a wire or net label for a node voltage, or a part for its current. The Probe tool needs a finished run. Each signal appears as a coloured chip, and the x on the chip removes it. A probed node voltage also colours its wires on the schematic in the same colour as its chip and trace, so you can see which net a trace belongs to. A selected or failing wire keeps its selection or error colour. Resistor currents are computed from the node voltages, with the sign positive from the first pin to the second.
 
 Click the plot to place cursor A and Shift+click to place cursor B. You can also type a position into the Cursor A and Cursor B fields, using the same suffixes as values (`1m`). The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
 

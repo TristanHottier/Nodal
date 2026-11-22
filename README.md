@@ -7,7 +7,7 @@
 
 Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
 
-> **Status: pre-alpha. M7 done: the web app is a schematic editor with the four analyses, eight example projects and a user guide. The `v1.0.0` tag comes with the final design in M8.**
+> **Status: v1.0.0. The web app is a schematic editor with the four analyses, eight example projects, a user guide and the "Solderless" design: light and dark themes, a read-only schematic view below 1024 px wide, and probed nets drawn in their trace colour.**
 > Live editor: https://tristanhottier.github.io/Nodal/
 
 What works today:
@@ -16,6 +16,7 @@ What works today:
 - Run DC operating point, DC sweep, AC small-signal (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis) in the browser. The engine is Rust compiled to WebAssembly and runs in a worker. Runs can be cancelled.
 - See operating-point values on the schematic. Plot results with probes, cursors and a Bode view. Engine errors are marked on the schematic.
 - Open one of eight examples from the "Open example" select in the project bar: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
+- Switch between light and dark with the Theme select in the status bar (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only. The design rules are in [`apps/web/DESIGN.md`](apps/web/DESIGN.md).
 - Devices: R, L, C, V, I, E, G, H and F elements plus diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient.
 - `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`.
 
@@ -47,7 +48,18 @@ Measured by `pnpm --filter @nodal/web e2e:perf`, which opens `bench.html` in hea
 
 The test passes with a mean of at least 58 fps and at most 5 % slow frames, to allow for timer jitter. On Tristan's laptop in desktop Chrome (2026-11-22, deployed app at 93c38f1) the same page gave a transient median of 599.6 ms (samples 572.6 to 860.3 ms), an AC median of 82.1 ms, and 60.3 fps for pan and zoom with 7 slow frames of 240. Anyone can run it at https://tristanhottier.github.io/Nodal/bench.html.
 
-## What v1 will do
+### Page load
+
+Lighthouse lab runs against https://tristanhottier.github.io/Nodal/ in the `lighthouse` CI job (median of 3 runs, CI run [45082190902](https://github.com/TristanHottier/Nodal/actions/runs/45082190902) at 876a528). The limits are LCP 2.5 s, CLS 0.1 and TBT 200 ms.
+
+| Profile | LCP | CLS | TBT |
+|---|---|---|---|
+| Mobile | 768 ms | 0.000 | 88 ms |
+| Desktop | 209 ms | 0.000 | 0 ms |
+
+In the same run, `e2e:perf` measured editor pan and zoom with 500 parts at 60 fps with 0 slow frames of 240 (limit 12). The CI job also runs axe-core (WCAG 2.2 AA) on the editor, inspector, analysis panel and waveform viewer in both themes; it finds no violations.
+
+## What v1 does
 
 - Draw a schematic on a grid: place parts, rotate and mirror them, draw orthogonal wires, label nets.
 - Simulate it entirely in the browser, with no server:
@@ -66,7 +78,7 @@ The test passes with a mean of at least 58 fps and at most 5 % slow frames, to a
 
 Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on a fixed suite of reference circuits, and simple circuits are also checked against closed-form solutions. CI blocks any change that breaks the suite. Accuracy claims in these docs are limited to what a passing test shows; see [`docs/VALIDATION.md`](docs/VALIDATION.md).
 
-## Planned stack
+## Stack
 
 | Part | Choice |
 |---|---|
