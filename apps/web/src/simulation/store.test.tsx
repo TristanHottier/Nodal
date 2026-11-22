@@ -51,6 +51,22 @@ describe("simulation store", () => {
     expect(get().ranIr).not.toBeNull();
   });
 
+  it("op_run_exposes_derived_resistor_current", async () => {
+    const { runner, get } = setup();
+    const done = get().run(dividerProject(), 0);
+    runner.calls[0]?.resolve({
+      type: "op",
+      axis: new Float64Array(0),
+      signals: [
+        { name: "in", kind: "v", re: new Float64Array([10]) },
+        { name: "out", kind: "v", re: new Float64Array([7.5]) },
+      ],
+    });
+    await done;
+    const i = get().result?.signals.find((s) => s.kind === "i" && s.name === "R1");
+    expect(i?.re[0]).toBeCloseTo(2.5e-3, 12);
+  });
+
   it("netlist_errors_block_run", async () => {
     const { runner, get } = setup();
     await get().run(projectOf(emptyDoc()), 0);

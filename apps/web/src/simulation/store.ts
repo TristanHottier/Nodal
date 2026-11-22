@@ -5,6 +5,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { CancelledError, EngineRunError, type EngineRunner } from "../engine/client";
 import { type SimResult, signalKey } from "../engine/results";
 import { type CircuitMap, projectToNetlist } from "../netlist/netlister";
+import { withDerivedCurrents } from "../waveform/traces";
 import { type ErrorTargets, errorTargets } from "./errorTargets";
 
 export type { ErrorTargets };
@@ -33,13 +34,6 @@ export interface SimulationState {
 }
 
 const NO_TARGETS: ErrorTargets = { partIds: [], wireIds: [], labelIds: [] };
-
-/* eslint-disable @typescript-eslint/no-unused-vars -- stub until Task 9 */
-// replaced in Task 9
-function deriveCurrents(result: SimResult, _ir: Netlist): SimResult {
-  return result;
-}
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
 /** Keep probes present in the result; fall back to the first node voltage (not for op). */
 function nextProbes(probes: string[], result: SimResult): string[] {
@@ -94,7 +88,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
             },
           });
           if (id !== runId) return;
-          const result = deriveCurrents(raw, ir);
+          const result = withDerivedCurrents(raw, ir);
           set({
             status: { kind: "done" },
             result,
