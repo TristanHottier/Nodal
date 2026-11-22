@@ -31,6 +31,9 @@
   --color-warning: oklch(0.56 0.12 70);
   --color-success: oklch(0.52 0.12 150);
   --color-op-tag: oklch(0.46 0.075 195);
+  /* Brand mark: cyan to mint, outside the 60/30/10 split (ADR 0012) */
+  --color-brand-1: oklch(0.6 0.1 200);
+  --color-brand-2: oklch(0.6 0.12 165);
   /* Waveform viewer; traces are jumper-wire colors */
   --color-plot-bg: oklch(0.985 0.003 250);
   --color-plot-grid: oklch(0.9 0.006 250);
@@ -112,6 +115,8 @@
   --color-warning: oklch(0.78 0.13 75);
   --color-success: oklch(0.75 0.13 150);
   --color-op-tag: oklch(0.8 0.1 190);
+  --color-brand-1: oklch(0.8 0.13 200);
+  --color-brand-2: oklch(0.86 0.17 165);
   --color-plot-bg: oklch(0.17 0.005 250);
   --color-plot-grid: oklch(0.28 0.008 250);
   --color-cursor-a: oklch(0.9 0.01 250);
@@ -146,6 +151,8 @@
     --color-warning: oklch(0.78 0.13 75);
     --color-success: oklch(0.75 0.13 150);
     --color-op-tag: oklch(0.8 0.1 190);
+    --color-brand-1: oklch(0.8 0.13 200);
+    --color-brand-2: oklch(0.86 0.17 165);
     --color-plot-bg: oklch(0.17 0.005 250);
     --color-plot-grid: oklch(0.28 0.008 250);
     --color-cursor-a: oklch(0.9 0.01 250);

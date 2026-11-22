@@ -21,6 +21,7 @@ const TEXT_ON = ["--color-canvas", "--color-panel", "--color-panel-raised"];
 const TEXT = ["--color-text", "--color-text-muted", "--color-error", "--color-op-tag"];
 const UI = ["--color-accent", "--color-focus", "--color-border-strong", "--color-ink"];
 const TRACES = [1, 2, 3, 4, 5, 6].map((n) => `--color-trace-${String(n)}`);
+const BRAND = ["--color-brand-1", "--color-brand-2"];
 const CURSORS = ["--color-cursor-a", "--color-cursor-b"];
 
 describe("tokens.css", () => {
@@ -68,6 +69,9 @@ describe("tokens.css", () => {
       it("gives UI components and focus rings at least 3:1", () => {
         for (const bg of ["--color-canvas", "--color-panel"])
           for (const fg of UI) expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
+        // Brand mark stops: outside the 60/30/10 split, but they must read on both surfaces.
+        for (const bg of ["--color-canvas", "--color-panel"])
+          for (const fg of BRAND) expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
         // The ring sits --focus-offset outside the control, so it meets the panel, not the accent fill.
         for (const fg of ["--color-warning", "--color-success"])
           expect(ratio(fg, "--color-panel"), fg).toBeGreaterThanOrEqual(3);

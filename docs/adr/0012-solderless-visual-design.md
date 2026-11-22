@@ -23,6 +23,10 @@ Colors are OKLCH custom properties in `apps/web/src/theme/tokens.css`.
 - Dark theme: a black "carbon" board with the same roles, the rails lifted for contrast. The theme follows `prefers-color-scheme`, with a manual choice stored per browser.
 - Semantic colors (error, warning, success, op tags) and the waveform palette are tokens but sit outside the 60/30/10 split.
 
+### Brand mark
+
+The logo is an "N" of two vertical strokes and a diagonal, with a node ring at each end, drawn in a cyan-to-mint gradient. It stays apart from the UI palette: rail blue remains the only accent, and the two logo colors are brand tokens (`--color-brand-1`, `--color-brand-2`) outside the 60/30/10 split, like the semantic colors. The dark theme keeps values close to the original artwork. The light theme darkens both stops, since the raw colors reach only 1.4:1 to 1.7:1 on white, so each stop meets 3:1 against the canvas and the panel. A unit test checks both themes. The wordmark is outlined paths, so it needs no font. The original raster is kept in `docs/brand/logo-source.png`.
+
 ### Traces
 
 Six trace colors taken from jumper wire: blue, brown or orange, green, violet, red, ochre or yellow. Each pair stays at least 0.06 apart in OKLab with normal vision and under simulated protanopia, deuteranopia and tritanopia, and contrasts at least 3:1 with the plot background. A unit test checks both. Color never carries a signal alone: the legend chip and the cursor row name every trace.
