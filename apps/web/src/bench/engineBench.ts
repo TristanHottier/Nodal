@@ -13,6 +13,9 @@ export interface BenchRow {
   medianMs: number | null;
   status: "pass" | "fail" | "timed out" | "error";
   detail?: string;
+  /** Frame-rate rows only. */
+  fps?: number;
+  slowFrames?: number;
 }
 
 const median = (xs: number[]): number | null => {
