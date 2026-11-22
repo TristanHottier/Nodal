@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor } from "./Editor";
 import { canvas, click, drag, makeStore, moveTo } from "./testUtils";
 import type { Schematic } from "@nodal/schema";
+import { createSimulationStore } from "../simulation/store";
+import { fakeRunner } from "../simulation/testFixtures";
 
 const NOTICE =
   "Nodal's editor needs a window at least 1024 px wide. The schematic is shown read-only.";
@@ -117,5 +119,39 @@ describe("Editor below 1024 px", () => {
     flip(false);
     expect(store.getState().gestureActive).toBe(false);
     expect(store.getState().doc).toEqual(DOC);
+  });
+
+  it("keeps_the_chosen_analysis_and_cursors_across_the_breakpoint", () => {
+    const flip = mockMedia(true);
+    const editor = makeStore(DOC);
+    const sim = createSimulationStore({ runner: fakeRunner() });
+    render(<Editor store={editor} simulation={sim} />);
+    const sims = editor.getState().project.simulation;
+    act(() => {
+      editor.getState().setSimulation({ ...sims, analyses: [...sims.analyses, ...sims.analyses] });
+    });
+    fireEvent.change(screen.getByLabelText("Analysis to run"), { target: { value: "1" } });
+    sim.getState().setCursors("tran", { a: 0.5, b: null });
+    flip(false);
+    flip(true);
+    expect((screen.getByLabelText("Analysis to run") as HTMLSelectElement).value).toBe("1");
+    expect(sim.getState().cursors.cursors.a).toBe(0.5);
+  });
+
+  it("shows_a_running_simulation_and_a_cancel_control_when_read_only", () => {
+    mockMedia(false);
+    const runner = fakeRunner();
+    const sim = createSimulationStore({ runner });
+    render(<Editor store={makeStore(DOC)} simulation={sim} />);
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+    act(() => {
+      sim.setState({ status: { kind: "running", index: 0, progress: 0.2 } });
+    });
+    expect(screen.getByText("Running…")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(sim.getState().status).toEqual({ kind: "idle" });
+    expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+    // Still no Run or other editing control.
+    expect(screen.queryByRole("button", { name: "Run" })).toBeNull();
   });
 });

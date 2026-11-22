@@ -2,14 +2,11 @@
 import { Field } from "../editor/inspector/Field";
 import type { SimResult } from "../engine/results";
 import { formatQuantity, formatValue, parseValue } from "../netlist/value";
-import { cursorReadout } from "./cursors";
+import { type CursorState, cursorReadout } from "./cursors";
 import { Swatch } from "./Swatch";
 import type { TraceView } from "./traces";
 
-export interface CursorState {
-  a: number | null;
-  b: number | null;
-}
+export type { CursorState };
 
 const X_UNIT = { tran: "s", ac: "Hz", dc: "", op: "" } as const;
 

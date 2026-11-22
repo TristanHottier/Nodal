@@ -1,5 +1,4 @@
 // Top of the results panel: analysis choice, Run and Cancel, progress and status.
-import { useState } from "react";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
 import { analysisLabel } from "./AnalysisFields";
 import { useResultsStale, useSimulation, useSimulationStore } from "./SimulationContext";
@@ -11,7 +10,7 @@ export function RunBar() {
   const analyses = useEditor((s) => s.project.simulation.analyses);
   const status = useSimulation((s) => s.status);
   const stale = useResultsStale();
-  const [chosen, setChosen] = useState(0);
+  const chosen = useSimulation((s) => s.analysisIndex);
   const index = Math.min(chosen, analyses.length - 1);
   const running = status.kind === "running";
 
@@ -33,7 +32,7 @@ export function RunBar() {
         value={index}
         disabled={running}
         onChange={(e) => {
-          setChosen(Number(e.target.value));
+          sim.getState().setAnalysisIndex(Number(e.target.value));
         }}
       >
         {analyses.map((a, i) => (

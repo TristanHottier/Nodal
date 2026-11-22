@@ -4,7 +4,12 @@ import type { StoreApi } from "zustand";
 import { EngineClient } from "../engine/client";
 import { RunBar } from "../simulation/RunBar";
 import { WaveformPanel } from "../waveform/WaveformPanel";
-import { SimulationProvider, useResetOnProjectLoad } from "../simulation/SimulationContext";
+import {
+  SimulationProvider,
+  useResetOnProjectLoad,
+  useSimulation,
+  useSimulationStore,
+} from "../simulation/SimulationContext";
 import { createSimulationStore, type SimulationState } from "../simulation/store";
 import { Canvas } from "./canvas/Canvas";
 import { EditorProvider, useEditor, useEditorStore } from "./EditorContext";
@@ -36,6 +41,26 @@ function StatusBar({ status }: { status?: ReactNode }) {
   );
 }
 
+/** A run that started in the editor keeps going in the read-only view: show it, and let it be cancelled. */
+function ReadOnlyRun() {
+  const sim = useSimulationStore();
+  const running = useSimulation((s) => s.status.kind === "running");
+  if (!running) return null;
+  return (
+    <div className="nodal-readonly-run">
+      <span role="status">Running…</span>
+      <button
+        type="button"
+        onClick={() => {
+          sim.getState().cancel();
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
 /** Below the minimum width: notice, pan-and-zoom canvas, status bar. No tool, panel or shortcut. */
 function ReadOnlyBody({ status }: { status?: ReactNode }) {
   const store = useEditorStore();
@@ -53,6 +78,7 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
         <h1 className="nodal-visually-hidden">Nodal</h1>
         <Canvas readOnly />
       </main>
+      <ReadOnlyRun />
       <StatusBar status={status} />
     </div>
   );

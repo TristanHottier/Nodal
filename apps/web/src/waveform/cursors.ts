@@ -2,6 +2,12 @@
 import type { SimResult } from "../engine/results";
 import { type TraceView, traceValues } from "./traces";
 
+/** The two cursor positions on the x axis; null when unset. */
+export interface CursorState {
+  a: number | null;
+  b: number | null;
+}
+
 /**
  * Interpolated y at x (in log10(x) when `logX`); null outside the range or next to a NaN.
  * `xs` may be ascending or descending (a DC sweep with a negative step).

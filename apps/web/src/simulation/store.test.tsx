@@ -179,6 +179,19 @@ describe("simulation store", () => {
     expect(screen.getByTestId("stale").textContent).toBe("true");
   });
 
+  it("keeps_the_chosen_analysis_and_the_cursors_and_reset_clears_them", () => {
+    const { get } = setup();
+    expect(get().analysisIndex).toBe(0);
+    expect(get().cursors).toEqual({ type: null, cursors: { a: null, b: null } });
+    get().setAnalysisIndex(2);
+    get().setCursors("tran", { a: 1e-3, b: null });
+    expect(get().analysisIndex).toBe(2);
+    expect(get().cursors).toEqual({ type: "tran", cursors: { a: 1e-3, b: null } });
+    get().reset();
+    expect(get().analysisIndex).toBe(0);
+    expect(get().cursors.cursors).toEqual({ a: null, b: null });
+  });
+
   it("reset_clears_result_status_and_probes", async () => {
     const { runner, get } = setup();
     const done = get().run(dividerProject(), 0);

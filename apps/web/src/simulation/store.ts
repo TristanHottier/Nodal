@@ -5,6 +5,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { CancelledError, EngineRunError, type EngineRunner } from "../engine/client";
 import { type SimResult, signalKey } from "../engine/results";
 import { type CircuitMap, projectToNetlist } from "../netlist/netlister";
+import type { CursorState } from "../waveform/cursors";
 import { withDerivedCurrents } from "../waveform/traces";
 import { type ErrorTargets, errorTargets } from "./errorTargets";
 
@@ -27,6 +28,12 @@ export interface SimulationState {
   map: CircuitMap | null;
   /** Signal keys such as `V(out)`. */
   probes: string[];
+  /** The analysis picked in the run bar. Lives here so it survives the editor/read-only switch. */
+  analysisIndex: number;
+  /** Cursor positions, owned by one analysis kind; a different kind starts clean. */
+  cursors: { type: SimResult["type"] | null; cursors: CursorState };
+  setAnalysisIndex(index: number): void;
+  setCursors(type: SimResult["type"], cursors: CursorState): void;
   run(project: Project, index: number): Promise<void>;
   cancel(): void;
   addProbe(key: string): void;
@@ -34,6 +41,8 @@ export interface SimulationState {
   /** Cancel any run and forget the result, status, map and probes (a new project was loaded). */
   reset(): void;
 }
+
+const NO_CURSORS = { type: null, cursors: { a: null, b: null } } as const;
 
 const NO_TARGETS: ErrorTargets = { partIds: [], wireIds: [], labelIds: [] };
 
@@ -61,6 +70,15 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
       ranIr: null,
       map: null,
       probes: [],
+      analysisIndex: 0,
+      cursors: NO_CURSORS,
+
+      setAnalysisIndex(index) {
+        set({ analysisIndex: index });
+      },
+      setCursors(type, cursors) {
+        set({ cursors: { type, cursors } });
+      },
 
       async run(project, requested) {
         // EngineClient.run supersedes a run still in flight, so no cancel is needed here.
@@ -128,6 +146,8 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
           ranIr: null,
           map: null,
           probes: [],
+          analysisIndex: 0,
+          cursors: NO_CURSORS,
         });
       },
 

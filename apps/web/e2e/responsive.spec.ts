@@ -115,3 +115,25 @@ test("resizing below 1024 px mid-wire leaves no half wire", async ({ page }) => 
     "true",
   );
 });
+
+test("crossing 1024 px keeps the chosen analysis and the cursors", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  await page.getByLabel("Analysis to run").selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.locator(".nodal-runbar").getByRole("status")).toHaveText("Done");
+  const cursorA = page.getByLabel("Cursor A");
+  await cursorA.fill("1k");
+  await cursorA.press("Enter");
+  await expect(cursorA).toHaveValue(/1/);
+  const shown = await cursorA.inputValue();
+
+  await page.setViewportSize({ width: 900, height: 700 });
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 1280, height: 800 });
+
+  await expect(page.getByLabel("Analysis to run")).toHaveValue("1");
+  await expect(page.getByLabel("Cursor A")).toHaveValue(shown);
+});

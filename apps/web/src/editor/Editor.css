@@ -124,7 +124,19 @@
 /* Below 1024 px: notice above a pan-and-zoom canvas. */
 .nodal-editor-readonly {
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
+}
+
+.nodal-readonly-run {
+  grid-row: 3;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  background: var(--color-panel);
+  border-top: var(--border-width) solid var(--color-border);
 }
 
 .nodal-editor-readonly .nodal-canvas-pane {
@@ -133,7 +145,7 @@
 }
 
 .nodal-editor-readonly .nodal-status {
-  grid-row: 3;
+  grid-row: 4;
   grid-column: 1;
 }
 
