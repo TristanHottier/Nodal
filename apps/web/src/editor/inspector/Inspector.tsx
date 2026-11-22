@@ -5,6 +5,7 @@ import { Diagnostics } from "../Diagnostics";
 import { useEditor } from "../EditorContext";
 import { LabelFields } from "./LabelFields";
 import { ModelEditor } from "./ModelEditor";
+import { OpValues } from "./OpValues";
 import { PartFields } from "./PartFields";
 import { ProjectFields } from "./ProjectFields";
 
@@ -35,6 +36,7 @@ export function Inspector() {
         <>
           <h2>{SYMBOLS[part.type].label}</h2>
           <PartFields part={part} />
+          <OpValues part={part} />
         </>
       ) : label ? (
         <>

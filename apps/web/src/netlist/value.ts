@@ -93,3 +93,11 @@ export function parsePwl(text: string): PwlResult {
   }
   return { ok: true, points };
 }
+
+/** A value with its unit, the unit attached to the engineering suffix: "2.5 V", "-1.25 mA". */
+export function formatQuantity(v: number, unit: string, digits = 4): string {
+  const text = formatValue(v, digits);
+  const m = /^(-?[\d.]+(?:e[+-]?\d+)?)(.*)$/.exec(text);
+  const [, num = text, suffix = ""] = m ?? [];
+  return `${num} ${suffix}${unit}`;
+}

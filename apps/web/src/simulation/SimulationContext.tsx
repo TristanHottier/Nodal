@@ -1,7 +1,9 @@
 // React binding for the simulation store, plus the hook that needs both stores.
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
-import { useStore } from "zustand";
+import { createStore, useStore } from "zustand";
+import type { SimResult } from "../engine/results";
+import type { CircuitMap } from "../netlist/netlister";
 import { useEditor } from "../editor/EditorContext";
 import type { SimulationState } from "./store";
 
@@ -60,4 +62,31 @@ export function useResultsStale(): boolean {
   const doc = useEditor((s) => s.doc);
   const simulation = useEditor((s) => s.project.simulation);
   return hasResult && (doc !== ranDoc || simulation !== ranSimulation);
+}
+
+/** What the schematic and inspector need to show operating-point values. */
+export interface OpView {
+  result: SimResult;
+  map: CircuitMap;
+  stale: boolean;
+}
+
+// Stands in outside a provider so components using useOpView need none in their tests.
+const NO_RESULT = createStore<SimulationState>(
+  // Only the fields useOpView reads exist; the cast documents that.
+  () =>
+    ({ result: null, map: null, ranDoc: null, ranSimulation: null }) as unknown as SimulationState,
+);
+
+/** The latest operating-point result with its circuit map. Null outside a provider or for other analyses. */
+export function useOpView(): OpView | null {
+  const store = useContext(SimulationContext) ?? NO_RESULT;
+  const result = useStore(store, (s) => s.result);
+  const map = useStore(store, (s) => s.map);
+  const ranDoc = useStore(store, (s) => s.ranDoc);
+  const ranSimulation = useStore(store, (s) => s.ranSimulation);
+  const doc = useEditor((s) => s.doc);
+  const simulation = useEditor((s) => s.project.simulation);
+  if (!result || !map || result.type !== "op") return null;
+  return { result, map, stale: doc !== ranDoc || simulation !== ranSimulation };
 }

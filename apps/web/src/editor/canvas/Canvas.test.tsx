@@ -277,4 +277,47 @@ describe("Canvas", () => {
     expect(screen.getByTestId("label-L1").getAttribute("class")).toContain("sim-error");
     expect(screen.getByTestId("wire-wA").getAttribute("class")).not.toContain("sim-error");
   });
+
+  it("op_tags_render_and_dim_when_stale", () => {
+    cleanup();
+    const sim = createSimulationStore({ runner: fakeRunner() });
+    const editor = createEditorStore({ doc: DOC });
+    render(
+      <EditorProvider store={editor}>
+        <SimulationProvider store={sim}>
+          <Canvas />
+        </SimulationProvider>
+      </EditorProvider>,
+    );
+    expect(document.querySelector(".nodal-op-tag")).toBeNull();
+    const doc = editor.getState().doc;
+    const net = "VDD";
+    act(() => {
+      sim.setState({
+        status: { kind: "done" },
+        result: {
+          type: "op",
+          axis: new Float64Array(0),
+          signals: [{ name: net, kind: "v", re: new Float64Array([2.5]) }],
+        },
+        ranDoc: doc,
+        ranSimulation: editor.getState().project.simulation,
+        map: {
+          partOfElement: new Map(),
+          netOfPin: new Map(),
+          netOfWire: new Map(),
+          netOfLabel: new Map([["L1", net]]),
+        },
+      });
+    });
+    const tag = document.querySelector(".nodal-op-tag");
+    expect(tag?.textContent).toBe("2.5 V");
+    expect(tag?.getAttribute("x")).toBe("30.3");
+    const group = () => document.querySelector<SVGElement>(".nodal-op-tags");
+    expect(group()?.style.opacity).toBe("1");
+    act(() => {
+      editor.getState().commit({ ...doc, labels: [...doc.labels] });
+    });
+    expect(group()?.style.opacity).toBe("0.5");
+  });
 });

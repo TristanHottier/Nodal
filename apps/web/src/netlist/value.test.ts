@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatValue, parsePwl, parseValue } from "./value";
+import { formatQuantity, formatValue, parsePwl, parseValue } from "./value";
 
 function ok(text: string): number {
   const r = parseValue(text);
@@ -79,5 +79,15 @@ describe("formatValue", () => {
     expect(formatValue(0)).toBe("0");
     expect(formatValue(1e-18)).toBe("1e-18");
     expect(formatValue(1e20)).toBe("100000000000000000000");
+  });
+});
+
+describe("formatQuantity", () => {
+  it("attaches_the_unit_to_the_suffix", () => {
+    expect(formatQuantity(2.5, "V")).toBe("2.5 V");
+    expect(formatQuantity(-1.25e-3, "A")).toBe("-1.25 mA");
+    expect(formatQuantity(1000, "V")).toBe("1 kV");
+    expect(formatQuantity(0, "V")).toBe("0 V");
+    expect(formatQuantity(1.23456789, "V")).toBe("1.235 V");
   });
 });

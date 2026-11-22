@@ -1,6 +1,8 @@
 import { EMPTY_SCHEMATIC, type Part, type PartType, type Schematic } from "@nodal/schema";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { createSimulationStore } from "../../simulation/store";
+import { fakeRunner } from "../../simulation/testFixtures";
 import { Editor } from "../Editor";
 import { makeStore, type Store, undo } from "../testUtils";
 
@@ -331,5 +333,41 @@ describe("Inspector", () => {
     expect(screen.getByText("Empty uses the default (1k)")).toBeTruthy();
     type("Value", "2k");
     expect(screen.queryByText(/Empty uses the default/)).toBeNull();
+  });
+
+  it("op_values_for_selected_part", () => {
+    const r1 = { ...part("p1", "resistor", "R1"), x: 10, y: 10 };
+    const store = makeStore({ ...EMPTY_SCHEMATIC, parts: [r1] });
+    store.getState().select(["p1"]);
+    const sim = createSimulationStore({ runner: fakeRunner() });
+    render(<Editor store={store} simulation={sim} />);
+    expect(screen.queryByText("Operating point")).toBeNull();
+    act(() => {
+      sim.setState({
+        status: { kind: "done" },
+        result: {
+          type: "op",
+          axis: new Float64Array(0),
+          signals: [
+            { name: "a", kind: "v", re: new Float64Array([2.5]) },
+            { name: "R1", kind: "i", re: new Float64Array([-1.25e-3]) },
+          ],
+        },
+        ranDoc: store.getState().doc,
+        ranSimulation: store.getState().project.simulation,
+        map: {
+          partOfElement: new Map([["R1", "p1"]]),
+          netOfPin: new Map([
+            ["p1:1", "a"],
+            ["p1:2", "0"],
+          ]),
+          netOfWire: new Map(),
+          netOfLabel: new Map(),
+        },
+      });
+    });
+    expect(screen.getByText("I(R1) = -1.25 mA")).toBeTruthy();
+    expect(screen.getByText("1: a = 2.5 V")).toBeTruthy();
+    expect(screen.getByText("2: 0 = 0 V")).toBeTruthy();
   });
 });

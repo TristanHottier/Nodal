@@ -9,6 +9,7 @@ import { moveItems } from "../model/edits";
 import { GridBackground } from "./GridBackground";
 import { JunctionDots } from "./JunctionDots";
 import { LabelView } from "./LabelView";
+import { OpOverlay } from "./OpOverlay";
 import { PartView } from "./PartView";
 import { SelectionBox } from "./SelectionBox";
 import { type CanvasToolHandlers, useCanvasPointer } from "./useCanvasPointer";
@@ -61,6 +62,7 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
           />
         ))}
         <JunctionDots dots={dots} />
+        <OpOverlay />
         {preview?.kind === "box" && <SelectionBox box={preview.box} />}
         {overlay}
       </g>
