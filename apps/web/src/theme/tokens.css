@@ -78,7 +78,7 @@
   --duration-fast: 120ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 
-  /* Layout, in grid units */
+  /* Layout: whole grid units (18, 26 and 32), written in px */
   --palette-width: 180px;
   --inspector-width: 260px;
   --waveform-side-width: 320px;

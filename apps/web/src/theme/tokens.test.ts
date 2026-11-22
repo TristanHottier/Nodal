@@ -28,6 +28,17 @@ describe("tokens.css", () => {
     expect(themes.systemDark).toEqual(themes.dark);
   });
 
+  it("overrides every light color in the dark block", () => {
+    const darkOnly = parseTokens(
+      css.replace(
+        /:root,\n\[data-theme="light"\] \{[\s\S]*?\n\}/,
+        ':root,\n[data-theme="light"] {}',
+      ),
+    );
+    const colors = Object.keys(themes.light).filter((k) => k.startsWith("--color-"));
+    for (const k of colors) expect(darkOnly.dark[k], k).toBeDefined();
+  });
+
   for (const [name, tokens] of [
     ["light", themes.light],
     ["dark", themes.dark],
