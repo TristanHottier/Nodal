@@ -96,3 +96,21 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  lighthouse:
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm --filter @nodal/web exec playwright install --with-deps chromium
+      - name: Lighthouse lab check (mobile and desktop)
+        run: |
+          export CHROME_PATH="$(pnpm --filter @nodal/web exec node -p "require('@playwright/test').chromium.executablePath()")"
+          node scripts/lighthouse.mjs https://tristanhottier.github.io/Nodal/ --runs 3
