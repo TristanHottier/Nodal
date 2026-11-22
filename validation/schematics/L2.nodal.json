@@ -1,0 +1,259 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "L2 unbalanced Wheatstone bridge",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 10,
+        "y": 15,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "10"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 10,
+        "y": 18,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 30,
+        "y": 15,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-R2",
+        "type": "resistor",
+        "name": "R2",
+        "x": 30,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "2k"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 30,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R3",
+        "type": "resistor",
+        "name": "R3",
+        "x": 54,
+        "y": 15,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "3k"
+        }
+      },
+      {
+        "id": "p-R4",
+        "type": "resistor",
+        "name": "R4",
+        "x": 54,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 54,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R5",
+        "type": "resistor",
+        "name": "R5",
+        "x": 42,
+        "y": 21,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "5k"
+        }
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 10,
+            "y": 12
+          },
+          {
+            "x": 54,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 20,
+            "y": 12
+          },
+          {
+            "x": 20,
+            "y": 9
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 30,
+            "y": 18
+          },
+          {
+            "x": 30,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 30,
+            "y": 21
+          },
+          {
+            "x": 24,
+            "y": 21
+          },
+          {
+            "x": 24,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 30,
+            "y": 21
+          },
+          {
+            "x": 39,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 54,
+            "y": 18
+          },
+          {
+            "x": 54,
+            "y": 24
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 45,
+            "y": 21
+          },
+          {
+            "x": 54,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 54,
+            "y": 21
+          },
+          {
+            "x": 58,
+            "y": 21
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-top",
+        "text": "top",
+        "x": 20,
+        "y": 9,
+        "rotation": 0
+      },
+      {
+        "id": "l-a",
+        "text": "a",
+        "x": 24,
+        "y": 24,
+        "rotation": 0
+      },
+      {
+        "id": "l-b",
+        "text": "b",
+        "x": 58,
+        "y": 21,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

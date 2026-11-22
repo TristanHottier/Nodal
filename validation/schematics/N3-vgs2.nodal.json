@@ -1,0 +1,232 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "N3 NMOS output characteristic, VGS=2",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VGS",
+        "type": "vsource",
+        "name": "VGS",
+        "x": 8,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "2"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-M1",
+        "type": "nmos",
+        "name": "M1",
+        "x": 30,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "NMOD",
+          "w": "10u",
+          "l": "1u"
+        }
+      },
+      {
+        "id": "p-VDS",
+        "type": "vsource",
+        "name": "VDS",
+        "x": 44,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 44,
+        "y": 25,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 32,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 19
+          },
+          {
+            "x": 8,
+            "y": 15
+          },
+          {
+            "x": 22,
+            "y": 15
+          },
+          {
+            "x": 22,
+            "y": 22
+          },
+          {
+            "x": 27,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 15,
+            "y": 15
+          },
+          {
+            "x": 15,
+            "y": 12
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 32,
+            "y": 19
+          },
+          {
+            "x": 32,
+            "y": 16
+          },
+          {
+            "x": 44,
+            "y": 16
+          },
+          {
+            "x": 44,
+            "y": 19
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 38,
+            "y": 16
+          },
+          {
+            "x": 38,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 32,
+            "y": 25
+          },
+          {
+            "x": 32,
+            "y": 28
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 34,
+            "y": 22
+          },
+          {
+            "x": 36,
+            "y": 22
+          },
+          {
+            "x": 36,
+            "y": 28
+          },
+          {
+            "x": 32,
+            "y": 28
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-g",
+        "text": "g",
+        "x": 15,
+        "y": 12,
+        "rotation": 0
+      },
+      {
+        "id": "l-d",
+        "text": "d",
+        "x": 38,
+        "y": 13,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "NMOD",
+      "type": "NMOS",
+      "params": {
+        "VTO": "0.7",
+        "KP": "0.0001",
+        "GAMMA": "0.4",
+        "PHI": "0.65",
+        "LAMBDA": "0.02"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "dc",
+        "source": "VDS",
+        "start": 0,
+        "stop": 5,
+        "step": 0.05
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

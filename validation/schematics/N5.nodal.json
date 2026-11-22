@@ -1,0 +1,582 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "N5 ten series diodes, 100 V",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 8,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "100"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 16,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1"
+        }
+      },
+      {
+        "id": "p-D1",
+        "type": "diode",
+        "name": "D1",
+        "x": 26,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D2",
+        "type": "diode",
+        "name": "D2",
+        "x": 36,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D3",
+        "type": "diode",
+        "name": "D3",
+        "x": 46,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D4",
+        "type": "diode",
+        "name": "D4",
+        "x": 56,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D5",
+        "type": "diode",
+        "name": "D5",
+        "x": 66,
+        "y": 13,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D6",
+        "type": "diode",
+        "name": "D6",
+        "x": 66,
+        "y": 33,
+        "rotation": 90,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D7",
+        "type": "diode",
+        "name": "D7",
+        "x": 56,
+        "y": 33,
+        "rotation": 90,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D8",
+        "type": "diode",
+        "name": "D8",
+        "x": 46,
+        "y": 33,
+        "rotation": 90,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D9",
+        "type": "diode",
+        "name": "D9",
+        "x": 36,
+        "y": 33,
+        "rotation": 90,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-D10",
+        "type": "diode",
+        "name": "D10",
+        "x": 26,
+        "y": 33,
+        "rotation": 90,
+        "mirror": false,
+        "params": {
+          "model": "DDEF"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 20,
+        "y": 33,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 13
+          },
+          {
+            "x": 13,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 10,
+            "y": 13
+          },
+          {
+            "x": 10,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 19,
+            "y": 13
+          },
+          {
+            "x": 23,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 21,
+            "y": 13
+          },
+          {
+            "x": 21,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 29,
+            "y": 13
+          },
+          {
+            "x": 33,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 31,
+            "y": 13
+          },
+          {
+            "x": 31,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 39,
+            "y": 13
+          },
+          {
+            "x": 43,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 41,
+            "y": 13
+          },
+          {
+            "x": 41,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 49,
+            "y": 13
+          },
+          {
+            "x": 53,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 51,
+            "y": 13
+          },
+          {
+            "x": 51,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 59,
+            "y": 13
+          },
+          {
+            "x": 63,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 61,
+            "y": 13
+          },
+          {
+            "x": 61,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w13",
+        "points": [
+          {
+            "x": 69,
+            "y": 13
+          },
+          {
+            "x": 76,
+            "y": 13
+          },
+          {
+            "x": 76,
+            "y": 33
+          },
+          {
+            "x": 69,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w14",
+        "points": [
+          {
+            "x": 76,
+            "y": 20
+          },
+          {
+            "x": 80,
+            "y": 20
+          }
+        ]
+      },
+      {
+        "id": "w15",
+        "points": [
+          {
+            "x": 63,
+            "y": 33
+          },
+          {
+            "x": 59,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w16",
+        "points": [
+          {
+            "x": 61,
+            "y": 33
+          },
+          {
+            "x": 61,
+            "y": 36
+          }
+        ]
+      },
+      {
+        "id": "w17",
+        "points": [
+          {
+            "x": 53,
+            "y": 33
+          },
+          {
+            "x": 49,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w18",
+        "points": [
+          {
+            "x": 51,
+            "y": 33
+          },
+          {
+            "x": 51,
+            "y": 36
+          }
+        ]
+      },
+      {
+        "id": "w19",
+        "points": [
+          {
+            "x": 43,
+            "y": 33
+          },
+          {
+            "x": 39,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w20",
+        "points": [
+          {
+            "x": 41,
+            "y": 33
+          },
+          {
+            "x": 41,
+            "y": 36
+          }
+        ]
+      },
+      {
+        "id": "w21",
+        "points": [
+          {
+            "x": 33,
+            "y": 33
+          },
+          {
+            "x": 29,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w22",
+        "points": [
+          {
+            "x": 31,
+            "y": 33
+          },
+          {
+            "x": 31,
+            "y": 36
+          }
+        ]
+      },
+      {
+        "id": "w23",
+        "points": [
+          {
+            "x": 23,
+            "y": 33
+          },
+          {
+            "x": 20,
+            "y": 33
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 10,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a1",
+        "text": "a1",
+        "x": 21,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a2",
+        "text": "a2",
+        "x": 31,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a3",
+        "text": "a3",
+        "x": 41,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a4",
+        "text": "a4",
+        "x": 51,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a5",
+        "text": "a5",
+        "x": 61,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-a6",
+        "text": "a6",
+        "x": 80,
+        "y": 20,
+        "rotation": 0
+      },
+      {
+        "id": "l-a7",
+        "text": "a7",
+        "x": 61,
+        "y": 36,
+        "rotation": 0
+      },
+      {
+        "id": "l-a8",
+        "text": "a8",
+        "x": 51,
+        "y": 36,
+        "rotation": 0
+      },
+      {
+        "id": "l-a9",
+        "text": "a9",
+        "x": 41,
+        "y": 36,
+        "rotation": 0
+      },
+      {
+        "id": "l-a10",
+        "text": "a10",
+        "x": 31,
+        "y": 36,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "DDEF",
+      "type": "D",
+      "params": {}
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

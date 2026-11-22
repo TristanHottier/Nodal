@@ -1,0 +1,163 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "N1 diode with series resistor, sweep",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 10,
+        "y": 20,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 10,
+        "y": 23,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 22,
+        "y": 17,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-D1",
+        "type": "diode",
+        "name": "D1",
+        "x": 34,
+        "y": 20,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "DMOD"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 34,
+        "y": 23,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 10,
+            "y": 17
+          },
+          {
+            "x": 19,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 14,
+            "y": 17
+          },
+          {
+            "x": 14,
+            "y": 14
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 25,
+            "y": 17
+          },
+          {
+            "x": 34,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 29,
+            "y": 17
+          },
+          {
+            "x": 29,
+            "y": 14
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 14,
+        "y": 14,
+        "rotation": 0
+      },
+      {
+        "id": "l-a",
+        "text": "a",
+        "x": 29,
+        "y": 14,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "DMOD",
+      "type": "D",
+      "params": {
+        "IS": "1e-14",
+        "RS": "10"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "dc",
+        "source": "V1",
+        "start": -5,
+        "stop": 5,
+        "step": 0.1
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

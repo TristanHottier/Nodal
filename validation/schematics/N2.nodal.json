@@ -1,0 +1,285 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "N2 BJT common-emitter bias point",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VCC",
+        "type": "vsource",
+        "name": "VCC",
+        "x": 8,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "12"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 20,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "47k"
+        }
+      },
+      {
+        "id": "p-R2",
+        "type": "resistor",
+        "name": "R2",
+        "x": 20,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "10k"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 20,
+        "y": 31,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-RC",
+        "type": "resistor",
+        "name": "RC",
+        "x": 38,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "4.7k"
+        }
+      },
+      {
+        "id": "p-Q1",
+        "type": "npn",
+        "name": "Q1",
+        "x": 36,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "QMOD"
+        }
+      },
+      {
+        "id": "p-RE",
+        "type": "resistor",
+        "name": "RE",
+        "x": 38,
+        "y": 31,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 38,
+        "y": 34,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 10
+          },
+          {
+            "x": 38,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 14,
+            "y": 10
+          },
+          {
+            "x": 14,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 20,
+            "y": 16
+          },
+          {
+            "x": 20,
+            "y": 25
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 20,
+            "y": 22
+          },
+          {
+            "x": 33,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 26,
+            "y": 22
+          },
+          {
+            "x": 26,
+            "y": 26
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 38,
+            "y": 16
+          },
+          {
+            "x": 38,
+            "y": 19
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 38,
+            "y": 17
+          },
+          {
+            "x": 44,
+            "y": 17
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 38,
+            "y": 25
+          },
+          {
+            "x": 38,
+            "y": 28
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 38,
+            "y": 27
+          },
+          {
+            "x": 44,
+            "y": 27
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-vcc",
+        "text": "vcc",
+        "x": 14,
+        "y": 7,
+        "rotation": 0
+      },
+      {
+        "id": "l-b",
+        "text": "b",
+        "x": 26,
+        "y": 26,
+        "rotation": 0
+      },
+      {
+        "id": "l-c",
+        "text": "c",
+        "x": 44,
+        "y": 17,
+        "rotation": 0
+      },
+      {
+        "id": "l-e",
+        "text": "e",
+        "x": 44,
+        "y": 27,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "QMOD",
+      "type": "NPN",
+      "params": {
+        "IS": "1e-15",
+        "BF": "200",
+        "VAF": "100"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      }
+    ],
+    "options": {
+      "reltol": 0.000001,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}
