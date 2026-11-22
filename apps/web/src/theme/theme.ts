@@ -1,6 +1,6 @@
 // Theme choice: "system" follows the OS, "light" and "dark" force a theme via data-theme on <html>.
-// The inline script in index.html mirrors readThemeChoice and the attribute write so the first
-// paint already uses the stored theme. Keep the two in step.
+// The inline script in index.html mirrors readThemeChoice and the attribute and color-scheme
+// writes so the first paint already uses the stored theme. Keep the two in step.
 import { useSyncExternalStore } from "react";
 
 export const THEME_STORAGE_KEY = "nodal-theme";
@@ -33,8 +33,13 @@ export function applyThemeChoice(
   root: HTMLElement = document.documentElement,
   storage: Pick<Storage, "setItem" | "removeItem"> | undefined = defaultStorage(),
 ): void {
-  if (choice === "system") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", choice);
+  if (choice === "system") {
+    root.removeAttribute("data-theme");
+    root.style.removeProperty("color-scheme");
+  } else {
+    root.setAttribute("data-theme", choice);
+    root.style.setProperty("color-scheme", choice);
+  }
   try {
     if (choice === "system") storage?.removeItem(THEME_STORAGE_KEY);
     else storage?.setItem(THEME_STORAGE_KEY, choice);

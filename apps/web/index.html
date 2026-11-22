@@ -8,7 +8,11 @@
       // Mirrors readThemeChoice in src/theme/theme.ts: apply a stored theme before first paint.
       try {
         var t = localStorage.getItem("nodal-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+          // A forced choice must also fix the browser's default canvas, or Light on a dark OS paints dark first.
+          document.documentElement.style.colorScheme = t;
+        }
       } catch (e) {}
     </script>
     <link rel="icon" type="image/svg+xml" href="/Nodal/favicon.svg" />

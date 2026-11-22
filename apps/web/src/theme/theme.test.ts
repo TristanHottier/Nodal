@@ -33,14 +33,17 @@ describe("applyThemeChoice", () => {
     const setItem = vi.fn();
     applyThemeChoice("dark", root, { setItem, removeItem: vi.fn() });
     expect(root.getAttribute("data-theme")).toBe("dark");
+    expect(root.style.getPropertyValue("color-scheme")).toBe("dark");
     expect(setItem).toHaveBeenCalledWith(THEME_STORAGE_KEY, "dark");
   });
   it("removes the attribute for system", () => {
     const root = document.createElement("html");
     root.setAttribute("data-theme", "dark");
+    root.style.setProperty("color-scheme", "dark");
     const removeItem = vi.fn();
     applyThemeChoice("system", root, { setItem: vi.fn(), removeItem });
     expect(root.hasAttribute("data-theme")).toBe(false);
+    expect(root.style.getPropertyValue("color-scheme")).toBe("");
     expect(removeItem).toHaveBeenCalledWith(THEME_STORAGE_KEY);
   });
   it("ignores storage errors", () => {
