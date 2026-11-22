@@ -208,8 +208,19 @@ fn earliest_crossing(
 
 /// Runs a transient analysis. Source DC values are restored before returning.
 pub fn solve_tran(circuit: &mut Circuit, spec: &TranSpec) -> Result<TranResult, Error> {
+    solve_tran_with_progress(circuit, spec, &mut |_| {})
+}
+
+/// [`solve_tran`] reporting `t / tstop` to `progress` after each accepted
+/// point, so the last report is exactly `1.0`.
+pub(crate) fn solve_tran_with_progress(
+    circuit: &mut Circuit,
+    spec: &TranSpec,
+    progress: &mut dyn FnMut(f64),
+) -> Result<TranResult, Error> {
     let (x0, state0) = initial_point(circuit, spec)?;
-    run(circuit, spec, x0, state0).map(|(result, _)| result)
+    run_capped_progress(circuit, spec, x0, state0, MAX_TRAN_POINTS, progress)
+        .map(|(result, _)| result)
 }
 
 /// The starting point: the operating point (with sources at their t = 0
@@ -243,6 +254,7 @@ fn initial_point(circuit: &mut Circuit, spec: &TranSpec) -> Result<(Vec<f64>, Ve
     Ok((x, state))
 }
 
+#[cfg(test)]
 fn run(
     circuit: &Circuit,
     spec: &TranSpec,
@@ -253,12 +265,24 @@ fn run(
 }
 
 /// [`run`] with the accepted-point limit as a parameter, so tests can lower it.
+#[cfg(test)]
 fn run_capped(
+    circuit: &Circuit,
+    spec: &TranSpec,
+    x: Vec<f64>,
+    state: Vec<f64>,
+    max_points: usize,
+) -> Result<(TranResult, Stats), Error> {
+    run_capped_progress(circuit, spec, x, state, max_points, &mut |_| {})
+}
+
+fn run_capped_progress(
     circuit: &Circuit,
     spec: &TranSpec,
     mut x: Vec<f64>,
     mut state: Vec<f64>,
     max_points: usize,
+    progress: &mut dyn FnMut(f64),
 ) -> Result<(TranResult, Stats), Error> {
     let mut stats = Stats::default();
     let TranSpec {
@@ -500,8 +524,10 @@ fn run_capped(
             result.push(circuit, t, &x);
         }
         if t >= tstop {
+            progress(1.0);
             break;
         }
+        progress((t / tstop).clamp(0.0, 1.0));
     }
     Ok((result, stats))
 }

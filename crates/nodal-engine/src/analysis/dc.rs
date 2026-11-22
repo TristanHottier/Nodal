@@ -30,6 +30,16 @@ pub fn solve_dc_sweep(
     sweep_with(circuit, source, values, |_| true)
 }
 
+/// [`solve_dc_sweep`] reporting `(k + 1) / n` to `progress` after point `k`.
+pub(crate) fn solve_dc_sweep_with_progress(
+    circuit: &mut Circuit,
+    source: &str,
+    values: &[f64],
+    progress: &mut dyn FnMut(f64),
+) -> Result<DcResult, Error> {
+    sweep_with_progress(circuit, source, values, |_| true, progress)
+}
+
 /// Restores the source's DC value when dropped, on every exit path.
 struct Restore<'a> {
     circuit: &'a mut Circuit,
@@ -52,6 +62,16 @@ pub(crate) fn sweep_with(
     source: &str,
     values: &[f64],
     plain_allowed: impl Fn(usize) -> bool,
+) -> Result<DcResult, Error> {
+    sweep_with_progress(circuit, source, values, plain_allowed, &mut |_| {})
+}
+
+fn sweep_with_progress(
+    circuit: &mut Circuit,
+    source: &str,
+    values: &[f64],
+    plain_allowed: impl Fn(usize) -> bool,
+    progress: &mut dyn FnMut(f64),
 ) -> Result<DcResult, Error> {
     if values.is_empty() {
         return Err(Error::Invalid(format!(
@@ -101,6 +121,7 @@ pub(crate) fn sweep_with(
             result.branch_currents.entry(name).or_default().push(i);
         }
         previous = Some((x, state));
+        progress((index + 1) as f64 / values.len() as f64);
     }
     Ok(result)
 }

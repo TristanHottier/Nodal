@@ -51,6 +51,15 @@ pub struct AcResult {
 /// Solves the small-signal response of `circuit` at each of `frequencies`
 /// (hertz).
 pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Error> {
+    solve_ac_with_progress(circuit, frequencies, &mut |_| {})
+}
+
+/// [`solve_ac`] reporting `(k + 1) / n` to `progress` after frequency `k`.
+pub(crate) fn solve_ac_with_progress(
+    circuit: &Circuit,
+    frequencies: &[f64],
+    progress: &mut dyn FnMut(f64),
+) -> Result<AcResult, Error> {
     let (x, state) = solve_op_with_state(circuit)?;
     let n = circuit.unknown_count();
     let opts = circuit.options;
@@ -100,7 +109,7 @@ pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Erro
     let mut node_voltages = empty(&circuit.node_names);
     let mut branch_currents = empty(&circuit.branch_names);
     let mut solver = DenseLu::<C64>::new();
-    for &frequency in frequencies {
+    for (index, &frequency) in frequencies.iter().enumerate() {
         let at = |cause: Error| Error::AcPoint {
             frequency,
             cause: Box::new(cause),
@@ -129,6 +138,7 @@ pub fn solve_ac(circuit: &Circuit, frequencies: &[f64]) -> Result<AcResult, Erro
                 series.push(i);
             }
         }
+        progress((index + 1) as f64 / frequencies.len() as f64);
     }
     Ok(AcResult {
         frequencies: frequencies.to_vec(),
