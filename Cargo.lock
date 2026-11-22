@@ -509,7 +509,10 @@ dependencies = [
 name = "nodal-wasm"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "nodal-engine",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]
