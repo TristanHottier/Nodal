@@ -54,6 +54,9 @@ GEMINI.md
 
 # Chat history exporters
 .specstory/
+
+# Impeccable (design skill state; PRODUCT.md and DESIGN.md are committed)
+.impeccable/
 target/
 .superpowers/
 crates/nodal-wasm/pkg/
