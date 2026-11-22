@@ -222,7 +222,7 @@ Detected while solving:
 
 **Elements.** Parts become elements in document order; ground parts produce none. The kind letter comes from the symbol prefix, and an op-amp becomes `E` plus its part name with nodes `[out, "0"]` and `controlNodes: [inp, inn]`. Element nodes follow pin order. Only the fields in `PARAM_FIELDS` whose `when` condition holds are read. Values use the notation of [ADR 0009](adr/0009-value-notation.md). Optional empty fields are left out and the IR defaults apply. A source with `acMag` gets `ac: { mag, phase }`, with the phase defaulting to 0. References (`model`, `controlSource`, a DC sweep `source`) must match a name exactly.
 
-**Diagnostics.** Each has a severity, a code, a message that names the part and field, and the ids of the parts or labels involved. `ir` is `null` when any error is present.
+**Diagnostics.** Each has a severity, a code, a message that names the part and field, and the ids of the parts or labels involved where there are any. `ir` is `null` when any error is present.
 
 | Code | Severity | Meaning |
 |---|---|---|
@@ -239,7 +239,7 @@ Detected while solving:
 | `unknown-control-source` | error | A CCVS or CCCS names no voltage source. The ids include a source whose name differs only in case. |
 | `unknown-sweep-source` | error | A DC sweep names no voltage or current source. |
 | `shorted-element` | error | Both terminals of a two-terminal element (any kind except Q and M) are on one net. |
-| `ir-invalid` | error | `parseNetlist` rejected the result; the message carries its text. |
+| `ir-invalid` | error | `parseNetlist` rejected the result, for example a resistance of 0. The message carries its text without the internal path, and an issue about an element carries the id of the part that produced it. Model issues name the model and have no ids. |
 | `dangling-pin` | warning | A pin has no other pin on its net. |
 | `unconnected-part` | warning | Every pin of a part is alone on its net. It replaces the dangling-pin warnings of that part. |
 

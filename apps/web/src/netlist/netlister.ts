@@ -103,6 +103,24 @@ function checkConnections(
   }
 }
 
+const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * One `parseNetlist` issue as a diagnostic. `elements.<i>` paths name the part that
+ * produced element i; the internal path is dropped from the message.
+ */
+function irIssue(issue: string, named: readonly { part: Part }[]): Diagnostic {
+  const m = /^(?:(elements|models)\.(\d+)[^:]*: )?(.*)$/s.exec(issue);
+  const text = (m?.[3] ?? issue).replace(/^element (\S+): /, "$1 ");
+  const part = m?.[1] === "elements" ? named[Number(m[2])]?.part : undefined;
+  return {
+    severity: "error",
+    code: "ir-invalid",
+    message: capitalize(text),
+    itemIds: part ? [part.id] : [],
+  };
+}
+
 export function projectToNetlist(project: Project): NetlistResult {
   const doc = project.schematic;
   if (doc.parts.length === 0 && doc.wires.length === 0 && doc.labels.length === 0) {
@@ -157,12 +175,7 @@ export function projectToNetlist(project: Project): NetlistResult {
     options: project.simulation.options,
   });
   if (!parsed.ok) {
-    diagnostics.push({
-      severity: "error",
-      code: "ir-invalid",
-      message: parsed.issues.join("; "),
-      itemIds: [],
-    });
+    for (const issue of parsed.issues) diagnostics.push(irIssue(issue, named));
     return { ir: null, diagnostics };
   }
   return { ir: parsed.value, diagnostics };

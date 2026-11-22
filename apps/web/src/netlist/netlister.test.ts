@@ -395,4 +395,43 @@ describe("projectToNetlist", () => {
     expect(bad).toHaveLength(1);
     expect(bad[0]?.message).toContain("tr");
   });
+  describe("ir_range_problems", () => {
+    const irProblems = (p: Project) =>
+      projectToNetlist(p).diagnostics.filter((x) => x.code === "ir-invalid");
+
+    it("zero_resistance_is_located_on_the_part", () => {
+      let d = putTagged(
+        emptyDoc(),
+        "resistor",
+        pt(0, 0),
+        { "1": "a", "2": "b" },
+        { id: "r1", params: { value: "0" } },
+      ).doc;
+      d = put(d, "ground", pt(0, 40)).doc;
+      const bad = irProblems(project(d));
+      expect(bad.map((x) => [x.itemIds, x.message])).toEqual([
+        [["r1"], "R1 value must be finite and > 0, got 0"],
+      ]);
+    });
+
+    it("model_range_names_the_model_without_an_item", () => {
+      let d = putTagged(
+        emptyDoc(),
+        "diode",
+        pt(0, 0),
+        { a: "a", k: "b" },
+        { params: { model: "DM" } },
+      ).doc;
+      d = put(d, "ground", pt(0, 40)).doc;
+      const p = {
+        ...project(d),
+        models: [{ name: "DM", type: "D" as const, params: { IS: "-1" } }],
+      };
+      const bad = irProblems(p);
+      expect(bad).toHaveLength(1);
+      expect(bad[0]?.itemIds).toEqual([]);
+      expect(bad[0]?.message).toContain("model DM");
+      expect(bad[0]?.message).not.toMatch(/models\.\d/);
+    });
+  });
 });

@@ -309,4 +309,13 @@ describe("Inspector", () => {
     fireEvent.blur(input("Value"));
     expect(params(store).value).toBe("2k");
   });
+  it("non_positive_value_shows_range_error_inline", () => {
+    setup([part("p1", "resistor", "R1")], ["p1"]);
+    type("Value", "0");
+    expect(screen.getByRole("alert").textContent).toBe("Must be > 0");
+    type("Value", "-1k");
+    expect(screen.getByRole("alert").textContent).toBe("Must be > 0");
+    type("Value", "2k");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
 });

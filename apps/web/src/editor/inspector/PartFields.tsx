@@ -26,6 +26,15 @@ export function nameError(part: Pick<Part, "type">, name: string): string | null
 const defaultOf = (part: Part, field: ParamField): string =>
   SYMBOLS[part.type].defaultParams[field.key] ?? "";
 
+/** Fields the IR requires to be finite and > 0 (rules V7 and the MOS dimensions). */
+const POSITIVE: Partial<Record<Part["type"], readonly string[]>> = {
+  resistor: ["value"],
+  capacitor: ["value"],
+  inductor: ["value"],
+  nmos: ["w", "l"],
+  pmos: ["w", "l"],
+};
+
 function numberError(part: Part, field: ParamField, text: string): string | null {
   if (field.kind === "pwl") {
     const r = parsePwl(text);
@@ -35,7 +44,8 @@ function numberError(part: Part, field: ParamField, text: string): string | null
     return field.kind === "number" && defaultOf(part, field) === "" ? "Required" : null;
   }
   const r = parseValue(text);
-  return r.ok ? null : r.error;
+  if (!r.ok) return r.error;
+  return POSITIVE[part.type]?.includes(field.key) && !(r.value > 0) ? "Must be > 0" : null;
 }
 
 /** Options for a ref select, keeping a dangling stored value visible. */
