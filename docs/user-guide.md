@@ -6,7 +6,7 @@ Nodal is a schematic editor and circuit simulator that runs in your browser. Thi
 
 Open the live editor at https://tristanhottier.github.io/Nodal/. Nothing is installed and no account is needed. The status bar at the bottom shows the engine version once the simulation engine has loaded.
 
-The fastest way to see the app work is an example. The project bar at the top of the left column has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. The menu has eight examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter and an inverting op-amp amplifier. Hover an entry to see a one-line summary.
+The fastest way to see the app work is an example. The project bar at the top of the left column has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. The menu has eight examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter and an inverting op-amp amplifier.
 
 ![The editor with the common-emitter amplifier loaded](user-guide/editor-ce-amplifier.png)
 

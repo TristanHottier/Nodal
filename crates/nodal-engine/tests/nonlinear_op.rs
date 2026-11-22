@@ -458,8 +458,9 @@ fn inverter_chain_op_converges() -> TestResult {
 }
 
 /// Two current sources in series with nothing else at the middle node: the
-/// system is singular for any iterate, so the singular-matrix fallback must
-/// still end in an error, not a made-up solution.
+/// topology check reports the floating node before any Newton iteration, so
+/// this does not exercise the singular-iterate fallback. It only shows that
+/// such a circuit still ends in an error, not a made-up solution.
 #[test]
 fn structurally_singular_still_reported() -> TestResult {
     let text = r#"{"irVersion":1,"elements":[
