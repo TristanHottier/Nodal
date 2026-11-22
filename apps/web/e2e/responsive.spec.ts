@@ -32,6 +32,56 @@ for (const [width, height] of [
   });
 }
 
+/** Every control inside the panel must lie within the panel's horizontal extent. */
+async function controlsInside(page: Page, name: string, panel: ReturnType<Page["locator"]>) {
+  const panelBox = await panel.boundingBox();
+  expect(panelBox, `${name} has a box`).not.toBeNull();
+  if (!panelBox) return;
+  const strays = await panel.locator("button, select, input, textarea").evaluateAll(
+    (els, edges) =>
+      els.flatMap((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0) return [];
+        const out = r.left < edges.left - 0.5 || r.right > edges.right + 0.5;
+        const label = el.getAttribute("aria-label") ?? (el.textContent || el.tagName);
+        return out
+          ? [`${label.trim()} (${String(Math.round(r.left))}..${String(Math.round(r.right))})`]
+          : [];
+      }),
+    { left: panelBox.x, right: panelBox.x + panelBox.width },
+  );
+  expect(strays, `${name} controls outside the panel`).toEqual([]);
+}
+
+for (const [width, height] of [
+  [1024, 768],
+  [1280, 800],
+] as const) {
+  test(`palette and inspector controls stay inside their panels at ${String(width)} px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("./");
+    await page.getByLabel("Open example").selectOption("ce-amplifier");
+    const parts = page.locator('[data-testid^="part-"]');
+    await expect(parts.first()).toBeVisible();
+    const palette = page.getByRole("navigation", { name: "Palette" });
+    const inspector = page.locator(".nodal-inspector");
+
+    // Analysis editor: nothing selected.
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("complementary", { name: "Inspector" })).toBeVisible();
+    await controlsInside(page, "palette", palette);
+    await controlsInside(page, "inspector with analysis editor", inspector);
+
+    // A part selected.
+    await parts.first().click();
+    await expect(inspector.locator("h2")).toBeVisible();
+    await controlsInside(page, "palette", palette);
+    await controlsInside(page, "inspector with a part", inspector);
+  });
+}
+
 test("below 1024 px the notice shows and the schematic stays visible", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 700 });
   await page.goto("./");

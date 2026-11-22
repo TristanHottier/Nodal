@@ -65,6 +65,9 @@
 }
 
 .nodal-model {
+  /* A fieldset keeps min-width: min-content by default, which pushes its fields past the panel. */
+  min-width: 0;
+  min-inline-size: 0;
   margin: var(--space-2) 0 0;
   padding: var(--space-1);
   border: var(--border-width) solid var(--color-border);

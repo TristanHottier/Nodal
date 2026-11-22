@@ -52,6 +52,7 @@
 .nodal-projectbar-examples {
   display: flex;
   flex: 1 0 100%;
+  min-width: 0;
   align-items: center;
   gap: var(--space-1);
 }
