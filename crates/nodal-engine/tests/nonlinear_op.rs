@@ -439,3 +439,40 @@ fn pmos_forward_bulk_current() -> TestResult {
     assert!(close(got, want, 1e-13), "I(VS) = {got}, want {want}");
     Ok(())
 }
+
+/// 12 CMOS inverters in a chain, input at 0 V. Plain Newton hits a singular
+/// matrix at the second iterate (every stage sits at mid-rail with
+/// gm/gmin ~ 1e9 per stage), so the engine must fall back to gmin stepping
+/// as ngspice's `CKTop` does. Reference values: `ngspice -b` (ngspice-42) on
+/// `nodal-cli export-spice validation/perf/inverter-chain.json`, `.op`.
+#[test]
+fn inverter_chain_op_converges() -> TestResult {
+    let text = include_str!("../../../validation/perf/inverter-chain.json");
+    let r = run(text)?;
+    for k in 1..=12 {
+        let want = if k % 2 == 1 { 3.3 } else { 1.273077e-9 };
+        let got = r.node_voltages[&format!("o{k}")];
+        assert!((got - want).abs() <= 1e-3, "V(o{k}) = {got}, want {want}");
+    }
+    Ok(())
+}
+
+/// Two current sources in series with nothing else at the middle node: the
+/// system is singular for any iterate, so the singular-matrix fallback must
+/// still end in an error, not a made-up solution.
+#[test]
+fn structurally_singular_still_reported() -> TestResult {
+    let text = r#"{"irVersion":1,"elements":[
+        {"kind":"I","name":"I1","nodes":["0","a"],"dc":1e-3},
+        {"kind":"I","name":"I2","nodes":["a","b"],"dc":2e-3},
+        {"kind":"R","name":"R1","nodes":["b","0"],"value":1000}],
+        "analyses":[{"type":"op"}]}"#;
+    let n = parse_netlist(text)?;
+    let err = simulate(&n).err().ok_or("expected an error")?;
+    // The topology check reports it before any Newton iteration runs.
+    assert!(
+        matches!(&err, nodal_engine::Error::Floating { nodes, .. } if nodes == &["a".to_string()]),
+        "{err:?}"
+    );
+    Ok(())
+}

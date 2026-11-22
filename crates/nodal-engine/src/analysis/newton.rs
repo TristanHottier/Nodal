@@ -263,6 +263,17 @@ pub(crate) struct Trace {
 /// cannot crawl forever at the smallest step.
 const MAX_SOURCE_STEPS: usize = 10_000;
 
+/// True for a failure that no fallback can fix: a device fault or an engine
+/// bug. A singular matrix is not fatal. ngspice `cktop.c` treats any `NIiter`
+/// error, `E_SINGULAR` included, as "no convergence" and goes on to gmin
+/// stepping and source stepping.
+fn fatal_error(failure: &NewtonFailure) -> Option<Error> {
+    failure
+        .error
+        .clone()
+        .filter(|e| !matches!(e, Error::Singular { .. }))
+}
+
 /// Outcome of one stage: the solution, or the failure that ended it.
 type Stage = Result<Vec<f64>, Box<StageFailure>>;
 
@@ -336,7 +347,7 @@ fn gmin_stepping(
                 g = (g / factor).max(target);
             }
             Err(f) => {
-                if f.failure.error.is_some() {
+                if fatal_error(&f.failure).is_some() {
                     return Err(f);
                 }
                 factor = factor.sqrt().sqrt();
@@ -411,7 +422,7 @@ fn source_stepping_capped(
                 }
             }
             Err(f) => {
-                if f.failure.error.is_some() {
+                if fatal_error(&f.failure).is_some() {
                     return Err(f);
                 }
                 last_update.clone_from(&f.failure.last_update);
@@ -528,36 +539,54 @@ pub(crate) fn solve_dc_counted(
 ) -> (Result<Vec<f64>, Error>, usize) {
     let mut iters = 0;
     let mut last: Option<Box<StageFailure>> = None;
+    // The singular matrix of plain Newton, reported if every stage fails.
+    let mut plain_singular: Option<Error> = None;
+    // Keeps the failure whose update vector the final report should use: a
+    // singular matrix has none, so it never replaces a real non-convergence.
+    let keep = |last: &mut Option<Box<StageFailure>>, f: Box<StageFailure>| {
+        if f.failure.error.is_none() || last.is_none() {
+            *last = Some(f);
+        }
+    };
     if strategy == Strategy::All {
         let cfg = NewtonConfig::default();
         match attempt(circuit, x0, state, &cfg, &mut iters) {
             Ok(x) => return (Ok(x), iters),
-            Err(f) => match f.failure.error {
-                Some(e) => return (Err(e), iters),
-                None => last = Some(f),
-            },
+            Err(f) => {
+                if let Some(e) = fatal_error(&f.failure) {
+                    return (Err(e), iters);
+                }
+                plain_singular = f.failure.error.clone();
+                keep(&mut last, f);
+            }
         }
     }
     if matches!(strategy, Strategy::All | Strategy::GminOnly) {
         match gmin_stepping(circuit, x0, state, trace, &mut iters) {
             Ok(x) => return (Ok(x), iters),
-            Err(f) => match f.failure.error {
+            Err(f) => match fatal_error(&f.failure) {
                 Some(e) => return (Err(e), iters),
-                None => last = Some(f),
+                None => keep(&mut last, f),
             },
         }
     }
     if matches!(strategy, Strategy::All | Strategy::SourceOnly) {
         match source_stepping(circuit, state, trace, &mut iters) {
             Ok(x) => return (Ok(x), iters),
-            Err(f) => match f.failure.error {
+            Err(f) => match fatal_error(&f.failure) {
                 Some(e) => return (Err(e), iters),
-                None => last = Some(f),
+                None => keep(&mut last, f),
             },
         }
     }
+    if let Some(e) = plain_singular {
+        return (Err(e), iters);
+    }
     let err = match last {
-        Some(f) => no_convergence(circuit, state, &f),
+        Some(f) => match f.failure.error.clone() {
+            Some(e) => e,
+            None => no_convergence(circuit, state, &f),
+        },
         None => Error::Internal("solve_dc ran no stage".into()),
     };
     (Err(err), iters)
@@ -837,7 +866,7 @@ mod tests {
     }
 
     #[test]
-    fn fatal_error_is_not_a_fallback_trigger() -> TestResult {
+    fn singular_everywhere_reports_the_plain_newton_error() -> TestResult {
         let text = r#"{"irVersion":1,"elements":[
             {"kind":"R","name":"R1","nodes":["a","0"],"value":1000},
             {"kind":"E","name":"E1","nodes":["a","0"],"controlNodes":["a","0"],"gain":1}],

@@ -1,0 +1,588 @@
+{
+ "irVersion": 1,
+ "title": "Perf: 12-stage CMOS inverter chain",
+ "elements": [
+  {
+   "kind": "V",
+   "name": "VDD",
+   "nodes": [
+    "vdd",
+    "0"
+   ],
+   "dc": 3.3
+  },
+  {
+   "kind": "R",
+   "name": "RDD",
+   "nodes": [
+    "vdd",
+    "0"
+   ],
+   "value": 10000.0
+  },
+  {
+   "kind": "V",
+   "name": "VIN",
+   "nodes": [
+    "in",
+    "0"
+   ],
+   "dc": 0
+  },
+  {
+   "kind": "R",
+   "name": "RG1",
+   "nodes": [
+    "in",
+    "g1"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN1",
+   "nodes": [
+    "o1",
+    "g1",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP1",
+   "nodes": [
+    "o1",
+    "g1",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL1",
+   "nodes": [
+    "o1",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG2",
+   "nodes": [
+    "o1",
+    "g2"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN2",
+   "nodes": [
+    "o2",
+    "g2",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP2",
+   "nodes": [
+    "o2",
+    "g2",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL2",
+   "nodes": [
+    "o2",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG3",
+   "nodes": [
+    "o2",
+    "g3"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN3",
+   "nodes": [
+    "o3",
+    "g3",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP3",
+   "nodes": [
+    "o3",
+    "g3",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL3",
+   "nodes": [
+    "o3",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG4",
+   "nodes": [
+    "o3",
+    "g4"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN4",
+   "nodes": [
+    "o4",
+    "g4",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP4",
+   "nodes": [
+    "o4",
+    "g4",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL4",
+   "nodes": [
+    "o4",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG5",
+   "nodes": [
+    "o4",
+    "g5"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN5",
+   "nodes": [
+    "o5",
+    "g5",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP5",
+   "nodes": [
+    "o5",
+    "g5",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL5",
+   "nodes": [
+    "o5",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG6",
+   "nodes": [
+    "o5",
+    "g6"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN6",
+   "nodes": [
+    "o6",
+    "g6",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP6",
+   "nodes": [
+    "o6",
+    "g6",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL6",
+   "nodes": [
+    "o6",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG7",
+   "nodes": [
+    "o6",
+    "g7"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN7",
+   "nodes": [
+    "o7",
+    "g7",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP7",
+   "nodes": [
+    "o7",
+    "g7",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL7",
+   "nodes": [
+    "o7",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG8",
+   "nodes": [
+    "o7",
+    "g8"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN8",
+   "nodes": [
+    "o8",
+    "g8",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP8",
+   "nodes": [
+    "o8",
+    "g8",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL8",
+   "nodes": [
+    "o8",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG9",
+   "nodes": [
+    "o8",
+    "g9"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN9",
+   "nodes": [
+    "o9",
+    "g9",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP9",
+   "nodes": [
+    "o9",
+    "g9",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL9",
+   "nodes": [
+    "o9",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG10",
+   "nodes": [
+    "o9",
+    "g10"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN10",
+   "nodes": [
+    "o10",
+    "g10",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP10",
+   "nodes": [
+    "o10",
+    "g10",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL10",
+   "nodes": [
+    "o10",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG11",
+   "nodes": [
+    "o10",
+    "g11"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN11",
+   "nodes": [
+    "o11",
+    "g11",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP11",
+   "nodes": [
+    "o11",
+    "g11",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL11",
+   "nodes": [
+    "o11",
+    "0"
+   ],
+   "value": 2e-14
+  },
+  {
+   "kind": "R",
+   "name": "RG12",
+   "nodes": [
+    "o11",
+    "g12"
+   ],
+   "value": 1000
+  },
+  {
+   "kind": "M",
+   "name": "MN12",
+   "nodes": [
+    "o12",
+    "g12",
+    "0",
+    "0"
+   ],
+   "model": "NM",
+   "w": 1e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "M",
+   "name": "MP12",
+   "nodes": [
+    "o12",
+    "g12",
+    "vdd",
+    "vdd"
+   ],
+   "model": "PM",
+   "w": 2e-05,
+   "l": 1e-06
+  },
+  {
+   "kind": "C",
+   "name": "CL12",
+   "nodes": [
+    "o12",
+    "0"
+   ],
+   "value": 2e-14
+  }
+ ],
+ "models": [
+  {
+   "name": "NM",
+   "type": "NMOS",
+   "params": {
+    "VTO": 0.7,
+    "KP": 0.0001,
+    "CGSO": 1e-10,
+    "CGDO": 1e-10
+   }
+  },
+  {
+   "name": "PM",
+   "type": "PMOS",
+   "params": {
+    "VTO": -0.7,
+    "KP": 5e-05,
+    "CGSO": 1e-10,
+    "CGDO": 1e-10
+   }
+  }
+ ],
+ "analyses": [
+  {
+   "type": "op"
+  }
+ ]
+}
