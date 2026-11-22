@@ -49,6 +49,7 @@ export class EngineClient {
     }, timeoutMs);
     return promise
       .then((r) => {
+        if (r.type === "error") throw new Error(decodeError(r.error).message);
         if (r.type !== "version") throw new Error("unexpected engine response");
         return r.version;
       })
@@ -65,11 +66,11 @@ export class EngineClient {
     const { signal } = opts;
     if (signal?.aborted) return Promise.reject(new CancelledError());
     this.cancel();
-    const { id, promise } = this.request(
+    const { promise } = this.request(
       (i) => ({ type: "run", id: i, netlist, analysisIndex }),
       opts.onProgress,
+      true,
     );
-    this.activeRun = id;
     const onAbort = (): void => {
       this.cancel();
     };
@@ -98,12 +99,15 @@ export class EngineClient {
   private request(
     build: (id: number) => WorkerRequest,
     onProgress?: (f: number) => void,
+    isRun = false,
   ): { id: number; promise: Promise<WorkerResponse> } {
     const id = this.nextId++;
     const promise = new Promise<WorkerResponse>((resolve, reject) => {
       try {
         const worker = this.ensureWorker();
         this.pending.set(id, { resolve, reject, onProgress });
+        // Set before postMessage so a synchronous failure's settle() clears it.
+        if (isRun) this.activeRun = id;
         worker.postMessage(build(id));
       } catch (e) {
         this.settle(id, asError(e));

@@ -199,13 +199,25 @@ describe("EngineClient", () => {
 
   it("postMessage_throw_rejects", async () => {
     const { workers, client } = setup();
-    const first = client.version();
-    nth(workers, 0).reply({ type: "version", id: nth(workers, 0).lastId(), version: "1" });
-    await first;
-    nth(workers, 0).postMessage.mockImplementationOnce(() => {
+    const pendingVersion = client.version();
+    const w = nth(workers, 0);
+    w.postMessage.mockImplementationOnce(() => {
       throw new Error("clone failed");
     });
     await expect(client.run("n", 0)).rejects.toThrow("clone failed");
+    // The failed run must leave no stale active run behind.
+    client.cancel();
+    expect(w.terminate).not.toHaveBeenCalled();
+    w.reply({ type: "version", id: 1, version: "3" });
+    await expect(pendingVersion).resolves.toBe("3");
+  });
+
+  it("version_error_carries_message", async () => {
+    const { workers, client } = setup();
+    const p = client.version();
+    const w = nth(workers, 0);
+    w.reply({ type: "error", id: w.lastId(), error: "init failed" });
+    await expect(p).rejects.toThrow("init failed");
   });
 
   it("unknown_id_ignored", async () => {
@@ -226,5 +238,18 @@ describe("EngineClient", () => {
     const client = new EngineClient();
     await expect(client.version()).rejects.toThrow("worker construction failed");
     await expect(client.run("n", 0)).rejects.toThrow("worker construction failed");
+    // Nothing stale: a later cancel is a no-op and a healthy worker is created next time.
+    client.cancel();
+    const workers: FakeWorker[] = [];
+    vi.stubGlobal("Worker", function () {
+      const w = new FakeWorker();
+      workers.push(w);
+      return w;
+    });
+    const p = client.version();
+    client.cancel();
+    expect(nth(workers, 0).terminate).not.toHaveBeenCalled();
+    nth(workers, 0).reply({ type: "version", id: nth(workers, 0).lastId(), version: "4" });
+    await expect(p).resolves.toBe("4");
   });
 });

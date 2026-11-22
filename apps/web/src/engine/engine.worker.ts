@@ -6,6 +6,10 @@ let ready: Promise<unknown> | undefined;
 function ensureInit(): Promise<unknown> {
   const started = ready ?? init();
   ready = started;
+  // A failed init is not memoized: the next request retries.
+  started.catch(() => {
+    if (ready === started) ready = undefined;
+  });
   return started;
 }
 
