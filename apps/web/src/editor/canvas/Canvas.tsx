@@ -83,7 +83,15 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
   );
 
   return (
-    <svg ref={svgRef} data-testid="schematic-canvas" className="nodal-canvas" {...handlers}>
+    <svg
+      ref={svgRef}
+      data-testid="schematic-canvas"
+      className="nodal-canvas"
+      tabIndex={0}
+      role="application"
+      aria-label="Schematic canvas"
+      {...handlers}
+    >
       <GridBackground view={view} />
       <g
         transform={`translate(${String(view.x)} ${String(view.y)}) scale(${String(view.zoom * GRID)})`}

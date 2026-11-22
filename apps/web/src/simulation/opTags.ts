@@ -1,7 +1,8 @@
 // Operating-point voltage tags: where on the schematic each net's voltage is drawn.
-import type { Point, Schematic } from "@nodal/schema";
+import type { NetLabel, Point, Schematic } from "@nodal/schema";
 import type { SimResult } from "../engine/results";
 import { pinPositions } from "../editor/geometry";
+import { LABEL_SYMBOL } from "../symbols/catalog";
 import type { CircuitMap } from "../netlist/netlister";
 import { formatQuantity } from "../netlist/value";
 
@@ -13,9 +14,27 @@ export interface OpTag {
 
 const GROUND = "0";
 
+/** Lowest world y of the (rotated) net-label flag, in grid units. */
+function flagBottom(label: NetLabel): number {
+  const { x0, y0, x1, y1 } = LABEL_SYMBOL.bounds;
+  const a = (label.rotation * Math.PI) / 180;
+  const ys = [
+    [x0, y0],
+    [x1, y0],
+    [x0, y1],
+    [x1, y1],
+  ].map(([x = 0, y = 0]) => Math.sin(a) * x + Math.cos(a) * y);
+  return label.y + Math.round(Math.max(...ys) * 1e6) / 1e6;
+}
+
+/** A tag anchored on a label sits one grid step below the flag, never on top of its text. */
+function belowFlag(label: NetLabel): Point {
+  return { x: label.x, y: flagBottom(label) + 1 };
+}
+
 function anchorOf(net: string, map: CircuitMap, doc: Schematic): Point | null {
   const label = doc.labels.find((l) => map.netOfLabel.get(l.id) === net);
-  if (label) return { x: label.x, y: label.y };
+  if (label) return belowFlag(label);
   for (const w of doc.wires) {
     const [a, b] = w.points;
     if (map.netOfWire.get(w.id) !== net || !a || !b) continue;

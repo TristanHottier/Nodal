@@ -39,3 +39,16 @@
   stroke: var(--color-canvas);
   stroke-width: 0.2;
 }
+
+.nodal-canvas .nodal-op-tag {
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.nodal-canvas .nodal-op-tags[data-stale] {
+  opacity: var(--opacity-stale);
+}
+
+.nodal-canvas:focus-visible {
+  outline-offset: calc(-1 * var(--focus-width));
+}

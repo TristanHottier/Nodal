@@ -7,7 +7,13 @@ import { createSimulationStore } from "../../simulation/store";
 import { fakeRunner } from "../../simulation/testFixtures";
 import { EditorProvider } from "../EditorContext";
 import { createEditorStore } from "../store";
+import { useShortcuts } from "../useShortcuts";
 import { Canvas } from "./Canvas";
+
+function WithShortcuts() {
+  useShortcuts();
+  return <Canvas />;
+}
 
 const R1: Part = {
   id: "R1",
@@ -71,6 +77,29 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Canvas", () => {
+  it("shortcuts_reach_a_focused_canvas", () => {
+    cleanup();
+    store = createEditorStore({ doc: DOC });
+    render(
+      <EditorProvider store={store}>
+        <WithShortcuts />
+      </EditorProvider>,
+    );
+    const canvas = screen.getByTestId("schematic-canvas");
+    store.getState().select(["R1"]);
+    canvas.focus();
+    fireEvent.keyDown(canvas, { key: "r" });
+    expect(store.getState().doc.parts.find((p) => p.id === "R1")?.rotation).toBe(90);
+  });
+
+  it("is_focusable_and_labelled", () => {
+    expect(svg.getAttribute("tabindex")).toBe("0");
+    expect(svg.getAttribute("role")).toBe("application");
+    expect(svg.getAttribute("aria-label")).toBe("Schematic canvas");
+    svg.focus();
+    expect(document.activeElement).toBe(svg);
+  });
+
   it("renders_parts_wires_dots", () => {
     expect(screen.getByTestId("part-R1")).toBeTruthy();
     expect(screen.getByTestId("wire-wA")).toBeTruthy();
@@ -313,11 +342,15 @@ describe("Canvas", () => {
     const tag = document.querySelector(".nodal-op-tag");
     expect(tag?.textContent).toBe("2.5 V");
     expect(tag?.getAttribute("x")).toBe("30.3");
+    // Below the flag, not on the anchor: label at y 30, flag bottom 1, tag at 32 - 0.3.
+    expect(tag?.getAttribute("y")).toBe("31.7");
     const group = () => document.querySelector<SVGElement>(".nodal-op-tags");
-    expect(group()?.style.opacity).toBe("1");
+    expect(group()?.hasAttribute("data-stale")).toBe(false);
+    expect(group()?.style.opacity).toBe("");
     act(() => {
       editor.getState().commit({ ...doc, labels: [...doc.labels] });
     });
-    expect(group()?.style.opacity).toBe("0.5");
+    expect(group()?.getAttribute("data-stale")).toBe("true");
+    expect(group()?.style.opacity).toBe("");
   });
 });

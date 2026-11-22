@@ -14,7 +14,7 @@ export function OpOverlay() {
   }, [view, doc]);
   if (!view || tags.length === 0) return null;
   return (
-    <g className="nodal-op-tags" style={{ opacity: view.stale ? 0.5 : 1 }} pointerEvents="none">
+    <g className="nodal-op-tags" data-stale={view.stale ? "true" : undefined} pointerEvents="none">
       {tags.map((t) => (
         <text
           key={t.net}
@@ -23,8 +23,6 @@ export function OpOverlay() {
           x={t.at.x + 0.3}
           y={t.at.y - 0.3}
           fontSize={0.7}
-          paintOrder="stroke"
-          strokeLinejoin="round"
         >
           {t.text}
         </text>
