@@ -1,6 +1,7 @@
 // Tool and symbol palette: Select, Wire, and one button per placeable item.
 import { LABEL_SYMBOL, PALETTE, SYMBOLS } from "../symbols/catalog";
 import { useEditor, useEditorStore } from "./EditorContext";
+import { ProjectBar } from "./ProjectBar";
 import type { Tool } from "./store";
 
 type Item = (typeof PALETTE)[number];
@@ -39,6 +40,8 @@ export function Palette() {
   };
   return (
     <nav className="nodal-palette" aria-label="Palette">
+      <ProjectBar />
+      <hr />
       <button
         type="button"
         onMouseDown={keepFocus}

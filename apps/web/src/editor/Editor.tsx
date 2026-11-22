@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import type { StoreApi } from "zustand";
 import { Canvas } from "./canvas/Canvas";
+import { DIAGNOSTICS_CSS } from "./Diagnostics";
 import { EditorProvider, useEditor } from "./EditorContext";
 import { Inspector, INSPECTOR_CSS } from "./inspector/Inspector";
 import { Palette } from "./Palette";
@@ -17,6 +18,8 @@ const CSS = `
 .nodal-palette button { display: flex; align-items: center; gap: 8px; padding: 3px 6px; font: inherit; text-align: left; border: 1px solid transparent; border-radius: 4px; background: none; cursor: pointer; }
 .nodal-palette button:hover { background: #e2e8f0; }
 .nodal-palette button[aria-pressed="true"] { background: #dbeafe; border-color: #2563eb; }
+.nodal-projectbar { display: flex; gap: 4px; }
+.nodal-projectbar button { flex: 1; justify-content: center; }
 .nodal-palette hr { width: 100%; border: 0; border-top: 1px solid #e5e7eb; margin: 4px 0; }
 .nodal-canvas-pane { grid-row: 1; grid-column: 2; min-width: 0; min-height: 0; }
 .nodal-status { grid-row: 2; grid-column: 1 / span 3; padding: 4px 10px; font-size: 12px; border-top: 1px solid #e5e7eb; background: #f8fafc; }
@@ -24,13 +27,14 @@ const CSS = `
 
 function EditorBody({ status }: { status?: ReactNode }) {
   const kind = useEditor((s) => s.tool.kind);
+  const message = useEditor((s) => s.statusMessage);
   const place = usePlaceTool();
   const wire = useWireTool();
   useShortcuts(wire);
   const tool = kind === "place" ? place : kind === "wire" ? wire : undefined;
   return (
     <div className="nodal-editor">
-      <style>{CSS + INSPECTOR_CSS}</style>
+      <style>{CSS + INSPECTOR_CSS + DIAGNOSTICS_CSS}</style>
       <Palette />
       <div className="nodal-canvas-pane">
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
@@ -38,6 +42,12 @@ function EditorBody({ status }: { status?: ReactNode }) {
       <Inspector />
       <div className="nodal-status">
         <strong>Nodal</strong> {status}
+        {message === null ? null : (
+          <>
+            {" "}
+            <span data-testid="project-message">{message}</span>
+          </>
+        )}
       </div>
     </div>
   );

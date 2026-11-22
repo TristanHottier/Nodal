@@ -43,6 +43,9 @@ export interface EditorState {
    */
   gestureActive: boolean;
   setGestureActive(active: boolean): void;
+  /** Message shown in the status bar (open errors, autosave). Not part of history. */
+  statusMessage: string | null;
+  setStatusMessage(m: string | null): void;
   commit(next: Schematic, select?: readonly string[]): void;
   undo(): void;
   redo(): void;
@@ -98,6 +101,7 @@ export function createEditorStore(opts?: {
     tool: { kind: "select" },
     view: { x: 0, y: 0, zoom: 1 },
     gestureActive: false,
+    statusMessage: null,
     newId,
 
     commit(next, select) {
@@ -172,6 +176,9 @@ export function createEditorStore(opts?: {
         models: m.models,
         simulation: m.simulation,
       };
+    },
+    setStatusMessage: (statusMessage) => {
+      if (get().statusMessage !== statusMessage) set({ statusMessage });
     },
     setGestureActive: (gestureActive) => {
       if (get().gestureActive !== gestureActive) set({ gestureActive });
