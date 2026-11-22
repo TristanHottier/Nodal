@@ -173,6 +173,26 @@
 - [ ] **Step 2: If a metric fails,** fix the cause before going on (likely candidates: render-blocking module size, engine `version()` call at startup, uPlot import on the first screen; lazy-load `WaveformPanel`/uPlot with `React.lazy` if TBT needs it, keeping `simulate.spec.ts` green).
 - [ ] **Step 3: Add the CI job.** **Step 4: Commit** `ci: Lighthouse lab check on the Pages URL`.
 
+### Task 9b: Brand mark: logo, favicon, app header, README
+
+Added 2026-11-22 at Tristan's request. He supplied the logo as a raster, `docs/brand/logo-source.png` (768×512, grey background, glow). It shows an "N" made of two vertical strokes and a diagonal, with a node circle at each of the four ends, in a cyan-to-mint gradient (about `#13dbe3` → `#27fab8`, OKLCH hue 200 → 165), and the wordmark "Nodal" in a heavy geometric sans. Tristan's ruling: **the logo stays separate from the UI palette.** Rail blue remains the only accent (ADR 0012), and the logo colors are brand tokens outside the 60/30/10 split, like the semantic colors.
+
+**Files:**
+- Create: `apps/web/src/brand/LogoMark.tsx` (the "N" mark as inline SVG), `apps/web/src/brand/Logo.tsx` (mark plus wordmark), `apps/web/src/brand/Logo.test.tsx`, `apps/web/public/favicon.svg`, `apps/web/public/favicon-32.png`, `apps/web/public/apple-touch-icon.png` (180×180), `docs/brand/logo-light.svg`, `docs/brand/logo-dark.svg`, `scripts/render-favicons.mjs`
+- Modify: `apps/web/src/theme/tokens.css` (`--color-brand-1`, `--color-brand-2`, light and dark), `apps/web/src/theme/tokens.test.ts`, `apps/web/index.html` (icon links), `apps/web/src/editor/ProjectBar.tsx` (mark at the left end), `README.md` (logo at the top), ADR 0012 (one paragraph under Palette: "Brand mark")
+
+**Interfaces:**
+- Produces: `<LogoMark size?: number />` and `<Logo size?: number />`. Both render `<svg role="img" aria-label="Nodal">` with the gradient stops from `var(--color-brand-1)` and `var(--color-brand-2)`. The wordmark is SVG paths, not live text, so it doesn't depend on the system font stacks.
+
+- [ ] **Step 1: Redraw the mark as SVG** on a 32×32 grid: two vertical strokes and the diagonal, a stroke width that survives 16 px, four node circles (hollow ring with a dark core, as in the source), gradient from top-left cyan to bottom-right mint. No glow, no background. Draw the wordmark "Nodal" as outlined paths, matched by eye to the source letterforms. Compare the source and the redraw side by side in a Playwright screenshot before going on.
+- [ ] **Step 2: Brand tokens.** Light theme: darken the logo hues until each stop reaches ≥ 3:1 against `--color-panel` (for example around `oklch(0.6 0.12 200)` → `oklch(0.62 0.14 165)`; the raw logo colors reach only 1.4:1 (mint) and 1.7:1 (cyan) on white). Dark theme: close to the source colors. Add both pairs to the 3:1 checks in `tokens.test.ts`. The token test runs first: FAIL, then add the tokens: PASS.
+- [ ] **Step 3: Write `Logo.test.tsx`:** the mark has role `img` and name "Nodal"; its gradient stops reference the two brand tokens; no raw color literal in either component (`noRawValues` already guards this).
+- [ ] **Step 4: Favicon set.** `favicon.svg` uses the dark-theme stops on a transparent background, with an inline `@media (prefers-color-scheme: light)` style switching to the light stops. `scripts/render-favicons.mjs` rasterizes it with Playwright Chromium to `favicon-32.png` and `apple-touch-icon.png` (the touch icon on a `--color-canvas` square, since iOS ignores transparency). In `index.html`, replace `<link rel="icon" href="data:," />` with the SVG icon, the PNG fallback and the apple-touch icon, all under the `/Nodal/` base. `check-base-path.mjs` must still pass.
+- [ ] **Step 5: App header.** `<LogoMark size={20} />` at the left end of the project bar, before the project name, with `aria-hidden` there because the page title already says Nodal. It adds no new control and changes no copy.
+- [ ] **Step 6: README.** `docs/brand/logo-light.svg` and `logo-dark.svg` (mark plus wordmark), shown with a `<picture>` element using `prefers-color-scheme`, above the title. Keep `docs/brand/logo-source.png` as the source of record.
+- [ ] **Step 7: Look at it.** Screenshots at 1440×900 in both themes, plus the favicon in a browser tab: the mark reads at 16, 20 and 180 px. Run the unit, e2e and token tests; visual baselines from Task 8 change only in the project bar (say so in the commit).
+- [ ] **Step 8: Commit** `feat(web): brand mark, favicon and header logo` (humanizer on the ADR paragraph and README text).
+
 ### Task 10: Impeccable critique, audit, fixes, polish
 
 Run in the main session with the impeccable skill (subagents only where its references direct).
