@@ -1,7 +1,7 @@
 {
   "format": "nodal-project",
   "formatVersion": 1,
-  "name": "Resistive divider: 10 V across 10 k and 5 k, operating point",
+  "name": "Resistive divider: 10 V across 10 k\u03a9 and 5 k\u03a9, operating point",
   "createdAt": "2026-11-21T00:00:00.000Z",
   "schematic": {
     "parts": [

@@ -1,7 +1,7 @@
 {
   "format": "nodal-project",
   "formatVersion": 1,
-  "name": "Inverting amplifier: ideal op-amp, 1 k\u03a9 in, 10 k\u03a9 feedback, gain -10",
+  "name": "Inverting amplifier: high-gain op-amp (gain 1e9), 1 k\u03a9 in, 10 k\u03a9 feedback, gain -10",
   "createdAt": "2026-11-21T00:00:00.000Z",
   "schematic": {
     "parts": [

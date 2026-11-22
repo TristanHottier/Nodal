@@ -72,7 +72,7 @@ export const EXAMPLES: readonly Example[] = [
   example(
     "opamp-inverting",
     "Inverting amplifier",
-    "Ideal op-amp with 1 kΩ and 10 kΩ; gain of -10.",
+    "High-gain op-amp (gain 1e9) with 1 kΩ and 10 kΩ; gain of about -10.",
     opampInverting,
   ),
 ];
