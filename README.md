@@ -39,6 +39,7 @@ Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on
 
 | Document | Contents |
 |---|---|
+| [`docs/user-guide.md`](docs/user-guide.md) | How to draw, simulate and read results in the app |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Repo layout, data flow, engine design, file formats |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones with exit criteria and current status |
 | [`docs/VALIDATION.md`](docs/VALIDATION.md) | Reference circuits, tolerances, how goldens are made |

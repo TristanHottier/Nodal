@@ -32,7 +32,12 @@ export default tseslint.config(
   },
   {
     // Config and e2e files belong to apps/web/tsconfig.node.json, which already includes them.
-    files: ["apps/web/vite.config.ts", "apps/web/playwright.config.ts", "apps/web/e2e/**/*.ts"],
+    files: [
+      "apps/web/vite.config.ts",
+      "apps/web/playwright.config.ts",
+      "apps/web/playwright.guide.config.ts",
+      "apps/web/e2e/**/*.ts",
+    ],
     languageOptions: {
       parserOptions: {
         projectService: false,

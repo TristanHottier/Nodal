@@ -12,7 +12,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "e2e": "playwright test --project=chromium --project=firefox",
-    "e2e:perf": "playwright test --project=perf --workers=1"
+    "e2e:perf": "playwright test --project=perf --workers=1",
+    "guide:screenshots": "playwright test --config=playwright.guide.config.ts"
   },
   "dependencies": {
     "@nodal/schema": "workspace:*",
