@@ -25,12 +25,17 @@ export async function startAutosave(
 ): Promise<Autosave> {
   const delayMs = opts.delayMs ?? 500;
   let message: string | null = null;
+  let editedDuringRead = false;
+  const before = store.getState();
   try {
     const raw = await kv.get(KEY);
     if (raw !== undefined) {
       const r = parseProject(raw);
       if (r.ok) {
-        store.getState().loadProject(r.project);
+        // Keep edits the user made while the read was in flight.
+        const now = store.getState();
+        if (now.doc === before.doc && now.project === before.project) now.loadProject(r.project);
+        else editedDuringRead = true;
       } else {
         await kv.put(`current-invalid-${new Date().toISOString()}`, raw);
         message = `The autosaved project could not be loaded (${r.error}). A copy was kept in browser storage.`;
@@ -41,19 +46,36 @@ export async function startAutosave(
   }
 
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let pending = false;
+  const write = () => {
+    clearTimeout(timer);
+    if (!pending) return;
+    pending = false;
+    kv.put(KEY, store.getState().getProject()).catch((e: unknown) => {
+      store.getState().setStatusMessage(`Autosave failed: ${errText(e)}`);
+    });
+  };
   const unsubscribe = store.subscribe((s, prev) => {
     if (s.doc === prev.doc && s.project === prev.project) return;
+    pending = true;
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      kv.put(KEY, store.getState().getProject()).catch((e: unknown) => {
-        store.getState().setStatusMessage(`Autosave failed: ${errText(e)}`);
-      });
-    }, delayMs);
+    timer = setTimeout(write, delayMs);
   });
+  if (editedDuringRead) {
+    pending = true;
+    timer = setTimeout(write, delayMs);
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === "hidden") write();
+  };
+  window.addEventListener("pagehide", write);
+  document.addEventListener("visibilitychange", onVisibility);
   return {
     message,
     stop() {
-      clearTimeout(timer);
+      write();
+      window.removeEventListener("pagehide", write);
+      document.removeEventListener("visibilitychange", onVisibility);
       unsubscribe();
     },
   };

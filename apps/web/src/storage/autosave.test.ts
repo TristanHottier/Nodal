@@ -68,7 +68,7 @@ describe("startAutosave", () => {
     h.stop();
   });
 
-  it("stop_cancels_pending_write", async () => {
+  it("stop_flushes_pending_write_once", async () => {
     fakeTimers();
     const kv = await freshKv();
     const put = vi.spyOn(kv, "put");
@@ -76,8 +76,54 @@ describe("startAutosave", () => {
     const h = await startAutosave(store, kv);
     store.getState().setProjectName("A");
     h.stop();
+    expect(put).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(2000);
-    expect(put).not.toHaveBeenCalled();
+    expect(put).toHaveBeenCalledTimes(1);
+  });
+
+  it("pagehide_flushes_pending_write", async () => {
+    fakeTimers();
+    const kv = await freshKv();
+    const store = createEditorStore();
+    const h = await startAutosave(store, kv, { delayMs: 500 });
+    store.getState().setProjectName("A");
+    window.dispatchEvent(new Event("pagehide"));
+    expect(((await kv.get("current")) as Project).name).toBe("A");
+    h.stop();
+  });
+
+  it("hidden_visibility_flushes_pending_write", async () => {
+    fakeTimers();
+    const kv = await freshKv();
+    const store = createEditorStore();
+    const h = await startAutosave(store, kv);
+    store.getState().setProjectName("A");
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(((await kv.get("current")) as Project).name).toBe("A");
+    h.stop();
+  });
+
+  it("edit_during_startup_read_is_kept", async () => {
+    fakeTimers();
+    const kv = await freshKv();
+    await kv.put("current", newProject("Saved", T0));
+    const store = createEditorStore();
+    const slow: KvStore = {
+      put: (k, v) => kv.put(k, v),
+      get: async (k) => {
+        const v = await kv.get(k);
+        store.getState().setProjectName("Typed");
+        return v;
+      },
+    };
+    const h = await startAutosave(store, slow, { delayMs: 500 });
+    expect(store.getState().project.name).toBe("Typed");
+    await vi.advanceTimersByTimeAsync(600);
+    await vi.waitFor(async () => {
+      expect(((await kv.get("current")) as Project).name).toBe("Typed");
+    });
+    h.stop();
   });
 
   const diagonal = {

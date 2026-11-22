@@ -38,13 +38,28 @@ export function openStore(dbName = "nodal", storeName = "projects"): Promise<KvS
     open.onsuccess = () => {
       const db = open.result;
       resolve({
-        get: (key) =>
-          request(db.transaction(storeName, "readonly").objectStore(storeName).get(key)),
-        put: async (key, value) => {
-          await request(
-            db.transaction(storeName, "readwrite").objectStore(storeName).put(value, key),
-          );
+        get: async (key) => {
+          const tx = db.transaction(storeName, "readonly");
+          return await request<unknown>(tx.objectStore(storeName).get(key));
         },
+        put: (key, value) =>
+          new Promise<void>((res, rej) => {
+            try {
+              const tx = db.transaction(storeName, "readwrite");
+              tx.oncomplete = () => {
+                res();
+              };
+              tx.onerror = () => {
+                rej(fail(tx));
+              };
+              tx.onabort = () => {
+                rej(fail(tx));
+              };
+              tx.objectStore(storeName).put(value, key);
+            } catch (e) {
+              rej(e instanceof Error ? e : new Error(String(e)));
+            }
+          }),
       });
     };
   });
