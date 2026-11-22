@@ -109,4 +109,8 @@ describe("project file", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toContain("schematic.wires.0");
   });
+  it("accepts_a_createdAt_with_an_offset", () => {
+    const r = parseProject({ ...base(), createdAt: "2026-11-21T10:00:00+01:00" });
+    expect(r.ok).toBe(true);
+  });
 });

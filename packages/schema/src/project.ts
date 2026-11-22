@@ -31,7 +31,7 @@ export const projectSchema = z.strictObject({
   format: z.literal(PROJECT_FORMAT),
   formatVersion: z.literal(PROJECT_FORMAT_VERSION),
   name: z.string().min(1),
-  createdAt: z.iso.datetime(),
+  createdAt: z.iso.datetime({ offset: true }),
   schematic: schematicSchema,
   models: z.array(modelSchema).superRefine((models, ctx) => {
     const seen = new Set<string>();
