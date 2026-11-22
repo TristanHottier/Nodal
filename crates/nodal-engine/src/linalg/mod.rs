@@ -1,13 +1,15 @@
 //! Linear solves behind a backend-neutral trait (ADR 0003).
 //!
 //! The trait is generic over the scalar type: `f64` for DC and transient
-//! analyses, `C64` for AC analysis. No backend types appear in the signature, so a sparse backend
-//! can be added without touching the analyses.
+//! analyses, `C64` for AC analysis. No backend types appear in the signature,
+//! so the analyses use `SparseLu` while `DenseLu` stays as the test oracle.
 
 mod dense;
+mod sparse;
 
 pub use dense::{DenseLu, DenseMatrix};
 pub use faer::c64 as C64;
+pub use sparse::SparseLu;
 
 mod sealed {
     pub trait Sealed {}

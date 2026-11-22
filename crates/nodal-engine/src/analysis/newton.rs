@@ -8,7 +8,7 @@ use super::integrate::Coeffs;
 use crate::circuit::Circuit;
 use crate::devices::{LoadContext, LoadMode, TranLoad};
 use crate::error::Error;
-use crate::linalg::{DenseLu, LinearSolver, SolveError};
+use crate::linalg::{LinearSolver, SolveError, SparseLu};
 use crate::mna::RealSystem;
 
 /// Settings for one Newton run.
@@ -82,17 +82,20 @@ pub(crate) fn newton(
     state: &mut [f64],
     cfg: &NewtonConfig,
 ) -> Result<Vec<f64>, NewtonFailure> {
-    newton_counted(circuit, x0, state, cfg, None).0
+    newton_counted(circuit, x0, state, cfg, None, &mut SparseLu::new()).0
 }
 
 /// Like `newton`, also returning the number of iterations performed. With
 /// `cfg.tran` and `history` both set, every device loads a transient point.
+/// `solver` is reused across calls so its symbolic analysis survives while
+/// the matrix pattern stays the same.
 pub(crate) fn newton_counted(
     circuit: &Circuit,
     x0: &[f64],
     state: &mut [f64],
     cfg: &NewtonConfig,
     history: Option<&History>,
+    solver: &mut SparseLu,
 ) -> (Result<Vec<f64>, NewtonFailure>, usize) {
     let n = circuit.unknown_count();
     let voltages = circuit.voltage_count();
@@ -112,7 +115,7 @@ pub(crate) fn newton_counted(
         let e = Error::Internal("newton: history length mismatch".into());
         return (Err(fatal(&x, e)), 0);
     }
-    let mut solver = DenseLu::new();
+    let mut sys = RealSystem::new(n);
     let mut last_update = vec![0.0; n];
     // Nodeset hold, ported from cktload.c (nodesets are enforced during
     // MODEINITJCT and MODEINITFIX) and niiter.c (MODEINITFIX lasts until an
@@ -149,7 +152,9 @@ pub(crate) fn newton_counted(
             }),
             ..ctx
         };
-        let mut sys = RealSystem::new(n);
+        if iter > 1 {
+            sys.reset(n);
+        }
         let mut limited = false;
         for (device, &offset) in circuit.devices.iter().zip(&circuit.state_offsets) {
             let len = device.state_len();
@@ -294,7 +299,7 @@ fn attempt(
     iters: &mut usize,
 ) -> Result<Vec<f64>, Box<StageFailure>> {
     let saved = state.to_vec();
-    let (outcome, n) = newton_counted(circuit, x, state, cfg, None);
+    let (outcome, n) = newton_counted(circuit, x, state, cfg, None, &mut SparseLu::new());
     *iters += n;
     outcome.map_err(|failure| {
         state.copy_from_slice(&saved);

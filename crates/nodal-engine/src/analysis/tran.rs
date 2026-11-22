@@ -22,10 +22,11 @@ use serde::{Deserialize, Serialize};
 
 use super::integrate::{Coeffs, TruncOpts, truncation};
 use super::newton::{History, NewtonConfig, newton_counted};
-use super::op::{report, solve_op_with_state};
+use super::op::solve_op_with_state;
 use crate::circuit::Circuit;
 use crate::error::Error;
 use crate::ir::Method;
+use crate::linalg::SparseLu;
 
 /// `itl4`: Newton iteration limit per transient time point.
 const ITL4: usize = 10;
@@ -63,13 +64,23 @@ pub struct TranResult {
 
 impl TranResult {
     fn push(&mut self, circuit: &Circuit, t: f64, x: &[f64]) {
-        let point = report(circuit, x);
         self.time.push(t);
-        for (name, v) in point.node_voltages {
-            self.node_voltages.entry(name).or_default().push(v);
+        let currents = x.iter().skip(circuit.voltage_count());
+        for (name, v) in circuit.node_names.iter().zip(x) {
+            push_series(&mut self.node_voltages, name, *v);
         }
-        for (name, i) in point.branch_currents {
-            self.branch_currents.entry(name).or_default().push(i);
+        for (name, i) in circuit.branch_names.iter().zip(currents) {
+            push_series(&mut self.branch_currents, name, *i);
+        }
+    }
+}
+
+/// Appends `v` to the series `name`, allocating the key only on first use.
+fn push_series(map: &mut BTreeMap<String, Vec<f64>>, name: &str, v: f64) {
+    match map.get_mut(name) {
+        Some(series) => series.push(v),
+        None => {
+            map.insert(name.to_string(), vec![v]);
         }
     }
 }
@@ -330,6 +341,7 @@ fn run_capped_progress(
         node_voltages: BTreeMap::new(),
         branch_currents: BTreeMap::new(),
     };
+    let mut solver = SparseLu::new();
     let mut history = History {
         levels: [state.clone(), state.clone(), state.clone()],
     };
@@ -345,7 +357,7 @@ fn run_capped_progress(
             ..NewtonConfig::default()
         };
         let mut trial = state.clone();
-        match newton_counted(circuit, &x, &mut trial, &cfg, Some(&history)).0 {
+        match newton_counted(circuit, &x, &mut trial, &cfg, Some(&history), &mut solver).0 {
             Ok(x_new) => {
                 x = x_new;
                 init_history(circuit, &x, &mut trial, true)?;
@@ -428,7 +440,7 @@ fn run_capped_progress(
                 ..NewtonConfig::default()
             };
             let mut trial = history.levels[0].clone();
-            match newton_counted(circuit, &x, &mut trial, &cfg, Some(&history)).0 {
+            match newton_counted(circuit, &x, &mut trial, &cfg, Some(&history), &mut solver).0 {
                 Err(f) => {
                     if let Some(e) = f.error {
                         return Err(e);

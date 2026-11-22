@@ -13,7 +13,7 @@ use super::op::solve_op_with_state;
 use crate::circuit::Circuit;
 use crate::devices::{LoadContext, LoadMode};
 use crate::error::Error;
-use crate::linalg::{C64, DenseLu, LinearSolver, SolveError};
+use crate::linalg::{C64, LinearSolver, SolveError, SparseLu};
 use crate::mna::{AcExcitation, RealSystem, assemble_ac};
 
 /// One complex signal over the frequency grid, as parallel real and
@@ -108,7 +108,7 @@ pub(crate) fn solve_ac_with_progress(
     };
     let mut node_voltages = empty(&circuit.node_names);
     let mut branch_currents = empty(&circuit.branch_names);
-    let mut solver = DenseLu::<C64>::new();
+    let mut solver = SparseLu::<C64>::new();
     for (index, &frequency) in frequencies.iter().enumerate() {
         let at = |cause: Error| Error::AcPoint {
             frequency,

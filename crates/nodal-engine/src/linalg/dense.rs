@@ -18,9 +18,21 @@ impl<T: Scalar> DenseMatrix<T> {
         }
     }
 
+    /// Sets every entry to zero and the dimension to `n`, reusing the storage.
+    pub fn clear(&mut self, n: usize) {
+        self.n = n;
+        self.data.clear();
+        self.data.resize(n * n, T::default());
+    }
+
     /// The matrix dimension.
     pub fn n(&self) -> usize {
         self.n
+    }
+
+    /// The entries in row-major order (`n * n` values).
+    pub(crate) fn as_row_major(&self) -> &[T] {
+        &self.data
     }
 
     /// Entry at row `r`, column `c`. Out-of-range indices return 0.

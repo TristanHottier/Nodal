@@ -98,7 +98,7 @@ nodal-engine/src/
 ├── circuit/     IR → indexed circuit: node map, branch-current unknowns, device instances
 ├── devices/     one module per device; each implements the Device trait
 ├── mna/         system assembly: real (DC, transient) and complex (AC)
-├── linalg/      LinearSolver trait; dense LU backend (ADR 0003)
+├── linalg/      LinearSolver trait; sparse LU backend, dense LU as test oracle (ADR 0003)
 ├── analysis/    op, dc_sweep, ac, tran
 ├── waveform/    source waveforms (pulse, sine, PWL) and their breakpoints
 ├── export/      SPICE deck writer (for validation against ngspice)
@@ -140,7 +140,7 @@ Limiting happens inside `load`, as in SPICE, so there is no separate limit metho
 
 In a transient step `ctx.tran` carries the time being solved for, the integration coefficients and the device's own slices of the states accepted at the previous three time points. A capacitor then stores `q = C v`, integrates it and stamps the companion conductance and current, and an inductor integrates its flux and rewrites its branch row. Independent sources take their value from the waveform at that time, or from `dc` when they have none. Without `tran`, including the transient's initial operating point, capacitors stay open, inductors stay shorted and sources use `dc` times the source factor. The transient driver reads `charge_slots` for the truncation error, `init_charges` for the initial state, `next_breakpoint` for forced time points, `crossing` to reject a step in which a switch changed state, and `dc_value`, `set_dc` and `tran_value` to put sources at their t = 0 value for the initial operating point and restore their DC values afterwards.
 
-AC analysis uses `LoadMode::SmallSignal`. In it `load` stamps the conductance matrix $G$ at the operating point without writing state: a diode or BJT reads the junction voltages stored by the last Newton load, a MOSFET reads `x` limited against the state, and a switch keeps its stored on/off state. `load_reactive` fills $C$, and `load_ac_excitation` fills the phasor right-hand side. Per frequency, `mna::assemble_ac` forms $G + j\omega C$ and a dense complex LU solves it.
+AC analysis uses `LoadMode::SmallSignal`. In it `load` stamps the conductance matrix $G$ at the operating point without writing state: a diode or BJT reads the junction voltages stored by the last Newton load, a MOSFET reads `x` limited against the state, and a switch keeps its stored on/off state. `load_reactive` fills $C$, and `load_ac_excitation` fills the phasor right-hand side. Per frequency, `mna::assemble_ac` forms $G + j\omega C$ and a sparse complex LU solves it.
 
 The stamps and equations each device must implement are in [`reference/mna.md`](reference/mna.md) and [`reference/devices.md`](reference/devices.md).
 

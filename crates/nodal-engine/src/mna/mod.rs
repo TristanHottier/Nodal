@@ -27,6 +27,16 @@ impl RealSystem {
         }
     }
 
+    /// Zeroes the system and sets it to `n` unknowns, keeping the allocations
+    /// when the size is unchanged.
+    pub fn reset(&mut self, n: usize) {
+        self.a.clear(n);
+        self.b.clear();
+        self.b.resize(n, 0.0);
+        self.out_of_range = None;
+        self.fault = None;
+    }
+
     /// Records a device error. Only the first one is kept.
     pub fn fault(&mut self, e: Error) {
         self.fault.get_or_insert(e);

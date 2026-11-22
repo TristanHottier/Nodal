@@ -8,6 +8,7 @@ use super::newton::{NewtonConfig, Strategy, Trace, newton_counted, solve_dc_coun
 use super::op::report;
 use crate::circuit::Circuit;
 use crate::error::Error;
+use crate::linalg::SparseLu;
 
 /// Node voltages and branch currents at every sweep point, keyed by bare
 /// name. Each vector has one entry per point of `sweep`.
@@ -139,7 +140,16 @@ fn solve_point(
             init_junction: false,
             ..NewtonConfig::default()
         };
-        match newton_counted(circuit, x_prev, &mut state, &cfg, None).0 {
+        match newton_counted(
+            circuit,
+            x_prev,
+            &mut state,
+            &cfg,
+            None,
+            &mut SparseLu::new(),
+        )
+        .0
+        {
             Ok(x) => return Ok((x, state)),
             Err(failure) => {
                 if let Some(error) = failure.error {

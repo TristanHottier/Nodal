@@ -2,8 +2,6 @@ import { expect, test } from "@playwright/test";
 
 // Performance budget (docs/ROADMAP.md). Chromium only (see playwright.config.ts).
 test("engine_meets_perf_budget", async ({ page }, testInfo) => {
-  // Expected to fail until Task 3 (sparse LU) brings tran50 under its budget; Task 3 removes this line.
-  test.fail();
   test.setTimeout(300_000);
   await page.goto("bench.html");
   await page.waitForFunction(() => document.body.dataset.done === "1", undefined, {

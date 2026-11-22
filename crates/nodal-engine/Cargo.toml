@@ -12,4 +12,4 @@ workspace = true
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
-faer = { version = "0.24", default-features = false, features = ["linalg"] }
+faer = { version = "0.24", default-features = false, features = ["linalg", "sparse-linalg"] }
