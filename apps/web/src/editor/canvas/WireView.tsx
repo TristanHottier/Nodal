@@ -21,7 +21,19 @@ export const WireView = memo(function WireView({
       data-selected={selected ? "true" : undefined}
       className={`nodal-item${selected ? " selected" : ""}${error ? " sim-error" : ""}${probeSlot === undefined ? "" : ` probed trace-${String(probeSlot)}`}`}
     >
+      {selected && (
+        <polyline
+          className="nodal-halo"
+          points={points}
+          fill="none"
+          vectorEffect="non-scaling-stroke"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          pointerEvents="none"
+        />
+      )}
       <polyline
+        className="nodal-wire-line"
         points={points}
         fill="none"
         stroke="currentColor"

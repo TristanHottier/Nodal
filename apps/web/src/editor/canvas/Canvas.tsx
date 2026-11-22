@@ -1,11 +1,20 @@
 // The schematic canvas: one SVG, a world group in grid units, and the
 // interaction hook. Tools other than "select" plug in through `tool`/`overlay`.
 import type { Schematic } from "@nodal/schema";
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  memo,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useErrorIds, useProbeSlots } from "../../simulation/SimulationContext";
-import { useEditor } from "../EditorContext";
+import { useEditor, useEditorStore } from "../EditorContext";
 import { GRID } from "../geometry";
 import { junctionDots } from "../model/junctions";
+import { cycleSelection } from "../model/cycle";
 import { moveItems } from "../model/edits";
 import { cullDoc, type Size, visibleBox } from "./cull";
 import { GridBackground } from "./GridBackground";
@@ -19,6 +28,13 @@ import { WireView } from "./WireView";
 import "./Canvas.css";
 
 export type { CanvasToolHandlers };
+
+const STEP_KEYS: Partial<Record<string, 1 | -1>> = {
+  ArrowRight: 1,
+  ArrowDown: 1,
+  ArrowLeft: -1,
+  ArrowUp: -1,
+};
 
 interface SceneProps {
   doc: Schematic;
@@ -63,6 +79,7 @@ export function Canvas({
   readOnly?: boolean;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const store = useEditorStore();
   const doc = useEditor((s) => s.doc);
   const selection = useEditor((s) => s.selection);
   const view = useEditor((s) => s.view);
@@ -99,6 +116,18 @@ export function Canvas({
     [shown, box?.x0, box?.y0, box?.x1, box?.y1],
   );
 
+  // Keyboard selection: with the canvas itself focused, Right/Down and Left/Up step through the
+  // items. Tab is left alone, so focus can always leave the canvas.
+  const onKeyDown = (e: KeyboardEvent<SVGSVGElement>) => {
+    if (readOnly || e.target !== e.currentTarget) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    const step = STEP_KEYS[e.key];
+    const s = store.getState();
+    if (step === undefined || s.tool.kind !== "select") return;
+    e.preventDefault();
+    s.select(cycleSelection(s.doc, s.selection, step));
+  };
+
   return (
     <svg
       ref={svgRef}
@@ -107,6 +136,7 @@ export function Canvas({
       tabIndex={0}
       role="application"
       aria-label="Schematic canvas"
+      onKeyDown={onKeyDown}
       {...handlers}
     >
       <GridBackground view={view} />

@@ -42,6 +42,23 @@
   color: var(--color-accent);
 }
 
+/* Selection is not carried by color alone (trace 1 and the accent share a hue): a selected wire
+   is heavier and sits in a canvas-colored halo; a selected part or label gets a dashed outline. */
+.nodal-canvas .selected .nodal-wire-line {
+  stroke-width: var(--stroke-selected);
+}
+
+.nodal-canvas .nodal-halo {
+  stroke: var(--color-canvas);
+  stroke-width: var(--stroke-halo);
+}
+
+.nodal-canvas .nodal-outline {
+  stroke: currentColor;
+  stroke-width: var(--stroke-outline);
+  stroke-dasharray: var(--dash-outline);
+}
+
 .nodal-canvas .nodal-grid-dot {
   fill: var(--color-canvas-grid);
 }
@@ -64,9 +81,6 @@
   fill: var(--color-op-tag);
   stroke: var(--color-canvas);
   stroke-width: 0.2;
-}
-
-.nodal-canvas .nodal-op-tag {
   paint-order: stroke;
   stroke-linejoin: round;
 }

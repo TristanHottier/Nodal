@@ -23,6 +23,18 @@ export const PartView = memo(function PartView({
       transform={`translate(${String(part.x)} ${String(part.y)}) rotate(${String(part.rotation)}) scale(${part.mirror ? "-1" : "1"} 1)`}
     >
       <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} fill="transparent" pointerEvents="all" />
+      {selected && (
+        <rect
+          className="nodal-outline"
+          x={x0}
+          y={y0}
+          width={x1 - x0}
+          height={y1 - y0}
+          fill="none"
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="none"
+        />
+      )}
       <Body />
     </g>
   );

@@ -41,12 +41,13 @@ Keyboard shortcuts work on the canvas and are ignored while you type in a field:
 | `X` | Mirror the part being placed, or the selection (it does nothing to a net label) |
 | `W` | Wire tool |
 | `P` | Probe tool |
+| `Right` or `Down`, `Left` or `Up` | With the canvas focused and the Select tool active, select the next or previous item (parts, then wires, then net labels, in the order you drew them) |
 | `Esc` | Cancel the wire in progress, then return to the Select tool, then clear the selection |
 | `Delete` or `Backspace` | Delete the selection (Select tool) |
 | `Ctrl+Z`, `Ctrl+Shift+Z` or `Ctrl+Y` | Undo, redo (`Cmd` on macOS) |
 | `Ctrl+C`, `Ctrl+V` | Copy, paste (`Cmd` on macOS) |
 
-The Select tool is the default. Click a part to select it, Shift+click to add or remove items from the selection, and drag on empty canvas to box-select. Drag a selected item to move it. The mouse wheel zooms around the pointer. Pan with a middle-button drag, or hold `Space` and drag.
+The Select tool is the default. Click a part to select it, Shift+click to add or remove items from the selection, and drag on empty canvas to box-select. Drag a selected item to move it. A selected wire is drawn heavier and in a halo, and a selected part or net label gets a dashed outline, so selection never depends on colour alone. With the canvas focused you can also select with the arrow keys (see the table), then rotate, mirror, copy or delete the item and edit it in the inspector. `Tab` always moves focus out of the canvas. The mouse wheel zooms around the pointer. Pan with a middle-button drag, or hold `Space` and drag.
 
 ### Wires
 
@@ -149,7 +150,7 @@ After an operating-point run, each net shows its voltage next to it on the schem
 
 ### Waveforms
 
-DC sweep and transient runs draw one plot, with the swept source or time on the x axis. After a run, the first node voltage is shown. To add more signals, use the Signal menu and the Add button in the results panel, or press `P` and click a wire or net label for a node voltage, or a part for its current. The Probe tool needs a finished run. Each signal appears as a coloured chip, and the x on the chip removes it. A probed node voltage also colours its wires on the schematic in the same colour as its chip and trace, so you can see which net a trace belongs to. A selected or failing wire keeps its selection or error colour. Resistor currents are computed from the node voltages, with the sign positive from the first pin to the second.
+DC sweep and transient runs draw one plot, with the swept source or time on the x axis. After a run, the first node voltage is shown. To add more signals, use the Signal menu and the Add button in the results panel, or press `P` and click a wire or net label for a node voltage, or a part for its current. The Probe tool needs a finished run. Each signal appears as a coloured chip, and the x on the chip removes it. A probed node voltage also colours its wires on the schematic in the same colour as its chip and trace, so you can see which net a trace belongs to. A selected or failing wire keeps its selection or error colour. When you edit the schematic after a run, the results are out of date and the wires lose their trace colours until you run again. Resistor currents are computed from the node voltages, with the sign positive from the first pin to the second.
 
 Click the plot to place cursor A and Shift+click to place cursor B. You can also type a position into the Cursor A and Cursor B fields, using the same suffixes as values (`1m`). The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
 

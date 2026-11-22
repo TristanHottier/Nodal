@@ -94,6 +94,11 @@
   --bench-width: 1200px;
   --bench-height: 700px;
   --opacity-stale: 0.5;
+  /* Selection cue besides color (SVG user units on non-scaling strokes, i.e. screen px) */
+  --stroke-selected: 3;
+  --stroke-halo: 7;
+  --stroke-outline: 1.5;
+  --dash-outline: 4 3;
 }
 
 [data-theme="dark"] {

@@ -229,6 +229,9 @@ Small, square-ish corners: 3 px on controls (`--radius-sm`), 5 px on larger cont
 - **Do** keep motion at 120 ms or less, on hover, press, focus and panel state only. It becomes 0 ms under `prefers-reduced-motion`.
 - **Do** check new colors against the contrast tests in `tokens.test.ts` in both themes, and add the dark value to both dark blocks.
 - **Do** keep a visible 2 px focus ring on anything a keyboard can reach.
+- **Do** mark selection with a shape cue as well as color: a selected wire is heavier (`--stroke-selected`) and sits in a canvas-colored halo (`--stroke-halo`); a selected part or label gets a dashed outline.
+- **Do** keep canvas selection reachable by keyboard: with the canvas focused, the arrow keys (Right or Down next, Left or Up previous) step through parts, wires and labels, `Esc` clears, and `Tab` always leaves the canvas.
+- **Do** dim only results when they are stale (plots; values go muted and italic). Never fade controls, labels or chips: they stay operable and must keep 4.5:1.
 
 ### Don't:
 - **Don't** write `#hex`, `rgb()`, `hsl()`, `oklch()`, `px`, `rem` or `em` in any CSS or component file other than `tokens.css`. `noRawValues.test.ts` fails on it.

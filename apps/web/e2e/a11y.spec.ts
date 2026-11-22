@@ -160,3 +160,43 @@ test("Tab reaches every button, select, input and the canvas, each with a visibl
   expect(unreached, "controls Tab never reached").toEqual([]);
   expect(noOutline, "focused elements without an outline").toEqual([]);
 });
+
+test("the keyboard can select, rotate and inspect a part, and Tab leaves the canvas", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  const parts = page.locator('[data-testid^="part-"]');
+  await expect(parts.first()).toBeVisible();
+  const canvas = page.getByTestId("schematic-canvas");
+  const inspector = page.getByRole("complementary", { name: "Inspector" });
+
+  await canvas.focus();
+  await page.keyboard.press("ArrowRight");
+  const first = parts.first();
+  await expect(first).toHaveAttribute("data-selected", "true");
+  await expect(inspector.locator("h2")).not.toHaveText("Project");
+  // The selected part is not marked by color alone: it has an outline.
+  await expect(first.locator(".nodal-outline")).toHaveCount(1);
+
+  const before = await first.getAttribute("transform");
+  await page.keyboard.press("r");
+  await expect.poll(() => first.getAttribute("transform")).not.toBe(before);
+  await expect(first).toHaveAttribute("data-selected", "true");
+
+  // The next arrow moves the selection; Left comes back.
+  await page.keyboard.press("ArrowRight");
+  await expect(first).not.toHaveAttribute("data-selected", "true");
+  await page.keyboard.press("ArrowLeft");
+  await expect(first).toHaveAttribute("data-selected", "true");
+
+  // Escape clears the selection and the canvas keeps focus.
+  await page.keyboard.press("Escape");
+  await expect(first).not.toHaveAttribute("data-selected", "true");
+
+  // Tab leaves the canvas.
+  await page.keyboard.press("Tab");
+  expect(await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))).not.toBe(
+    "schematic-canvas",
+  );
+});

@@ -66,7 +66,7 @@ Positive:
 Negative:
 
 - System font stacks render a little differently on each OS, so visual-regression baselines are tied to the CI runner.
-- Two blues on screen (the accent and trace 1) can meet on a probed wire. Selection wins on a selected wire, so the user always sees what is selected.
+- Two blues on screen (the accent and trace 1) can meet on a probed wire. Selection wins on a selected wire, and it is also marked by a heavier stroke with a canvas-colored halo (parts and labels get a dashed outline), so selection never rests on color alone.
 - The dark block is written twice in `tokens.css`, once for the stored choice and once for the system choice. A test checks that the two copies match.
 
 ## Alternatives considered

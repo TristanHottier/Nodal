@@ -21,6 +21,18 @@ export const LabelView = memo(function LabelView({
       transform={`translate(${String(label.x)} ${String(label.y)}) rotate(${String(label.rotation)})`}
     >
       <rect x={x0} y={y0} width={x1 - x0} height={y1 - y0} fill="transparent" pointerEvents="all" />
+      {selected && (
+        <rect
+          className="nodal-outline"
+          x={x0}
+          y={y0}
+          width={x1 - x0}
+          height={y1 - y0}
+          fill="none"
+          vectorEffect="non-scaling-stroke"
+          pointerEvents="none"
+        />
+      )}
       <LABEL_SYMBOL.Body text={label.text} />
     </g>
   );

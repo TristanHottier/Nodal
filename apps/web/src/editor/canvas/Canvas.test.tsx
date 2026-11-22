@@ -356,6 +356,15 @@ describe("Canvas", () => {
     expect(group()?.style.opacity).toBe("");
   });
 
+  it("selected_parts_and_labels_get_an_outline_not_only_a_color", () => {
+    expect(document.querySelector(".nodal-outline")).toBeNull();
+    act(() => {
+      store.getState().select(["R1", "L1"]);
+    });
+    expect(screen.getByTestId("part-R1").querySelector(".nodal-outline")).not.toBeNull();
+    expect(screen.getByTestId("label-L1").querySelector(".nodal-outline")).not.toBeNull();
+  });
+
   describe("probed wires", () => {
     const mount = (selectWire?: string) => {
       cleanup();
@@ -426,6 +435,12 @@ describe("Canvas", () => {
         editor.getState().commit({ ...doc, labels: [...doc.labels] });
       });
       expect(screen.getByTestId("wire-wA").getAttribute("class")).not.toContain("probed");
+    });
+
+    it("selection_has_a_cue_besides_color", () => {
+      mount("wB");
+      expect(screen.getByTestId("wire-wB").querySelector(".nodal-halo")).not.toBeNull();
+      expect(screen.getByTestId("wire-wA").querySelector(".nodal-halo")).toBeNull();
     });
 
     it("selected_wire_keeps_both_classes", () => {
