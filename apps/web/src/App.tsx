@@ -1,12 +1,45 @@
 import { useEffect, useState } from "react";
 import { Editor } from "./editor/Editor";
+import { createEditorStore } from "./editor/store";
 import { getEngineVersion } from "./engine/client";
+import { startAutosave } from "./storage/autosave";
+import { openStore } from "./storage/idb";
 
 type Status =
   { kind: "loading" } | { kind: "ready"; version: string } | { kind: "failed"; message: string };
 
 export function App() {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
+  const [store] = useState(() => createEditorStore());
+
+  useEffect(() => {
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    openStore()
+      .then((kv) => startAutosave(store, kv))
+      .then((autosave) => {
+        if (cancelled) {
+          autosave.stop();
+          return;
+        }
+        stop = () => {
+          autosave.stop();
+        };
+        if (autosave.message !== null) store.getState().setStatusMessage(autosave.message);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled)
+          store
+            .getState()
+            .setStatusMessage(
+              `Autosave is unavailable: ${e instanceof Error ? e.message : String(e)}`,
+            );
+      });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [store]);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,5 +67,5 @@ export function App() {
         ? `Engine ${status.version}`
         : `Engine failed to load: ${status.message}`;
 
-  return <Editor status={<span data-testid="engine-status">{text}</span>} />;
+  return <Editor store={store} status={<span data-testid="engine-status">{text}</span>} />;
 }
