@@ -7,7 +7,10 @@ export async function openEditor(page: Page): Promise<void> {
 }
 
 export async function setTheme(page: Page, theme: "light" | "dark"): Promise<void> {
-  await page.getByLabel("Theme").selectOption(theme);
+  const select = page.getByLabel("Theme");
+  await select.selectOption(theme);
+  // No focus ring in the snapshots.
+  await select.blur();
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
 }
 

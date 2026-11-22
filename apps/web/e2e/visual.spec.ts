@@ -20,7 +20,13 @@ for (const theme of ["light", "dark"] as const) {
 
     test("analysis editor", async ({ page }) => {
       await page.keyboard.press("Escape");
-      await expect(page.getByRole("complementary", { name: "Inspector" })).toBeVisible();
+      const inspector = page.getByRole("complementary", { name: "Inspector" });
+      await expect(inspector.getByRole("heading", { name: "Analyses" })).toBeVisible();
+      await expect(inspector.getByRole("group", { name: "Analysis 1" })).toBeVisible();
+      // Bring the analysis cards and the solver options to the top of the inspector.
+      await inspector.getByRole("heading", { name: "Analyses" }).evaluate((el) => {
+        el.scrollIntoView({ block: "start" });
+      });
       await expect(page).toHaveScreenshot(`analysis-${theme}.png`);
     });
 

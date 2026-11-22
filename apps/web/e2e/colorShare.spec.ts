@@ -62,7 +62,7 @@ for (const theme of ["light", "dark"] as const) {
         type: "shares",
         description: JSON.stringify({ shares, refs }),
       });
-      console.log(`SHARES ${theme} ${view} ${JSON.stringify(shares)}`);
+      expect(shares.classified / (1440 * 900), "classified fraction").toBeGreaterThanOrEqual(0.5);
       expect(shares.dominant, "dominant").toBeGreaterThanOrEqual(0.5);
       expect(shares.dominant, "dominant").toBeLessThanOrEqual(0.8);
       expect(shares.secondary, "secondary").toBeGreaterThanOrEqual(0.15);
