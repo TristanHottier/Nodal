@@ -1,6 +1,7 @@
 import type { Schematic } from "@nodal/schema";
 import { describe, expect, it } from "vitest";
-import { cullDoc, visibleBox } from "./cull";
+import { SYMBOLS } from "../../symbols/catalog";
+import { cullDoc, REACH, visibleBox } from "./cull";
 
 const part = (id: string, x: number, y: number) => ({
   id,
@@ -65,5 +66,14 @@ describe("cullDoc", () => {
 
   it("keeps_the_original_item_objects", () => {
     expect(cullDoc(doc, box).parts[0]).toBe(doc.parts[0]);
+  });
+});
+
+describe("REACH", () => {
+  it("covers_every_symbol_bound", () => {
+    for (const def of Object.values(SYMBOLS)) {
+      const { x0, y0, x1, y1 } = def.bounds;
+      expect(Math.max(-x0, -y0, x1, y1), def.type).toBeLessThanOrEqual(REACH);
+    }
   });
 });

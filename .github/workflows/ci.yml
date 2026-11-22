@@ -57,6 +57,7 @@ jobs:
       - run: node scripts/check-base-path.mjs apps/web/dist
       - run: pnpm --filter @nodal/web exec playwright install --with-deps chromium firefox
       - run: pnpm --filter @nodal/web e2e
+      - run: pnpm --filter @nodal/web e2e:perf
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v7

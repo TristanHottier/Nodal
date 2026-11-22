@@ -8,7 +8,7 @@ import type { View } from "../store";
 /** Cell size (grid units) of the snapped box, and the margin around the viewport. */
 const CELL = 20;
 /** No symbol or label reaches farther than this from its anchor (grid units). */
-const REACH = 8;
+export const REACH = 8;
 
 export interface WorldBox {
   x0: number;

@@ -5,7 +5,7 @@ import ac50 from "../../../../validation/perf/ac50.json?raw";
 import { Editor } from "../editor/Editor";
 import { createEditorStore } from "../editor/store";
 import { bigProject } from "./bigProject";
-import { editorFramesPass, runPanZoom } from "./editorBench";
+import { editorFramesPass, MAX_SLOW_FRACTION, runPanZoom } from "./editorBench";
 import { runEngineBench, type BenchRow } from "./engineBench";
 
 const CASES = [
@@ -55,7 +55,7 @@ function EditorBench({ onRow }: { onRow: (row: BenchRow) => void }) {
         row.fps = total.fps;
         row.slowFrames = total.slowFrames;
         row.status = editorFramesPass(total, 2 * FRAMES) ? "pass" : "fail";
-        row.detail = `fps ${total.fps.toFixed(1)} (pan ${pan.fps.toFixed(1)}, zoom ${zoom.fps.toFixed(1)}), slow frames ${String(total.slowFrames)} of ${String(2 * FRAMES)} (limit ${String(0.05 * 2 * FRAMES)})`;
+        row.detail = `fps ${total.fps.toFixed(1)} (pan ${pan.fps.toFixed(1)}, zoom ${zoom.fps.toFixed(1)}), slow frames ${String(total.slowFrames)} of ${String(2 * FRAMES)} (limit ${String(MAX_SLOW_FRACTION * 2 * FRAMES)})`;
       } catch (e) {
         row.detail = e instanceof Error ? e.message : String(e);
       }

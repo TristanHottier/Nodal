@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Performance budget (docs/ROADMAP.md). Chromium only (see playwright.config.ts).
+// Performance budget (docs/ROADMAP.md). Runs alone in the `perf` project (pnpm e2e:perf).
 test("engine_meets_perf_budget", async ({ page }, testInfo) => {
   test.setTimeout(300_000);
   await page.goto("bench.html");

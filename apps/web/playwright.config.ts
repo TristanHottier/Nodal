@@ -9,13 +9,11 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-      // The performance budget is measured on Chromium only.
-      testIgnore: /perf\.spec\.ts/,
-    },
+    // The performance budget runs alone, in the `perf` project (`pnpm e2e:perf`).
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /perf\.spec\.ts/ },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] }, testIgnore: /perf\.spec\.ts/ },
+    // Chromium only. Run it with `--workers=1` so nothing else shares the machine.
+    { name: "perf", use: { ...devices["Desktop Chrome"] }, testMatch: /perf\.spec\.ts/ },
   ],
   webServer: {
     // Production build served under the /Nodal/ base path, as on GitHub Pages.
