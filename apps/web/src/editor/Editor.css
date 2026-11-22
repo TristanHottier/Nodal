@@ -91,3 +91,7 @@
 .nodal-status strong {
   font-weight: var(--weight-strong);
 }
+
+.nodal-theme-select {
+  float: right;
+}

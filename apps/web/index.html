@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Mirrors readThemeChoice in src/theme/theme.ts: apply a stored theme before first paint.
+      try {
+        var t = localStorage.getItem("nodal-theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
     <link rel="icon" href="data:," />
     <title>Nodal</title>
     <style>

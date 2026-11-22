@@ -10,6 +10,7 @@ import { Canvas } from "./canvas/Canvas";
 import { EditorProvider, useEditor } from "./EditorContext";
 import { Inspector } from "./inspector/Inspector";
 import { Palette } from "./Palette";
+import { ThemeSelect } from "../theme/ThemeSelect";
 import type { EditorState } from "./store";
 import { usePlaceTool } from "./tools/place";
 import { useProbeTool } from "./tools/probe";
@@ -52,6 +53,7 @@ function EditorBody({ status }: { status?: ReactNode }) {
             <span data-testid="project-message">{message}</span>
           </>
         )}
+        <ThemeSelect />
       </div>
     </div>
   );
