@@ -12,7 +12,7 @@ test("shell shows engine version from WASM worker", async ({ page }) => {
 
   await page.goto("./");
 
-  await expect(page.getByTestId("engine-status")).toHaveText("Engine 0.1.0", {
+  await expect(page.getByTestId("engine-status")).toHaveText("Engine 1.0.0", {
     timeout: 10_000,
   });
   expect(failedRequests).toEqual([]);

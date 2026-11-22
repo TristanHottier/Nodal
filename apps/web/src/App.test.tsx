@@ -24,9 +24,9 @@ describe("App", () => {
   });
 
   it("shows the engine version", async () => {
-    mocked.mockResolvedValue("0.1.0");
+    mocked.mockResolvedValue("1.0.0");
     render(<App />);
-    expect((await screen.findByText("Engine 0.1.0")).textContent).toBe("Engine 0.1.0");
+    expect((await screen.findByText("Engine 1.0.0")).textContent).toBe("Engine 1.0.0");
   });
 
   it("shows an error when the engine fails", async () => {

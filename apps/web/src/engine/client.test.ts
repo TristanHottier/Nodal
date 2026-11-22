@@ -57,8 +57,8 @@ describe("EngineClient", () => {
     const p = client.version();
     const w = nth(workers, 0);
     expect(w.postMessage).toHaveBeenCalledWith({ type: "version", id: w.lastId() });
-    w.reply({ type: "version", id: w.lastId(), version: "0.1.0" });
-    await expect(p).resolves.toBe("0.1.0");
+    w.reply({ type: "version", id: w.lastId(), version: "1.0.0" });
+    await expect(p).resolves.toBe("1.0.0");
   });
 
   it("version_times_out", async () => {

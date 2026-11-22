@@ -488,7 +488,7 @@ dependencies = [
 
 [[package]]
 name = "nodal-cli"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "clap",
  "nodal-engine",
@@ -498,7 +498,7 @@ dependencies = [
 
 [[package]]
 name = "nodal-engine"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "faer",
  "serde",
@@ -507,7 +507,7 @@ dependencies = [
 
 [[package]]
 name = "nodal-wasm"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "js-sys",
  "nodal-engine",
