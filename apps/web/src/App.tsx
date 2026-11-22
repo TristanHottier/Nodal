@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Editor } from "./editor/Editor";
 import { createEditorStore } from "./editor/store";
-import { getEngineVersion } from "./engine/client";
+import { EngineClient } from "./engine/client";
 import { startAutosave } from "./storage/autosave";
 import { openStore } from "./storage/idb";
 
@@ -11,6 +11,7 @@ type Status =
 export function App() {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [store] = useState(() => createEditorStore());
+  const [engine] = useState(() => new EngineClient());
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +44,7 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
-    getEngineVersion().then(
+    engine.version().then(
       (version) => {
         if (!cancelled) setStatus({ kind: "ready", version });
       },
@@ -57,8 +58,9 @@ export function App() {
     );
     return () => {
       cancelled = true;
+      engine.dispose();
     };
-  }, []);
+  }, [engine]);
 
   const text =
     status.kind === "loading"

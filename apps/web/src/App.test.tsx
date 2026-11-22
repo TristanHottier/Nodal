@@ -1,11 +1,15 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { getEngineVersion } from "./engine/client";
 
-vi.mock("./engine/client");
+const mocked = vi.hoisted(() => vi.fn<() => Promise<string>>());
 
-const mocked = vi.mocked(getEngineVersion);
+vi.mock("./engine/client", () => ({
+  EngineClient: class {
+    version = mocked;
+    dispose = vi.fn();
+  },
+}));
 
 afterEach(() => {
   cleanup();
