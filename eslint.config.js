@@ -21,19 +21,25 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          // Files covered by apps/web/tsconfig.node.json, not by the nearest tsconfig.json.
-          allowDefaultProject: [
-            "apps/web/vite.config.ts",
-            "apps/web/playwright.config.ts",
-            "apps/web/e2e/*.ts",
-            "packages/schema/src/ir.test.ts",
-          ],
+          // Not covered by its package tsconfig.json; the default project cap is 8 files.
+          allowDefaultProject: ["packages/schema/src/ir.test.ts"],
           defaultProject: "apps/web/tsconfig.node.json",
         },
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: { "@typescript-eslint/no-explicit-any": "error" },
+  },
+  {
+    // Config and e2e files belong to apps/web/tsconfig.node.json, which already includes them.
+    files: ["apps/web/vite.config.ts", "apps/web/playwright.config.ts", "apps/web/e2e/**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: "apps/web/tsconfig.node.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
   {
     files: ["**/*.{js,mjs,cjs}"],
