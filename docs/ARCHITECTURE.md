@@ -148,8 +148,8 @@ The stamps and equations each device must implement are in [`reference/mna.md`](
 
 | Analysis | Method |
 |---|---|
-| **DC operating point** | Newton–Raphson on the MNA system with capacitors open and inductors shorted. Junction voltage limiting every iteration. If plain Newton fails: gmin stepping, then source stepping. |
-| **DC sweep** | Sweep one independent source; each point starts from the previous solution. |
+| **DC operating point** | Newton–Raphson on the MNA system with capacitors open and inductors shorted. Junction voltage limiting every iteration. If plain Newton fails, or hits a singular matrix: gmin stepping, then source stepping. |
+| **DC sweep** | Sweep one independent source; each point starts from the previous solution. A singular matrix falls back to gmin and source stepping, as in the operating point. |
 | **AC** | Linearize every device at the DC operating point; solve the complex system $(G + j\omega C)\,x = b$ per frequency. Linear, decade or octave sweep. |
 | **Transient** | Initial condition from the DC operating point (or user ICs with `uic`). Trapezoidal integration by default, BDF2 (Gear 2) optional. Variable step from local truncation error, with forced time points at source breakpoints. Newton–Raphson at each time point. |
 
@@ -275,6 +275,12 @@ The code is in `apps/web/src/waveform/` and `apps/web/src/simulation/`. The run 
 - **Cursors.** Click the plot to set cursor A and Shift+click to set cursor B, or type a value in the Cursor A and Cursor B inputs (value notation, for example `1m`). The readout table shows each probe at A, at B and the difference, plus Δx and 1/Δx. Values are interpolated between samples and formatted with `formatQuantity` (4 significant digits and an engineering suffix, for example `632.1 mV`); AC rows are in dB and degrees.
 - **Operating point.** The result is drawn on the schematic as a voltage tag at each net, and the inspector of a selected part lists its current and pin voltages. The results panel also has a table of all operating-point signals. Tags and values dim when the schematic or settings changed after the run.
 - **Errors.** A failed run lists the engine message in the status and marks the involved parts, wires and labels with the `sim-error` class (red on the canvas).
+
+### 6.5 Examples, benchmark and performance
+
+- **Examples.** `apps/web/src/examples/` holds eight projects (divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter, inverting op-amp) as `.nodal.json` files, listed in `index.ts`. The "Open example" select in the project bar loads one, with the same replace confirmation as Open. `examples.test.ts` checks that each netlists without diagnostics, that every analysis runs in the wasm engine, and one expected value per example.
+- **Benchmark page.** `apps/web/bench.html` (`src/bench/`) is a second Vite entry that runs the performance cases in the browser: a transient and an AC run of `validation/perf/tran50.json` in the engine, and pan and zoom of a generated 500-part project in the `<Editor>`. `pnpm --filter @nodal/web e2e:perf` runs it in the Playwright `perf` project and checks the budget of the roadmap.
+- **Canvas culling.** `editor/canvas/cull.ts` limits rendering to the parts, wires and labels near the visible world box, which is snapped to coarse cells so that the rendered lists change only when the view crosses a cell border.
 
 ## 7. Project file (`.nodal.json`)
 
