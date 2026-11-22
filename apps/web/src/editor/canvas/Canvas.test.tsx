@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Part, Schematic } from "@nodal/schema";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { act } from "@testing-library/react";
@@ -352,5 +354,59 @@ describe("Canvas", () => {
     });
     expect(group()?.getAttribute("data-stale")).toBe("true");
     expect(group()?.style.opacity).toBe("");
+  });
+
+  describe("probed wires", () => {
+    const mount = (selectWire?: string) => {
+      cleanup();
+      const sim = createSimulationStore({ runner: fakeRunner() });
+      const editor = createEditorStore({ doc: DOC });
+      if (selectWire) editor.setState({ selection: [selectWire] });
+      render(
+        <EditorProvider store={editor}>
+          <SimulationProvider store={sim}>
+            <Canvas />
+          </SimulationProvider>
+        </EditorProvider>,
+      );
+      act(() => {
+        sim.setState({
+          probes: ["V(in)", "V(out)"],
+          map: {
+            partOfElement: new Map(),
+            netOfPin: new Map(),
+            netOfWire: new Map([
+              ["wA", "in"],
+              ["wB", "out"],
+              ["wC", "out"],
+            ]),
+            netOfLabel: new Map(),
+          },
+        });
+      });
+      return sim;
+    };
+
+    it("wires_on_a_probed_net_wear_its_trace_slot", () => {
+      mount();
+      expect(screen.getByTestId("wire-wA").getAttribute("class")).toContain("trace-1");
+      expect(screen.getByTestId("wire-wB").getAttribute("class")).toContain("trace-2");
+      expect(screen.getByTestId("wire-wC").getAttribute("class")).toContain("probed");
+    });
+
+    it("selected_wire_keeps_both_classes", () => {
+      mount("wB");
+      const cls = screen.getByTestId("wire-wB").getAttribute("class") ?? "";
+      expect(cls).toContain("selected");
+      expect(cls).toContain("trace-2");
+    });
+
+    it("stylesheet_orders_probed_then_error_then_selected", () => {
+      const css = readFileSync(join(__dirname, "Canvas.css"), "utf8");
+      const at = (s: string) => css.indexOf(s);
+      expect(at(".probed")).toBeGreaterThan(-1);
+      expect(at(".probed")).toBeLessThan(at(".sim-error"));
+      expect(at(".sim-error")).toBeLessThan(at(".nodal-canvas .selected"));
+    });
   });
 });

@@ -3,6 +3,7 @@ import { Field } from "../editor/inspector/Field";
 import type { SimResult } from "../engine/results";
 import { formatQuantity, formatValue, parseValue } from "../netlist/value";
 import { cursorReadout } from "./cursors";
+import { Swatch } from "./Swatch";
 import type { TraceView } from "./traces";
 
 export interface CursorState {
@@ -110,7 +111,10 @@ export function CursorTable({
               const u = unit(r.key);
               return (
                 <tr key={r.key + suffix} data-signal={r.key + suffix}>
-                  <td>{r.key + suffix}</td>
+                  <td>
+                    <Swatch index={probes.indexOf(r.key)} />
+                    {r.key + suffix}
+                  </td>
                   <td data-col="a" className="nodal-num">
                     {fmt(r.a, u)}
                   </td>

@@ -25,7 +25,7 @@ export function OpValues({ part }: { part: Part }) {
   });
   if (current === undefined && rows.length === 0) return null;
   return (
-    <section aria-label="Operating point" style={{ opacity: view.stale ? 0.5 : 1 }}>
+    <section aria-label="Operating point" data-stale={view.stale ? "true" : undefined}>
       <h3>Operating point</h3>
       {current !== undefined && (
         <div className="nodal-num">{`I(${name}) = ${formatQuantity(current, "A")}`}</div>

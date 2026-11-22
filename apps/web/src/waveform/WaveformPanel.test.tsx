@@ -1,15 +1,17 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SimResult } from "../engine/results";
+import { EditorProvider } from "../editor/EditorContext";
+import { createEditorStore } from "../editor/store";
 import { SimulationProvider } from "../simulation/SimulationContext";
 import { createSimulationStore } from "../simulation/store";
 import { fakeRunner, opResult } from "../simulation/testFixtures";
 import { valueAt } from "./cursors";
+import { traceVar } from "./traceColors";
 import { WaveformPanel } from "./WaveformPanel";
 
 // uPlot needs a real canvas; the mock renders what the panel passes as data attributes.
 vi.mock("./Plot", () => ({
-  TRACE_COLORS: ["#111", "#222", "#333"],
   Plot: (p: {
     series: { label: string }[];
     logX: boolean;
@@ -63,9 +65,11 @@ function setup(result: SimResult, probes: string[]) {
   const store = createSimulationStore({ runner: fakeRunner() });
   store.setState({ result, probes });
   render(
-    <SimulationProvider store={store}>
-      <WaveformPanel />
-    </SimulationProvider>,
+    <EditorProvider store={createEditorStore()}>
+      <SimulationProvider store={store}>
+        <WaveformPanel />
+      </SimulationProvider>
+    </EditorProvider>,
   );
   return store;
 }
@@ -153,5 +157,63 @@ describe("WaveformPanel", () => {
       store.setState({ result: ac, probes: ["V(out)"] });
     });
     expect(screen.getAllByTestId("plot")[0]?.dataset.cursorA).toBe("null");
+  });
+
+  it("chips_and_cursor_rows_share_the_trace_swatch", () => {
+    setup(tran, ["V(a)", "V(b)", "I(V1)"]);
+    const swatch = (el: Element | null | undefined) =>
+      el?.querySelector<HTMLElement>(".nodal-swatch")?.style.getPropertyValue("--swatch");
+    ["V(a)", "V(b)", "I(V1)"].forEach((key, i) => {
+      const chip = document.querySelector(`.nodal-chip[data-probe='${key}']`);
+      const row = document.querySelector(`tr[data-signal='${key}']`);
+      expect(swatch(chip)).toBe(traceVar(i));
+      expect(swatch(row)).toBe(traceVar(i));
+      expect(row?.textContent).toContain(key);
+    });
+  });
+
+  it("seventh_probe_reuses_color_one_in_chip_and_row", () => {
+    const names = ["a", "b", "c", "d", "e", "f", "g"];
+    const wide: SimResult = {
+      type: "tran",
+      axis: f(0, 1),
+      signals: names.map((name) => ({ name, kind: "v" as const, re: f(0, 1) })),
+    };
+    setup(
+      wide,
+      names.map((n) => `V(${n})`),
+    );
+    const chip = document.querySelector(".nodal-chip[data-probe='V(g)'] .nodal-swatch");
+    const row = document.querySelector("tr[data-signal='V(g)'] .nodal-swatch");
+    expect((chip as HTMLElement).style.getPropertyValue("--swatch")).toBe(traceVar(0));
+    expect((row as HTMLElement).style.getPropertyValue("--swatch")).toBe(traceVar(0));
+  });
+
+  it("marks_panel_and_op_table_stale_after_an_edit", () => {
+    for (const result of [tran, opResult(["a"])]) {
+      cleanup();
+      const editor = createEditorStore({ doc: { parts: [], wires: [], labels: [] } });
+      const store = createSimulationStore({ runner: fakeRunner() });
+      store.setState({
+        result,
+        probes: ["V(a)"],
+        ranDoc: editor.getState().doc,
+        ranSimulation: editor.getState().project.simulation,
+      });
+      render(
+        <EditorProvider store={editor}>
+          <SimulationProvider store={store}>
+            <WaveformPanel />
+          </SimulationProvider>
+        </EditorProvider>,
+      );
+      const root = () => document.querySelector<HTMLElement>(".nodal-waveform") as HTMLElement;
+      expect(root().hasAttribute("data-stale")).toBe(false);
+      act(() => {
+        const d = editor.getState().doc;
+        editor.getState().commit({ ...d, labels: [...d.labels] });
+      });
+      expect(root().getAttribute("data-stale")).toBe("true");
+    }
   });
 });

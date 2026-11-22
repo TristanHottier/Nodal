@@ -3,10 +3,16 @@
 import { useMemo, useState } from "react";
 import { type SimResult, signalKey } from "../engine/results";
 import { formatQuantity } from "../netlist/value";
-import { useSimulation, useSimulationStore } from "../simulation/SimulationContext";
+import {
+  useResultsStale,
+  useSimulation,
+  useSimulationStore,
+} from "../simulation/SimulationContext";
 import { CursorTable, type CursorState } from "./CursorTable";
-import { Plot, TRACE_COLORS } from "./Plot";
+import { Plot } from "./Plot";
 import { SignalPicker } from "./SignalPicker";
+import { Swatch } from "./Swatch";
+import { traceVar } from "./traceColors";
 import { listSignals, traceValues } from "./traces";
 import "./WaveformPanel.css";
 
@@ -15,9 +21,9 @@ export const WAVEFORM_PANEL_HEIGHT = 280;
 
 const NO_CURSORS: CursorState = { a: null, b: null };
 
-function OpTable({ result }: { result: SimResult }) {
+function OpTable({ result, stale }: { result: SimResult; stale: boolean }) {
   return (
-    <div className="nodal-waveform nodal-optable">
+    <div className="nodal-waveform nodal-optable" data-stale={stale ? "true" : undefined}>
       <table aria-label="Operating point">
         <tbody>
           {listSignals(result).map((s) => {
@@ -59,7 +65,7 @@ function Plots({
       probes.map((key, i) => ({
         label: key,
         values: traceValues(result, key, view),
-        color: TRACE_COLORS[i % TRACE_COLORS.length] ?? "#2563eb",
+        color: traceVar(i),
       }));
     return ac ? { mag: build("mag"), phase: build("phase") } : { linear: build("linear") };
   }, [result, probes, ac]);
@@ -81,19 +87,24 @@ export function WaveformPanel() {
   const sim = useSimulationStore();
   const result = useSimulation((s) => s.result);
   const probes = useSimulation((s) => s.probes);
+  const stale = useResultsStale();
   const [state, setState] = useState<{ type: SimResult["type"] | null; cursors: CursorState }>({
     type: null,
     cursors: NO_CURSORS,
   });
   if (!result) return null;
-  if (result.type === "op") return <OpTable result={result} />;
+  if (result.type === "op") return <OpTable result={result} stale={stale} />;
   // Cursor state belongs to one analysis kind; a different kind starts clean.
   const cursors = state.type === result.type ? state.cursors : NO_CURSORS;
   const setCursors = (c: CursorState) => {
     setState({ type: result.type, cursors: c });
   };
   return (
-    <div className="nodal-waveform" data-testid="waveform-panel">
+    <div
+      className="nodal-waveform"
+      data-testid="waveform-panel"
+      data-stale={stale ? "true" : undefined}
+    >
       <div className="nodal-waveform-plots">
         <Plots
           result={result}
@@ -114,12 +125,8 @@ export function WaveformPanel() {
         />
         <div className="nodal-chips">
           {probes.map((key, i) => (
-            <span
-              key={key}
-              className="nodal-chip"
-              data-probe={key}
-              style={{ borderColor: TRACE_COLORS[i % TRACE_COLORS.length] ?? "#2563eb" }}
-            >
+            <span key={key} className="nodal-chip" data-probe={key}>
+              <Swatch index={i} />
               {key}
               <button
                 type="button"

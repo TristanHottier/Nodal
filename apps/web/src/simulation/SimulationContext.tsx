@@ -1,10 +1,11 @@
 // React binding for the simulation store, plus the hook that needs both stores.
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { createStore, useStore } from "zustand";
 import type { SimResult } from "../engine/results";
 import type { CircuitMap } from "../netlist/netlister";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
+import { wireProbeSlots } from "../waveform/traceColors";
 import type { SimulationState } from "./store";
 
 const SimulationContext = createContext<StoreApi<SimulationState> | null>(null);
@@ -54,6 +55,14 @@ export function useErrorIds(): Set<string> {
   return ids;
 }
 
+/** Trace color slot of each wire on a probed net. Empty outside a provider. */
+export function useProbeSlots(): ReadonlyMap<string, number> {
+  const store = useContext(SimulationContext) ?? NO_RESULT;
+  const map = useStore(store, (s) => s.map);
+  const probes = useStore(store, (s) => s.probes);
+  return useMemo(() => wireProbeSlots(map, probes), [map, probes]);
+}
+
 /** True when a result exists and the schematic or simulation settings changed since it ran. */
 export function useResultsStale(): boolean {
   const ranDoc = useSimulation((s) => s.ranDoc);
@@ -73,9 +82,15 @@ export interface OpView {
 
 // Stands in outside a provider so components using useOpView need none in their tests.
 const NO_RESULT = createStore<SimulationState>(
-  // Only the fields useOpView reads exist; the cast documents that.
+  // Only the fields the hooks here read exist; the cast documents that.
   () =>
-    ({ result: null, map: null, ranDoc: null, ranSimulation: null }) as unknown as SimulationState,
+    ({
+      result: null,
+      map: null,
+      probes: [],
+      ranDoc: null,
+      ranSimulation: null,
+    }) as unknown as SimulationState,
 );
 
 /** The latest operating-point result with its circuit map. Null outside a provider or for other analyses. */

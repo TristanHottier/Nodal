@@ -8,12 +8,38 @@
   background: var(--color-canvas);
 }
 
-.nodal-canvas .selected {
-  color: var(--color-accent);
+/* Precedence, last wins: probe color < simulation error < selection. :where keeps the probe
+   rules at the lowest specificity so the later rules win whatever the order of classes. */
+.nodal-canvas :where(.probed.trace-1) {
+  color: var(--color-trace-1);
+}
+
+.nodal-canvas :where(.probed.trace-2) {
+  color: var(--color-trace-2);
+}
+
+.nodal-canvas :where(.probed.trace-3) {
+  color: var(--color-trace-3);
+}
+
+.nodal-canvas :where(.probed.trace-4) {
+  color: var(--color-trace-4);
+}
+
+.nodal-canvas :where(.probed.trace-5) {
+  color: var(--color-trace-5);
+}
+
+.nodal-canvas :where(.probed.trace-6) {
+  color: var(--color-trace-6);
 }
 
 .nodal-canvas .sim-error {
   color: var(--color-error);
+}
+
+.nodal-canvas .selected {
+  color: var(--color-accent);
 }
 
 .nodal-canvas .nodal-grid-dot {

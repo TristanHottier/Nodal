@@ -2,7 +2,7 @@
 // interaction hook. Tools other than "select" plug in through `tool`/`overlay`.
 import type { Schematic } from "@nodal/schema";
 import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { useErrorIds } from "../../simulation/SimulationContext";
+import { useErrorIds, useProbeSlots } from "../../simulation/SimulationContext";
 import { useEditor } from "../EditorContext";
 import { GRID } from "../geometry";
 import { junctionDots } from "../model/junctions";
@@ -25,14 +25,21 @@ interface SceneProps {
   selected: ReadonlySet<string>;
   errorIds: ReadonlySet<string>;
   dots: ReturnType<typeof junctionDots>;
+  probeSlots: ReadonlyMap<string, number>;
 }
 
 /** The drawn items. Memoized so that pan and zoom (a new `view` only) never reconcile them. */
-const Scene = memo(function Scene({ doc, selected, errorIds, dots }: SceneProps) {
+const Scene = memo(function Scene({ doc, selected, errorIds, dots, probeSlots }: SceneProps) {
   return (
     <>
       {doc.wires.map((w) => (
-        <WireView key={w.id} wire={w} selected={selected.has(w.id)} error={errorIds.has(w.id)} />
+        <WireView
+          key={w.id}
+          wire={w}
+          selected={selected.has(w.id)}
+          error={errorIds.has(w.id)}
+          probeSlot={probeSlots.get(w.id)}
+        />
       ))}
       {doc.parts.map((p) => (
         <PartView key={p.id} part={p} selected={selected.has(p.id)} error={errorIds.has(p.id)} />
@@ -51,6 +58,7 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
   const selection = useEditor((s) => s.selection);
   const view = useEditor((s) => s.view);
   const errorIds = useErrorIds();
+  const probeSlots = useProbeSlots();
   const { preview, handlers } = useCanvasPointer(svgRef, tool);
 
   const shown = useMemo(
@@ -96,7 +104,13 @@ export function Canvas({ tool, overlay }: { tool?: CanvasToolHandlers; overlay?:
       <g
         transform={`translate(${String(view.x)} ${String(view.y)}) scale(${String(view.zoom * GRID)})`}
       >
-        <Scene doc={drawn} selected={selected} errorIds={errorIds} dots={dots} />
+        <Scene
+          doc={drawn}
+          selected={selected}
+          errorIds={errorIds}
+          dots={dots}
+          probeSlots={probeSlots}
+        />
         <OpOverlay />
         {preview?.kind === "box" && <SelectionBox box={preview.box} />}
         {overlay}

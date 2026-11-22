@@ -4,22 +4,13 @@ import { useEffect, useRef } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { formatValue } from "../netlist/value";
-
-/** Fixed trace colors, assigned by probe order. */
-export const TRACE_COLORS = [
-  "#2563eb",
-  "#dc2626",
-  "#16a34a",
-  "#d97706",
-  "#7c3aed",
-  "#0891b2",
-  "#db2777",
-  "#4b5563",
-] as const;
+import { readCssVar } from "../theme/cssVar";
+import { useResolvedTheme } from "../theme/theme";
 
 export interface PlotSeries {
   label: string;
   values: Float64Array;
+  /** A CSS color or a `var(--name)` reference resolved when the chart is built. */
   color: string;
 }
 
@@ -58,7 +49,11 @@ export const xRange = (min: number, max: number, logX: boolean): [number, number
 const engineering = (_u: uPlot, ticks: number[]) =>
   ticks.map((v) => (Number.isFinite(v) ? formatValue(v, 4) : ""));
 
-const CURSOR_COLORS = { a: "#111827", b: "#6b7280" } as const;
+/** Resolves `var(--name)` to the computed token value; other strings pass through. */
+const resolveColor = (c: string): string => {
+  const m = /^var\((--[\w-]+)\)$/.exec(c);
+  return m?.[1] ? readCssVar(m[1]) : c;
+};
 
 export function Plot(props: PlotProps) {
   const host = useRef<HTMLDivElement>(null);
@@ -66,6 +61,7 @@ export function Plot(props: PlotProps) {
   // The latest props, read by uPlot hooks created once per chart.
   const latest = useRef(props);
   latest.current = props;
+  const theme = useResolvedTheme();
 
   const structure = JSON.stringify([
     props.series.map((s) => [s.label, s.color]),
@@ -73,14 +69,18 @@ export function Plot(props: PlotProps) {
     props.xLabel,
     props.yLabel,
     props.height,
+    theme,
   ]);
 
   useEffect(() => {
     const el = host.current;
     if (!el) return;
     const { series, logX, xLabel, yLabel, height } = latest.current;
-    const grid = { stroke: "#e5e7eb", width: 1 };
-    const axisFont = "11px system-ui, sans-serif";
+    const gridColor = readCssVar("--color-plot-grid");
+    const textColor = readCssVar("--color-text-muted");
+    const cursorColors = { a: readCssVar("--color-cursor-a"), b: readCssVar("--color-cursor-b") };
+    const grid = { stroke: gridColor, width: 1 };
+    const axisFont = `${readCssVar("--text-xs")} ${readCssVar("--font-mono")}`;
     const opts: uPlot.Options = {
       width: Math.max(el.clientWidth, 100),
       height,
@@ -100,7 +100,7 @@ export function Plot(props: PlotProps) {
         {},
         ...series.map((s) => ({
           label: s.label,
-          stroke: s.color,
+          stroke: resolveColor(s.color),
           width: 1,
           spanGaps: false,
           points: { show: false },
@@ -110,6 +110,8 @@ export function Plot(props: PlotProps) {
         {
           label: xLabel,
           grid,
+          stroke: textColor,
+          ticks: { stroke: gridColor, width: 1 },
           values: engineering,
           font: axisFont,
           labelFont: axisFont,
@@ -119,6 +121,8 @@ export function Plot(props: PlotProps) {
         {
           label: yLabel,
           grid,
+          stroke: textColor,
+          ticks: { stroke: gridColor, width: 1 },
           values: engineering,
           font: axisFont,
           labelFont: axisFont,
@@ -141,13 +145,13 @@ export function Plot(props: PlotProps) {
               if (x === null || (logX && x <= 0)) continue;
               const px = Math.round(u.valToPos(x, "x", true));
               if (px < u.bbox.left || px > u.bbox.left + u.bbox.width) continue;
-              ctx.strokeStyle = CURSOR_COLORS[which];
+              ctx.strokeStyle = cursorColors[which];
               ctx.beginPath();
               ctx.moveTo(px, u.bbox.top);
               ctx.lineTo(px, u.bbox.top + u.bbox.height);
               ctx.stroke();
-              ctx.fillStyle = CURSOR_COLORS[which];
-              ctx.font = "bold 11px system-ui, sans-serif";
+              ctx.fillStyle = cursorColors[which];
+              ctx.font = `bold ${axisFont}`;
               ctx.fillText(which.toUpperCase(), px + 3, u.bbox.top + 11);
             }
             ctx.restore();

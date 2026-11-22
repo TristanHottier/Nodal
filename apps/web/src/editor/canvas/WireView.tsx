@@ -5,10 +5,13 @@ export const WireView = memo(function WireView({
   wire,
   selected,
   error = false,
+  probeSlot,
 }: {
   wire: Wire;
   selected: boolean;
   error?: boolean;
+  /** 1-based trace color slot when the wire's net is probed. */
+  probeSlot?: number | undefined;
 }) {
   const points = wire.points.map((p) => `${String(p.x)},${String(p.y)}`).join(" ");
   return (
@@ -16,7 +19,7 @@ export const WireView = memo(function WireView({
       data-testid={`wire-${wire.id}`}
       data-item-id={wire.id}
       data-selected={selected ? "true" : undefined}
-      className={`nodal-item${selected ? " selected" : ""}${error ? " sim-error" : ""}`}
+      className={`nodal-item${selected ? " selected" : ""}${error ? " sim-error" : ""}${probeSlot === undefined ? "" : ` probed trace-${String(probeSlot)}`}`}
     >
       <polyline
         points={points}
