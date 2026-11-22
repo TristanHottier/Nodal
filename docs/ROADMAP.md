@@ -81,12 +81,12 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4497252950
 **Exit:** draw → simulate → plot works end to end for all four analyses; the browser results for circuits T1 and A1 match the CLI output to a relative difference ≤ 1e-12 (native and wasm32 builds may differ in the last bits of `exp` and `ln`).
 Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/44990835762 at 27d142b (rust, web, deploy green). Its [web job](https://github.com/TristanHottier/Nodal/actions/runs/44990835762/job/137111306571) runs `parity.test.ts`, which calls the wasm `run` entry point directly with the same IR as the CLI and finds a largest relative difference of 0 for T1-trap, T1-gear and A1 (the limit is 1e-12). The same job runs `simulate.spec.ts` on Chromium and Firefox: it draws a divider and reads its operating-point tags, runs T1-trap and reads `V(out)` at a cursor, runs A1 and reads the Bode magnitude at 159.155 Hz, plots the N1 DC sweep, cancels a long transient and reruns it, and highlights both sources of a source loop. The optimized WASM is 216.45 kB gzipped (faer linked). The [deploy job](https://github.com/TristanHottier/Nodal/actions/runs/44990835762/job/137111971790) published the app to https://tristanhottier.github.io/Nodal/, where A1 opens, runs and shows the Bode pair.
 
-### M7 — v1 release · not started
+### M7 — v1 content and performance · not started
 - Performance budget met (below); if dense LU misses it, add the sparse backend ([ADR 0003](adr/0003-linear-solver.md)).
 - Example projects: divider, RC/RLC filters, half- and full-wave rectifiers, common-emitter amplifier, CMOS inverter, op-amp inverting amplifier.
 - User guide in `docs/`; README status updated with what v1 does, backed by the validation results.
 
-**Exit:** budget met; examples load and simulate; `v1.0.0` tag.
+**Exit:** budget met; examples load and simulate. The `v1.0.0` tag moves to M8, so v1 ships with the final design.
 
 ### Performance budget (checked in M7, desktop Chrome on a mid-range laptop)
 
@@ -97,11 +97,34 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4499083576
 | Editor pan/zoom with 500 parts | 60 fps |
 | WASM module, gzipped | < 1 MB |
 
+### M8 — Web design overhaul and v1 release · not started
+
+The whole web app gets one coherent visual design, replacing the per-milestone styling from M0–M7. The app is an Operate surface in impeccable terms: an editor and a tool, where scanability and precision come before expression. Behaviour, copy and features stay as they are; this milestone changes only how the app looks and feels.
+
+- **Product and design context:** run impeccable `init` to write `PRODUCT.md`, then `shape` the visual direction. Record the chosen direction, palette and type scale in an ADR before any restyling.
+- **Design tokens:** one token file (CSS custom properties, colors in OKLCH) for color, type scale, spacing, radius, elevation and motion. Components use tokens only; no raw color or size values in component code. Impeccable `document` writes `DESIGN.md` from the result.
+- **60/30/10 color rule:** about 60% dominant neutral (canvas and page background), 30% secondary (panels, toolbars, inspector), 10% accent (primary actions, selection, focus). Each share is checked on screenshots of the editor and of the waveform viewer. Exempt from the rule, but still defined as tokens: semantic colors (error, warning, success) and the waveform trace palette.
+- **Light and dark themes** from the same tokens, following `prefers-color-scheme`, with a manual toggle stored per browser.
+- **Trace and schematic colors:** waveform traces, net highlights and operating-point tags stay distinguishable under the three common color-vision deficiencies (simulated protanopia, deuteranopia, tritanopia), and never rely on color alone: each trace also has a label in the legend and at the cursor readout.
+- **Typography:** a type scale with at most two families (UI and monospace for values and code); tabular numerals in every numeric readout.
+- **Motion:** short, purposeful transitions only; everything respects `prefers-reduced-motion`.
+- **Responsive:** usable from 1280 px wide down to 1024 px wide. Below that, the app shows the schematic read-only and says the editor needs a wider screen.
+- **Impeccable passes,** in this order, on the whole app: `critique`, then `audit`, then fixes, then `polish`. Every finding marked must-fix is fixed or written down with a reason in the M8 plan.
+
+**Exit:**
+- Accessibility: zero WCAG 2.2 AA violations from axe-core in the Playwright run, on the editor, the inspector, the analysis panel and the waveform viewer, in both themes. Every action reachable by keyboard, with a visible focus ring. WCAG 2.2 AA is the target because WCAG 3 is still a W3C Working Draft.
+- Contrast: text at least 4.5:1 (3:1 for large text), UI components and focus rings at least 3:1, in both themes, checked from the token values by a unit test.
+- Performance on the Pages URL, Lighthouse mobile and desktop lab runs: LCP ≤ 2.5 s, CLS ≤ 0.1, Total Blocking Time ≤ 200 ms (the lab proxy for INP ≤ 200 ms). The M7 performance budget still holds.
+- Impeccable `audit` reports no must-fix findings; `critique` and `audit` reports are committed under `docs/design/`.
+- No raw color or spacing values outside the token file (lint rule or test).
+- All existing unit and Playwright tests pass. Visual regression screenshots of the main views in both themes are committed.
+- `v1.0.0` tag.
+
 ## After v1 (not designed yet)
 
 Listed to bound v1 scope. None of these is a commitment. Order is not fixed.
 
-- **Public polish:** onboarding, example gallery, accessibility pass, browser support matrix.
+- **Public polish:** onboarding, example gallery, browser support matrix. (The accessibility pass is part of M8.)
 - ANSI symbol style toggle.
 - KiCad symbol import.
 - Subcircuits and hierarchical schematics.
