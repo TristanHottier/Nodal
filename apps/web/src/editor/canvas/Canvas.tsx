@@ -107,7 +107,6 @@ export function Canvas({
       tabIndex={0}
       role="application"
       aria-label="Schematic canvas"
-      {...(readOnly ? { "aria-readonly": true } : {})}
       {...handlers}
     >
       <GridBackground view={view} />

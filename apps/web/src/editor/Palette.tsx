@@ -11,6 +11,9 @@ function Preview({ item }: { item: Item }) {
   const def = item === "label" ? LABEL_SYMBOL : SYMBOLS[item];
   const { x0, y0, x1, y1 } = def.bounds;
   const Body = def.Body;
+  // The flag's "NET" glyph would count as visible text and break WCAG 2.5.3 (Label in Name):
+  // the button's visible text is "Net label", so the icon is just the flag.
+  const props = item === "label" ? { text: "" } : {};
   return (
     <svg
       aria-hidden="true"
@@ -19,7 +22,7 @@ function Preview({ item }: { item: Item }) {
       viewBox={`${String(x0 - 0.5)} ${String(y0 - 0.5)} ${String(x1 - x0 + 1)} ${String(y1 - y0 + 1)}`}
       className="nodal-palette-icon"
     >
-      <Body />
+      <Body {...props} />
     </svg>
   );
 }
