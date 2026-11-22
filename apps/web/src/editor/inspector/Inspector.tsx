@@ -1,5 +1,6 @@
 // Right-hand panel: the selected part or label, else the project name and model library.
 import { SYMBOLS } from "../../symbols/catalog";
+import { AnalysisEditor } from "../../simulation/AnalysisEditor";
 import { Diagnostics } from "../Diagnostics";
 import { useEditor } from "../EditorContext";
 import { LabelFields } from "./LabelFields";
@@ -45,6 +46,7 @@ export function Inspector() {
           {selection.length > 1 ? <p>{String(selection.length)} items selected</p> : null}
           <ProjectFields />
           <ModelEditor />
+          <AnalysisEditor />
         </>
       )}
       <Diagnostics />

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Editor } from "./editor/Editor";
 import { createEditorStore } from "./editor/store";
 import { EngineClient } from "./engine/client";
+import { createSimulationStore } from "./simulation/store";
 import { startAutosave } from "./storage/autosave";
 import { openStore } from "./storage/idb";
 
@@ -12,6 +13,7 @@ export function App() {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const [store] = useState(() => createEditorStore());
   const [engine] = useState(() => new EngineClient());
+  const [simulation] = useState(() => createSimulationStore({ runner: engine }));
 
   useEffect(() => {
     let cancelled = false;
@@ -69,5 +71,11 @@ export function App() {
         ? `Engine ${status.version}`
         : `Engine failed to load: ${status.message}`;
 
-  return <Editor store={store} status={<span data-testid="engine-status">{text}</span>} />;
+  return (
+    <Editor
+      store={store}
+      simulation={simulation}
+      status={<span data-testid="engine-status">{text}</span>}
+    />
+  );
 }

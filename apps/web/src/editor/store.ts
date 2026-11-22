@@ -58,6 +58,8 @@ export interface EditorState {
   /** Name and model edits are not part of history. */
   setProjectName(name: string): void;
   setModels(models: ProjectModel[]): void;
+  /** Analyses and options; like model edits, not part of history. */
+  setSimulation(sim: Project["simulation"]): void;
   /** Replace the whole project and reset history, selection, clipboard and view. */
   loadProject(p: Project): void;
   /** The current project in schema key order, ready to serialize. */
@@ -149,6 +151,10 @@ export function createEditorStore(opts?: {
     setModels: (models) => {
       const s = get();
       if (s.project.models !== models) set({ project: { ...s.project, models } });
+    },
+    setSimulation: (simulation) => {
+      const s = get();
+      if (s.project.simulation !== simulation) set({ project: { ...s.project, simulation } });
     },
     loadProject(p) {
       const { schematic, ...meta } = p;

@@ -172,6 +172,17 @@ describe("editor store", () => {
     expect(store.getState().past).toHaveLength(0);
   });
 
+  it("set_simulation_outside_history", () => {
+    const store = createEditorStore();
+    const sim = { ...store.getState().project.simulation };
+    store.getState().setSimulation(sim);
+    expect(store.getState().project.simulation).toBe(sim);
+    expect(store.getState().past).toHaveLength(0);
+    const before = store.getState();
+    store.getState().setSimulation(sim);
+    expect(store.getState()).toBe(before);
+  });
+
   it("property_edit_is_undoable", () => {
     const doc: Schematic = {
       ...EMPTY_SCHEMATIC,

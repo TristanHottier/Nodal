@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parsePwl, parseValue } from "./value";
+import { formatValue, parsePwl, parseValue } from "./value";
 
 function ok(text: string): number {
   const r = parseValue(text);
@@ -64,5 +64,20 @@ describe("parsePwl", () => {
     expect(parsePwl(" ; \n ").ok).toBe(false);
     const r = parsePwl("0 0; 1m x");
     expect(!r.ok && r.error).toContain("1m x");
+  });
+});
+
+describe("formatValue", () => {
+  it("format_round_trips", () => {
+    for (const x of [1e-6, 4.7e3, 1e6, 0.001, 159.15e3, 2.5e-9, -3.3e-12, 5, 999.5e3]) {
+      expect(ok(formatValue(x))).toBe(x);
+    }
+    expect(formatValue(1e-6)).toBe("1u");
+    expect(formatValue(4.7e3)).toBe("4.7k");
+    expect(formatValue(1e6)).toBe("1Meg");
+    expect(formatValue(0.001)).toBe("1m");
+    expect(formatValue(0)).toBe("0");
+    expect(formatValue(1e-18)).toBe("1e-18");
+    expect(formatValue(1e20)).toBe("100000000000000000000");
   });
 });

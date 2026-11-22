@@ -1,0 +1,166 @@
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { createEditorStore } from "../editor/store";
+import { EditorProvider } from "../editor/EditorContext";
+import { EngineRunError } from "../engine/client";
+import { project as projectOf, emptyDoc } from "../netlist/testDoc";
+import { SimulationProvider, useResultsStale } from "./SimulationContext";
+import { createSimulationStore } from "./store";
+import { dividerProject, fakeRunner, opResult, tranResult } from "./testFixtures";
+
+afterEach(cleanup);
+
+function setup() {
+  const runner = fakeRunner();
+  const store = createSimulationStore({ runner });
+  return { runner, store, get: () => store.getState() };
+}
+
+const withTran = () => {
+  const p = dividerProject();
+  return {
+    ...p,
+    simulation: {
+      ...p.simulation,
+      analyses: [
+        { type: "tran" as const, tstep: 1e-6, tstop: 1e-3, tstart: 0, tmax: undefined, uic: false },
+      ],
+    },
+  };
+};
+
+describe("simulation store", () => {
+  it("run_success_sets_result", async () => {
+    const { runner, get } = setup();
+    const p = dividerProject();
+    const done = get().run(p, 0);
+    expect(get().status.kind).toBe("running");
+    const call = runner.calls[0];
+    expect(call?.index).toBe(0);
+    expect(call?.netlist).toContain("irVersion");
+    call?.progress(0.5);
+    expect(get().status).toEqual({ kind: "running", index: 0, progress: 0.5 });
+    const result = opResult(["a"]);
+    call?.resolve(result);
+    await done;
+    expect(get().status).toEqual({ kind: "done" });
+    expect(get().result).toBe(result);
+    expect(get().ranDoc).toBe(p.schematic);
+    expect(get().ranSimulation).toBe(p.simulation);
+    expect(get().map).not.toBeNull();
+    expect(get().ranIr).not.toBeNull();
+  });
+
+  it("netlist_errors_block_run", async () => {
+    const { runner, get } = setup();
+    await get().run(projectOf(emptyDoc()), 0);
+    const s = get().status;
+    expect(s.kind).toBe("failed");
+    if (s.kind === "failed") expect(s.message).toBe("Fix the problems listed before simulating");
+    expect(runner.calls).toHaveLength(0);
+  });
+
+  it("engine_error_sets_failed", async () => {
+    const { runner, get } = setup();
+    const done = get().run(dividerProject(), 0);
+    runner.calls[0]?.reject(
+      new EngineRunError({ message: "singular matrix", elements: ["R1"], nodes: ["a"] }),
+    );
+    await done;
+    expect(get().status).toEqual({
+      kind: "failed",
+      message: "singular matrix",
+      partIds: [],
+      wireIds: [],
+      labelIds: [],
+    });
+    expect(get().result).toBeNull();
+  });
+
+  it("cancel_keeps_previous_result", async () => {
+    const { runner, get } = setup();
+    const first = get().run(dividerProject(), 0);
+    runner.calls[0]?.resolve(opResult());
+    await first;
+    const prev = get().result;
+    const second = get().run(dividerProject(), 0);
+    get().cancel();
+    await second;
+    expect(get().status).toEqual({ kind: "idle" });
+    expect(get().result).toBe(prev);
+    expect(runner.cancelled).toBeGreaterThan(0);
+  });
+
+  it("stale_run_is_ignored", async () => {
+    const { runner, get } = setup();
+    const first = get().run(dividerProject(), 0);
+    const second = get().run(dividerProject(), 0);
+    const r2 = opResult(["b"]);
+    runner.calls[1]?.resolve(r2);
+    await second;
+    runner.calls[0]?.resolve(opResult(["old"]));
+    await first;
+    expect(get().result).toBe(r2);
+    expect(get().status).toEqual({ kind: "done" });
+  });
+
+  it("missing_probes_dropped_on_rerun", async () => {
+    const { runner, get } = setup();
+    const p = withTran();
+    const first = get().run(p, 0);
+    runner.calls[0]?.resolve(tranResult(["a", "b"]));
+    await first;
+    get().addProbe("V(b)");
+    get().addProbe("V(b)");
+    expect(get().probes).toEqual(["V(a)", "V(b)"]);
+    get().removeProbe("V(a)");
+    get().addProbe("V(a)");
+    const second = get().run(p, 0);
+    runner.calls[1]?.resolve(tranResult(["a", "c"]));
+    await second;
+    expect(get().probes).toEqual(["V(a)"]);
+  });
+
+  it("first_node_probed_by_default", async () => {
+    const { runner, get } = setup();
+    const first = get().run(withTran(), 0);
+    runner.calls[0]?.resolve(tranResult(["a", "b"]));
+    await first;
+    expect(get().probes).toEqual(["V(a)"]);
+    const op = get().run(dividerProject(), 0);
+    runner.calls[1]?.resolve(opResult(["a"]));
+    await op;
+    expect(get().probes).toEqual(["V(a)"]);
+    const fresh = setup();
+    const o = fresh.get().run(dividerProject(), 0);
+    fresh.runner.calls[0]?.resolve(opResult(["a"]));
+    await o;
+    expect(fresh.get().probes).toEqual([]);
+  });
+
+  it("results_marked_stale_after_edit", async () => {
+    const { runner, store, get } = setup();
+    const editor = createEditorStore({ project: dividerProject() });
+    function Probe() {
+      return <span data-testid="stale">{String(useResultsStale())}</span>;
+    }
+    render(
+      <EditorProvider store={editor}>
+        <SimulationProvider store={store}>
+          <Probe />
+        </SimulationProvider>
+      </EditorProvider>,
+    );
+    expect(screen.getByTestId("stale").textContent).toBe("false");
+    const done = get().run(editor.getState().getProject(), 0);
+    runner.calls[0]?.resolve(opResult());
+    await act(async () => {
+      await done;
+    });
+    expect(screen.getByTestId("stale").textContent).toBe("false");
+    act(() => {
+      editor.getState().setSimulation({ ...editor.getState().project.simulation });
+    });
+    expect(screen.getByTestId("stale").textContent).toBe("true");
+  });
+});

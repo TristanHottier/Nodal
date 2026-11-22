@@ -40,6 +40,36 @@ export function parseValue(text: string): ValueResult {
   return { ok: true, value: n };
 }
 
+const SUFFIX_OF_EXPONENT = new Map<number, string>([
+  [-15, "f"],
+  [-12, "p"],
+  [-9, "n"],
+  [-6, "u"],
+  [-3, "m"],
+  [0, ""],
+  [3, "k"],
+  [6, "Meg"],
+  [9, "G"],
+  [12, "T"],
+]);
+
+/**
+ * Engineering notation with the suffix that puts the mantissa in [1, 1000).
+ * `parseValue(formatValue(x))` returns x for values of at most `digits`
+ * significant digits. Outside 1e-15…1e15 the plain `String(n)` is used.
+ */
+export function formatValue(n: number, digits = 12): string {
+  if (n === 0) return "0";
+  const abs = Math.abs(n);
+  if (!Number.isFinite(n) || abs < 1e-15 || abs >= 1e15) return String(n);
+  // toExponential rounds first, so a carry such as 999.9999999999999 -> 1e3 lands in the exponent.
+  const [m = "", e = "0"] = n.toExponential(digits - 1).split("e");
+  const exp = Number(e);
+  const group = Math.floor(exp / 3) * 3;
+  const mantissa = Number(`${m}e${String(exp - group)}`);
+  return `${String(Number(mantissa.toPrecision(digits)))}${SUFFIX_OF_EXPONENT.get(group) ?? ""}`;
+}
+
 /** Parses "t v" pairs separated by ";" or newlines. Monotonic time is checked elsewhere. */
 export function parsePwl(text: string): PwlResult {
   const segments = text
