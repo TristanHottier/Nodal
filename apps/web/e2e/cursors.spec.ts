@@ -83,6 +83,17 @@ test("shift_click_sets_b_and_clear_resets", async ({ page }) => {
   await page.keyboard.up("Shift");
   await expect(fieldB(page)).not.toHaveValue("");
   await expect(fieldA(page)).toHaveValue("");
+  // Shift+click right on A still places B: it must not grab A.
+  const p60 = await at(page, 0.6);
+  await page.mouse.click(p60.x, p60.y);
+  await expect(fieldA(page)).not.toHaveValue("");
+  const aSet = await read(fieldA(page));
+  const p41 = { x: p60.x + 2, y: p60.y };
+  await page.keyboard.down("Shift");
+  await page.mouse.click(p41.x, p41.y);
+  await page.keyboard.up("Shift");
+  expect(await read(fieldA(page))).toBe(aSet);
+  expect(await read(fieldB(page))).toBeGreaterThan(aSet);
   await page.getByRole("button", { name: "Clear cursors" }).click();
   await expect(fieldB(page)).toHaveValue("");
   await expect(fieldA(page)).toHaveValue("");

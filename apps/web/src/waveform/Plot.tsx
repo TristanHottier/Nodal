@@ -198,7 +198,8 @@ export function Plot(props: PlotProps) {
       el.classList.toggle(GRAB_CLASS, on);
     };
     const onPointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) return;
+      // Shift+click always places B, even right next to a cursor.
+      if (e.button !== 0 || e.shiftKey) return;
       const hit = cursorUnderPointer(latest.current.cursors, pointerPx(e), toPx);
       if (hit === null) return;
       dragging = hit;

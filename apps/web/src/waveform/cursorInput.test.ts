@@ -32,6 +32,10 @@ describe("cursorForClick", () => {
     expect(cursorForClick({ a: 1, b: null }, 5, linear, true)).toBe("b");
     expect(cursorForClick({ a: 1, b: 2 }, 5, linear, true)).toBe("b");
   });
+  it("a_cursor_without_a_finite_pixel_counts_as_unset", () => {
+    expect(cursorForClick({ a: 0, b: 5 }, 30, log, false)).toBe("a");
+    expect(cursorForClick({ a: 5, b: -1 }, 30, log, false)).toBe("b");
+  });
   it("tie_goes_to_a", () => {
     expect(cursorForClick({ a: 2, b: 8 }, 50, linear, false)).toBe("a");
   });
@@ -54,6 +58,9 @@ describe("cursorUnderPointer", () => {
   it("nearest_wins_when_both_are_within_the_radius", () => {
     expect(cursorUnderPointer({ a: 5, b: 5.8 }, 57, linear)).toBe("b");
     expect(cursorUnderPointer({ a: 5, b: 5.8 }, 53, linear)).toBe("a");
+  });
+  it("a_cursor_without_a_finite_pixel_is_never_grabbed", () => {
+    expect(cursorUnderPointer({ a: 0, b: null }, 0, log)).toBeNull();
   });
   it("custom_radius", () => {
     expect(cursorUnderPointer(c, 27, linear, 8)).toBe("a");

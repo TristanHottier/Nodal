@@ -18,9 +18,12 @@ export function cursorForClick(
   shift: boolean,
 ): CursorId {
   if (shift) return "b";
-  if (c.a === null) return "a";
-  if (c.b === null) return "b";
-  return Math.abs(toPx(c.b) - xPx) < Math.abs(toPx(c.a) - xPx) ? "b" : "a";
+  // A cursor with no finite pixel (a typed x <= 0 on a log axis) counts as unset.
+  const pa = c.a === null ? NaN : toPx(c.a);
+  const pb = c.b === null ? NaN : toPx(c.b);
+  if (!Number.isFinite(pa)) return "a";
+  if (!Number.isFinite(pb)) return "b";
+  return Math.abs(pb - xPx) < Math.abs(pa - xPx) ? "b" : "a";
 }
 
 /** The nearest set cursor within `radiusPx` of the pointer, or null. */
@@ -36,7 +39,7 @@ export function cursorUnderPointer(
     const x = c[id];
     if (x === null) continue;
     const d = Math.abs(toPx(x) - xPx);
-    if (d <= radiusPx && d < bestDist) {
+    if (Number.isFinite(d) && d <= radiusPx && d < bestDist) {
       best = id;
       bestDist = d;
     }

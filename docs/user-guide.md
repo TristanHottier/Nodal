@@ -154,7 +154,9 @@ DC sweep and transient runs draw one plot, with the swept source or time on the 
 
 Click the plot to place cursor A, then click again to place cursor B. After that, a click moves whichever cursor is nearer. Shift+click always places B. Drag a cursor line to move it; the pointer changes to a resize arrow when it is over a line. You can also type a position into the Cursor A and Cursor B fields, using the same suffixes as values (`1m`), and "Clear cursors" removes both.
 
-The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot and its field is marked "Active". The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
+The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot and its field is marked "Active".
+
+The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
 
 ![Transient response of the RC low-pass with two cursors](user-guide/waveform-rc-transient.png)
 

@@ -1,6 +1,6 @@
 // Results below the run bar: probes and plots for dc, ac and transient results,
 // a table for operating points, and the cursor readout.
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { type SimResult, signalKey } from "../engine/results";
 import { formatQuantity } from "../netlist/value";
 import {
@@ -103,7 +103,13 @@ export function WaveformPanel() {
   const probes = useSimulation((s) => s.probes);
   const stale = useResultsStale();
   const state = useSimulation((s) => s.cursors);
-  const activeCursor = useSimulation((s) => s.activeCursor);
+  const storedActive = useSimulation((s) => s.activeCursor);
+  // Cursors belong to one analysis kind; for another kind they are empty and A is active.
+  const stale0 = result !== null && state.type !== result.type;
+  const activeCursor: CursorId = stale0 ? "a" : storedActive;
+  useEffect(() => {
+    if (stale0 && storedActive !== "a") sim.getState().setActiveCursor("a");
+  }, [stale0, storedActive, sim]);
   if (!result) return null;
   if (result.type === "op") return <OpTable result={result} stale={stale} />;
   // Cursor state belongs to one analysis kind; a different kind starts clean.
