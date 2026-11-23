@@ -45,7 +45,7 @@ Run these from the repository root.
 - Validate every file read from disk or IndexedDB with Zod. Migrate old `formatVersion`s, and refuse unknown ones.
 - Keep components small. If a file passes about 400 lines, split it.
 - Symbols live one per file, drawn on the grid, in IEC 60617 style.
-- Colors and sizes come from tokens only. `apps/web/src/theme/tokens.css` is the single source: no color literal (`#hex`, `rgb()`, `hsl()`, `oklch()`) and no `px`, `rem` or `em` value in any other CSS or component file. Add the token first, and put dark values in both dark blocks. `noRawValues.test.ts` enforces this, so run `pnpm --filter @nodal/web test` before committing UI changes. The design is described in `apps/web/DESIGN.md` and [ADR 0012](docs/adr/0012-solderless-visual-design.md).
+- Colors and sizes come from tokens only. `apps/web/src/theme/tokens.css` is the single source: no color literal (`#hex`, `rgb()`, `hsl()`, `oklch()`) and no `px`, `rem` or `em` value in any other CSS or component file. Add the token first, and put dark values in both dark blocks. `noRawValues.test.ts` enforces this, so run `pnpm --filter @nodal/web test` before committing UI changes. The design is described in `apps/web/DESIGN.md` and [ADR 0013](docs/adr/0013-modern-visual-design.md). [ADR 0012](docs/adr/0012-solderless-visual-design.md) is superseded, and only its token rules, brand mark, trace rules and selection cues still apply.
 
 ## Documentation rules
 

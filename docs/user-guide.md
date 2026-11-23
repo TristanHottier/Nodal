@@ -6,23 +6,30 @@ Nodal is a schematic editor and circuit simulator that runs in your browser. Thi
 
 Open the live editor at https://tristanhottier.github.io/Nodal/. Nothing is installed and no account is needed. The status bar at the bottom shows the engine version once the simulation engine has loaded.
 
-The fastest way to see the app work is an example. The project bar at the top of the left column has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. The menu has eight examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter and an inverting op-amp amplifier.
+The fastest way to see the app work is an example. A new editor shows a "Start from an example" prompt over the empty canvas with one button per example. The top bar also has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. There are eight examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter and an inverting op-amp amplifier.
 
 ![The editor with the common-emitter amplifier loaded](user-guide/editor-ce-amplifier.png)
 
-The window has four areas. The left column holds the project bar, the tools and the parts. The canvas is in the middle. The inspector is on the right. The run bar and results sit under the canvas, and the status bar is at the bottom.
+The window has these areas, from top to bottom and left to right:
+
+- The top bar holds the Nodal mark, the project title, the file actions (Examples…, New, Open…, Save as…) and the Theme select. The title is the part of the project name before the first ": ", and the full name appears as a tooltip.
+- The tool rail is the narrow icon column at the left edge. It holds Select, Wire and Probe, each with its shortcut under the icon and in its tooltip.
+- The parts panel lists the parts in four groups: Sources, Passives, Semiconductors and Other.
+- The canvas is in the middle, and the inspector is on the right.
+- The run bar and results sit under the canvas.
+- The status bar at the bottom shows the engine version, messages and the run readout.
 
 ### Theme and window size
 
-The Theme select in the status bar has System, Light and Dark. System follows your operating system and is the default. Your choice is stored in this browser.
+The Theme select in the top bar has System, Light and Dark. System follows your operating system and is the default. Your choice is stored in this browser.
 
 The editor works in windows from 1024 px wide up, and the side columns get narrower between 1024 and 1280 px. In a window narrower than 1024 px, Nodal shows the schematic read-only: you can pan and zoom, and a notice says "Nodal's editor needs a window at least 1024 px wide. The schematic is shown read-only." Widen the window to edit again.
 
-To simulate an example, choose an analysis in the run bar (the menu left of the Run button) and press Run.
+To simulate an example, choose an analysis in the run bar (the labelled Analysis menu next to the Run button) and press Run.
 
 ## Drawing
 
-Choose a part in the left column, then click on the canvas to place it. The part follows the pointer snapped to the grid, and you can keep clicking to place more copies. The palette has these items:
+Choose a part in the parts panel, then click on the canvas to place it. The part follows the pointer snapped to the grid, and you can keep clicking to place more copies. The panel has these items:
 
 - Resistor, Capacitor, Inductor
 - Voltage source, Current source
@@ -39,15 +46,16 @@ Keyboard shortcuts work on the canvas and are ignored while you type in a field:
 |---|---|
 | `R` | Rotate the part being placed, or the selection, by 90 degrees |
 | `X` | Mirror the part being placed, or the selection (it does nothing to a net label) |
-| `W` | Wire tool |
-| `P` | Probe tool |
+| `W` | Wire tool (rail) |
+| `P` | Probe tool (rail) |
+| `Esc` | Select tool (rail), after it cancels a wire in progress |
 | `Right` or `Down`, `Left` or `Up` | With the canvas focused and the Select tool active, select the next or previous item (parts, then wires, then net labels, in the order you drew them) |
 | `Esc` | Cancel the wire in progress, then return to the Select tool, then clear the selection |
 | `Delete` or `Backspace` | Delete the selection (Select tool) |
 | `Ctrl+Z`, `Ctrl+Shift+Z` or `Ctrl+Y` | Undo, redo (`Cmd` on macOS) |
 | `Ctrl+C`, `Ctrl+V` | Copy, paste (`Cmd` on macOS) |
 
-The Select tool is the default. Click a part to select it, Shift+click to add or remove items from the selection, and drag on empty canvas to box-select. Drag a selected item to move it. A selected wire is drawn heavier and in a halo, and a selected part or net label gets a dashed outline, so selection never depends on colour alone. With the canvas focused you can also select with the arrow keys (see the table), then rotate, mirror, copy or delete the item and edit it in the inspector. `Tab` always moves focus out of the canvas. The mouse wheel zooms around the pointer. Pan with a middle-button drag, or hold `Space` and drag.
+The Select tool is the default. The tool rail shows which tool is active, and its buttons take the arrow keys, `Home` and `End` once focused. Click a part to select it, Shift+click to add or remove items from the selection, and drag on empty canvas to box-select. Drag a selected item to move it. A selected wire is drawn heavier and in a halo, and a selected part or net label gets a dashed outline, so selection never depends on colour alone. With the canvas focused you can also select with the arrow keys (see the table), then rotate, mirror, copy or delete the item and edit it in the inspector. `Tab` always moves focus out of the canvas. The mouse wheel zooms around the pointer. Pan with a middle-button drag, or hold `Space` and drag.
 
 ### Wires
 
@@ -105,7 +113,7 @@ The four controlled sources have a Gain. The current-controlled ones also have a
 
 ## Models
 
-Diodes, transistors and the switch take their parameters from a model. Models belong to the project, and you manage them in the inspector when nothing is selected (click empty canvas). Use "Add model…" and pick a type: D, NPN, PNP, NMOS, PMOS or SW. Each model card has a name (letters, digits and underscore, starting with a letter), a type and one field per supported parameter. An empty field uses the default, which is shown in grey. The hint under each field gives its allowed range.
+Diodes, transistors and the switch take their parameters from a model. Models belong to the project, and you manage them in the Models section of the inspector when nothing is selected (click empty canvas, then open Models). Use "Add model…" and pick a type: D, NPN, PNP, NMOS, PMOS or SW. Each model card has a name (letters, digits and underscore, starting with a letter), a type and one field per supported parameter. An empty field uses the default, which is shown in grey. The hint under each field gives its allowed range.
 
 A part picks its model in its own Model menu. "New model…" in that menu creates a model of the right type and assigns it in one step.
 
@@ -122,7 +130,7 @@ MOSFETs also take Width and Length on the part itself. Names and defaults follow
 
 ## Analyses
 
-With nothing selected, the Analyses section of the inspector lists the project's analyses. Each card has an analysis type menu, its fields and a Remove button (the last analysis cannot be removed). "Add analysis" appends an operating-point analysis. The Options section is below the list.
+With nothing selected, the inspector opens on Analyses, which lists the project's analyses. Options and Models are collapsed below it, and a chevron opens each one. Each card has an analysis type menu, its fields and a Remove button (the last analysis cannot be removed). "Add analysis" appends an operating-point analysis. When the project has several analyses, the card the run bar will run has a stronger border and the line "Runs when you press Run".
 
 ![The analysis editor for the RC low-pass](user-guide/analysis-editor.png)
 
@@ -136,11 +144,11 @@ Transient has tstep, tstop, tstart and an optional tmax (the largest time step),
 
 ### Options
 
-Leave the options empty unless a run fails to converge or you need tighter tolerances. The fields are method (`default`, `trap` or `gear`), reltol, abstol, vntol, gmin, chgtol and trtol. The engine default is shown as a hint in each empty field. The circuit temperature is fixed at 27 °C.
+Open Options in the inspector. Leave the fields empty unless a run fails to converge or you need tighter tolerances. The fields are method (`default`, `trap` or `gear`), reltol, abstol, vntol, gmin, chgtol and trtol. The engine default is shown as a hint in each empty field. The circuit temperature is fixed at 27 °C.
 
 ## Running and reading results
 
-Pick an analysis in the run bar and press Run. A progress bar fills as the run advances, and the button changes to Cancel while it runs. Cancelling stops the run at once, and you can start another. When the run ends the status reads "Done". If you edit the schematic or the settings afterwards, it reads "Out of date, run again" and the old results are dimmed.
+Pick an analysis in the run bar and press Run. A progress bar shows while the run is active, and the button changes to Cancel. Cancelling stops the run at once, and you can start another. When the run ends the status reads "Done", and the status bar shows a run readout such as `tran · 450 points · 54 ms` (an operating point reads `op · N signals`). The time is wall-clock and includes the worker round trip and decoding, so it is not a solver timing. The schematic refits once so the whole circuit stays visible when the results panel opens, and it keeps your zoom when you rerun the same analysis. If you edit the schematic or the settings afterwards, it reads "Out of date, run again", the readout ends with `· stale`, and the plots and values are dimmed.
 
 ### Operating point
 
@@ -154,7 +162,7 @@ DC sweep and transient runs draw one plot, with the swept source or time on the 
 
 Click the plot to place cursor A, then click again to place cursor B. After that, a click moves whichever cursor is nearer. Shift+click always places B. Drag a cursor line to move it; the pointer changes to a resize arrow when it is over a line. You can also type a position into the Cursor A and Cursor B fields, using the same suffixes as values (`1m`), and "Clear cursors" removes both.
 
-The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot and its field is marked "Active".
+The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot (the other cursor's tag is an outline), and the cursor panel names it as "Active". Cursor A is a dashed line and B is dotted, so the two stay apart without colour.
 
 The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
 

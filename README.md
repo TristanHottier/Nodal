@@ -7,7 +7,7 @@
 
 Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
 
-> **Status: v1.0.0. The web app is a schematic editor with the four analyses, eight example projects, a user guide and the "Solderless" design: light and dark themes, a read-only schematic view below 1024 px wide, and probed nets drawn in their trace colour.**
+> **Status: v1.1.0. The web app is a schematic editor with the four analyses, eight example projects and a user guide. Version 1.1 adds a second plot cursor (click order, drag and keys) and a modern redesign: a top bar, icon tool rail, grouped parts panel, mono numbers, light and dark themes, a read-only schematic view below 1024 px wide, and probed nets drawn in their trace colour.**
 > Live editor: https://tristanhottier.github.io/Nodal/
 
 What works today:
@@ -15,8 +15,8 @@ What works today:
 - Draw a schematic (place parts, wires, net labels), edit values, check problems, save and load `.nodal.json` files. Work is autosaved in the browser.
 - Run DC operating point, DC sweep, AC small-signal (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis) in the browser. The engine is Rust compiled to WebAssembly and runs in a worker. Runs can be cancelled.
 - See operating-point values on the schematic. Plot results with probes, cursors and a Bode view. Engine errors are marked on the schematic.
-- Open one of eight examples from the "Open example" select in the project bar: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
-- Switch between light and dark with the Theme select in the status bar (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only. The design rules are in [`apps/web/DESIGN.md`](apps/web/DESIGN.md).
+- Open one of eight examples from the "Examples…" menu in the top bar or from the first-run prompt: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
+- Switch between light and dark with the Theme select in the top bar (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only. The design rules are in [`apps/web/DESIGN.md`](apps/web/DESIGN.md).
 - Devices: R, L, C, V, I, E, G, H and F elements plus diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient.
 - `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`.
 
@@ -104,8 +104,8 @@ Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on
 
 | Asset | Source | Licence |
 | --- | --- | --- |
-| Inter (UI font, self-hosted Latin subset) | [Inter](https://rsms.me/inter/) via `@fontsource-variable/inter` | SIL Open Font License 1.1 |
-| JetBrains Mono (numbers and code, self-hosted Latin subset) | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) via `@fontsource-variable/jetbrains-mono` | SIL Open Font License 1.1 |
+| Inter (UI font, self-hosted Latin and Greek subsets) | [Inter](https://rsms.me/inter/) via `@fontsource-variable/inter` | SIL Open Font License 1.1 |
+| JetBrains Mono (numbers and code, self-hosted Latin and Greek subsets) | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) via `@fontsource-variable/jetbrains-mono` | SIL Open Font License 1.1 |
 | Lucide (UI icons) | [`lucide-react`](https://lucide.dev/) | ISC |
 | Poppins (outlined in the wordmark) | [Poppins](https://fonts.google.com/specimen/Poppins) | SIL Open Font License 1.1 |
 

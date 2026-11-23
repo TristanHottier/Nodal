@@ -7,7 +7,7 @@
 
 ADR 0012 gave Nodal a breadboard-inspired look (Solderless) for v1.0.0. The owner reviewed the released app and found the chrome dated: near-default controls, system fonts, text-only buttons and a layout that did not read as a current tool. The M8 critique records the same weakness as finding C13 ("Chrome is near-default controls"), and C3, C5, C9, C11 and C12 add a missing logo in the header, a palette without icons, an unlabelled run bar, a ragged unit column and no first-run prompt.
 
-The product record (`apps/web/PRODUCT.md`) is unchanged on audience: EE students on a laptop. What changes is the tone, from a themed look to a modern engineering tool. The app is still an Operate surface, so layout and controls stay conventional and the schematic stays the center of attention.
+The product record (`apps/web/PRODUCT.md`) is unchanged on audience: EE students on a laptop. The tone changes from a themed look to a modern engineering tool. The app is still an Operate surface, so layout and controls stay conventional and the schematic stays the center of attention.
 
 ## Decision
 
@@ -31,7 +31,7 @@ All values stay in `apps/web/src/theme/tokens.css`, in OKLCH for colors.
 
 - Inter for the UI, JetBrains Mono for numbers, values and code.
 - Both come from Fontsource as variable woff2 files (`@fontsource-variable/inter` 5.3.0 and `@fontsource-variable/jetbrains-mono` 5.3.0). Both are licensed under the SIL Open Font License 1.1, and the licence is credited in the repository.
-- Self-hosted, Latin subset only, `font-display: swap`. Only the Inter Latin file is preloaded.
+- Self-hosted with Latin and Greek faces, `font-display: swap`. Only the Inter Latin file is preloaded.
 - The CI Lighthouse limits must still hold (LCP at most 2.5 s, CLS at most 0.1, TBT at most 200 ms). The CI run is the evidence, and nothing is claimed beyond it.
 
 ### Icons
@@ -40,7 +40,7 @@ Lucide (`lucide-react` 1.73.0, ISC licence), imported per icon, for UI controls 
 
 ### Theme
 
-The default theme follows the OS (`prefers-color-scheme`). The Theme select in the status bar still overrides it, and the choice is stored per browser.
+The default theme follows the OS (`prefers-color-scheme`). The Theme select in the top bar still overrides it, and the choice is stored per browser.
 
 ### Layout
 
@@ -65,11 +65,11 @@ The default theme follows the OS (`prefers-color-scheme`). The Theme select in t
 
 ### Distinctive pass
 
-The critique in `docs/design/m9-critique.md` scored the baseline 26/36 and called it clean but generic: Inter at one size, one indigo accent for every job, identical bordered cards, a flat parts list and a plot viewer with library defaults. It chose four commands, run in this order: `typeset`, `colorize`, `layout` and `delight`. `bolder` and `quieter` were not needed, because the findings asked for specific changes to type, colour, layout and readouts. The direction is an instrument: numbers get their own typography, colour carries meaning, the plot is treated as a measuring device, and the chrome reports what the engine did.
+The critique in `docs/design/m9-critique.md` scored the baseline 26/36 and called it clean but generic: Inter at one size, one indigo accent for every job, identical bordered cards, a flat parts list and a plot viewer with library defaults. It chose four commands, run in this order: `typeset`, `colorize`, `layout` and `delight`. `bolder` and `quieter` were not needed, because the findings asked for specific changes to type, colour, layout and readouts. The direction is an instrument. Numbers get their own typography, colour carries meaning, the plot works like a measuring device, and the status bar reports what the engine did.
 
 Type (M9-C1, and the label part of M9-C3):
 
-- Section heads are small caps with tracking (`--tracking-label`, 11 px, semibold, muted). Panel titles are one step up, 14 px semibold with slightly tight tracking (`--tracking-title`). Body text stays 13 px and notes 12 px. Headings use balanced line breaks.
+- Section heads are uppercase with tracking (`--tracking-label`, 11 px, semibold, muted). Panel titles are one step up, 14 px semibold with slightly tight tracking (`--tracking-title`). Body text stays 13 px and notes 12 px. Headings use balanced line breaks.
 - JetBrains Mono with tabular figures sets every number, unit and signal name: numeric inputs, the unit column, signal chips, the first column of the cursor and operating-point tables, and the status readout. Placeholders in numeric fields stay in Inter.
 - Plot axes carry titles with units. The transient and DC y axis names the signal ("V(b) (V)"). Several probes of one kind give "Voltage (V)" or "Current (A)", and a mix lists both. The DC x axis carries the source unit. Magnitude ticks fall every 20 dB and phase ticks every 45 degrees. Axis titles are Inter medium and ticks are mono.
 
