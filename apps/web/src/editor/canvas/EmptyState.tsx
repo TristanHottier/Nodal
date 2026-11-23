@@ -8,7 +8,9 @@ import "./EmptyState.css";
 export function EmptyState({ readOnly = false }: { readOnly?: boolean }) {
   const store = useEditorStore();
   const empty = useEditor((s) => s.doc.parts.length === 0);
-  if (!empty) return null;
+  // While a part is being placed the card must not stand between the pointer and the canvas.
+  const placing = useEditor((s) => s.tool.kind === "place");
+  if (!empty || placing) return null;
   return (
     <div className="nodal-empty">
       <div className="nodal-empty-card">

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXAMPLES } from "../../examples";
 import { emptyDoc, put, pt } from "../../netlist/testDoc";
 import { Editor } from "../Editor";
-import { makeStore } from "../testUtils";
+import { click, makeStore } from "../testUtils";
 
 afterEach(() => {
   cleanup();
@@ -43,5 +43,15 @@ describe("EmptyState", () => {
     render(<Editor store={store} />);
     expect(screen.getByText("Start from an example")).toBeTruthy();
     expect(screen.queryByText("or pick a part from the left")).toBeNull();
+  });
+
+  it("steps_aside_while_a_part_is_being_placed", () => {
+    const store = makeStore();
+    render(<Editor store={store} />);
+    fireEvent.click(screen.getByRole("button", { name: "Place Resistor" }));
+    expect(store.getState().tool.kind).toBe("place");
+    expect(screen.queryByText("Start from an example")).toBeNull();
+    click(10, 10);
+    expect(store.getState().doc.parts).toHaveLength(1);
   });
 });

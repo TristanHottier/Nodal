@@ -1,4 +1,4 @@
-/* Sits over the canvas but lets the pointer through everywhere except the card itself. */
+/* Sits over the canvas and lets the pointer through, except on the example buttons. */
 .nodal-empty {
   position: absolute;
   inset: 0;
@@ -12,7 +12,6 @@
 .nodal-empty-card {
   max-width: 100%;
   padding: var(--space-3);
-  pointer-events: auto;
   background: var(--color-panel);
   border-radius: var(--radius-lg);
   box-shadow: var(--elevation-2);
@@ -37,4 +36,9 @@
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+/* Only the buttons take the pointer; a click anywhere else on the card reaches the canvas. */
+.nodal-empty-card button {
+  pointer-events: auto;
 }
