@@ -229,6 +229,15 @@
   list-style: none;
 }
 
+/* The row is a control: its label and chevron darken on hover, like the other quiet controls. */
+.nodal-models > summary {
+  transition: color var(--duration-fast) var(--ease-standard);
+}
+
+.nodal-models > summary:hover {
+  color: var(--color-text);
+}
+
 .nodal-models > summary::-webkit-details-marker {
   display: none;
 }
