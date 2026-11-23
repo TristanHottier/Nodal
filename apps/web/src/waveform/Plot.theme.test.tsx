@@ -50,7 +50,10 @@ const props = {
   xLabel: "Time (s)",
   yLabel: "Value",
   cursors: { a: 0.5, b: null },
+  activeCursor: "a" as const,
   onCursor: () => undefined,
+  onActiveCursor: () => undefined,
+  onClearCursor: () => undefined,
   height: 100,
 };
 

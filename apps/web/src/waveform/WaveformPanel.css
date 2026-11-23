@@ -128,3 +128,41 @@
   font-style: italic;
   color: var(--color-text-muted);
 }
+
+.nodal-waveform-hint {
+  flex: none;
+  height: var(--waveform-hint-height);
+  margin: 0;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: var(--waveform-hint-height);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-text-muted);
+}
+
+/* Hovering a cursor line: it can be dragged. */
+.nodal-plot.nodal-plot-grab .u-over {
+  cursor: ew-resize;
+}
+
+.nodal-cursor-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.nodal-cursor-input .nodal-field {
+  margin-bottom: 0;
+}
+
+/* The cursor the keys move: marked with a word, not colour alone. */
+.nodal-cursor-active {
+  font-size: var(--text-xs);
+  font-weight: bold;
+  color: var(--color-text);
+}
+
+.nodal-cursor-clear {
+  margin-bottom: var(--space-1);
+}

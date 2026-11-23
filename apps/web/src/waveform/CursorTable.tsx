@@ -2,6 +2,7 @@
 import { Field } from "../editor/inspector/Field";
 import type { SimResult } from "../engine/results";
 import { formatQuantity, formatValue, parseValue } from "../netlist/value";
+import type { CursorId } from "./cursorInput";
 import { type CursorState, cursorReadout } from "./cursors";
 import { Swatch } from "./Swatch";
 import type { TraceView } from "./traces";
@@ -22,30 +23,35 @@ function CursorInput({
   which,
   value,
   unit,
+  active,
   onChange,
 }: {
   which: "A" | "B";
   value: number | null;
   unit: string;
+  active: boolean;
   onChange: (x: number | null) => void;
 }) {
   return (
-    <Field
-      label={`Cursor ${which}`}
-      value={value === null ? "" : formatValue(value, 6)}
-      unit={unit}
-      placeholder="click the plot"
-      onCommit={(text) => {
-        if (text.trim() === "") {
-          onChange(null);
+    <div className="nodal-cursor-input" data-active={active ? "true" : undefined}>
+      <Field
+        label={`Cursor ${which}`}
+        value={value === null ? "" : formatValue(value, 6)}
+        unit={unit}
+        placeholder="click the plot"
+        onCommit={(text) => {
+          if (text.trim() === "") {
+            onChange(null);
+            return undefined;
+          }
+          const r = parseValue(text);
+          if (!r.ok) return r.error;
+          onChange(r.value);
           return undefined;
-        }
-        const r = parseValue(text);
-        if (!r.ok) return r.error;
-        onChange(r.value);
-        return undefined;
-      }}
-    />
+        }}
+      />
+      {active && <span className="nodal-cursor-active">Active</span>}
+    </div>
   );
 }
 
@@ -53,12 +59,17 @@ export function CursorTable({
   result,
   probes,
   cursors,
-  onChange,
+  activeCursor,
+  onPlace,
+  onClear,
 }: {
   result: SimResult;
   probes: string[];
   cursors: CursorState;
-  onChange: (c: CursorState) => void;
+  activeCursor: CursorId;
+  /** A typed value placed or cleared (null) cursor `which`; it becomes the active one. */
+  onPlace: (which: CursorId, x: number | null) => void;
+  onClear: () => void;
 }) {
   const ac = result.type === "ac";
   const views: { view: TraceView; suffix: string; unit: (k: string) => string }[] = ac
@@ -80,19 +91,24 @@ export function CursorTable({
           which="A"
           value={cursors.a}
           unit={xUnit}
-          onChange={(a) => {
-            onChange({ ...cursors, a });
+          active={activeCursor === "a"}
+          onChange={(x) => {
+            onPlace("a", x);
           }}
         />
         <CursorInput
           which="B"
           value={cursors.b}
           unit={xUnit}
-          onChange={(b) => {
-            onChange({ ...cursors, b });
+          active={activeCursor === "b"}
+          onChange={(x) => {
+            onPlace("b", x);
           }}
         />
       </div>
+      <button type="button" className="nodal-cursor-clear" onClick={onClear}>
+        Clear cursors
+      </button>
       <table aria-label="Cursor readout">
         <thead>
           <tr>

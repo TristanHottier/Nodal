@@ -91,6 +91,8 @@
   --progress-width: 120px;
   /* Keep equal to WAVEFORM_PANEL_HEIGHT in waveform/WaveformPanel.tsx (Plot sizing). */
   --waveform-height: 280px;
+  /* Keep equal to WAVEFORM_HINT_HEIGHT in waveform/WaveformPanel.tsx (Plot sizing). */
+  --waveform-hint-height: 20px;
   --bench-width: 1200px;
   --bench-height: 700px;
   --opacity-stale: 0.5;

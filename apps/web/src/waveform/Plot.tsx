@@ -1,11 +1,13 @@
-// A uPlot chart: thin traces, optional log x axis, two draggable-free cursors drawn as
-// dashed vertical lines. Click sets cursor A, Shift+click sets cursor B.
-import { useEffect, useRef } from "react";
+// A uPlot chart: thin traces, optional log x axis, two cursors drawn as dashed vertical lines.
+// Clicks place the cursors (see cursorForClick), a cursor can be dragged, and the focused plot
+// takes keys: A or B pick the active cursor, arrows, Home and End move it, Delete clears it.
+import { type KeyboardEvent, useEffect, useRef } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { formatValue } from "../netlist/value";
 import { readCssVar } from "../theme/cssVar";
 import { useResolvedTheme } from "../theme/theme";
+import { type CursorId, cursorForClick, cursorUnderPointer, stepCursor } from "./cursorInput";
 
 export interface PlotSeries {
   label: string;
@@ -21,7 +23,12 @@ export interface PlotProps {
   xLabel: string;
   yLabel: string;
   cursors: { a: number | null; b: number | null };
-  onCursor(which: "a" | "b", x: number): void;
+  /** The cursor the keyboard moves; drawn with a filled tag. */
+  activeCursor: CursorId;
+  /** Places or moves a cursor (click, drag, keys). The owner also makes it active. */
+  onCursor(which: CursorId, x: number): void;
+  onActiveCursor(which: CursorId): void;
+  onClearCursor(which: CursorId): void;
   height: number;
 }
 
@@ -45,6 +52,10 @@ export const xRange = (min: number, max: number, logX: boolean): [number, number
   return logX && min > 0 ? [min / 1.1, max * 1.1] : [min - 1, max + 1];
 };
 
+/** Canvas geometry of the active cursor tag, in canvas pixels (not CSS). */
+const TAG_PAD = 3;
+const TAG_HEIGHT = 15;
+
 /** Tick labels in engineering notation: 1m, 2.5k. */
 const engineering = (_u: uPlot, ticks: number[]) =>
   ticks.map((v) => (Number.isFinite(v) ? formatValue(v, 4) : ""));
@@ -54,6 +65,9 @@ const resolveColor = (c: string): string => {
   const m = /^var\((--[\w-]+)\)$/.exec(c);
   return m?.[1] ? readCssVar(m[1]) : c;
 };
+
+/** Toggled on the host while the pointer is over a cursor line; the CSS sets the cursor. */
+const GRAB_CLASS = "nodal-plot-grab";
 
 export function Plot(props: PlotProps) {
   const host = useRef<HTMLDivElement>(null);
@@ -78,6 +92,7 @@ export function Plot(props: PlotProps) {
     const { series, logX, xLabel, yLabel, height } = latest.current;
     const gridColor = readCssVar("--color-plot-grid");
     const textColor = readCssVar("--color-text-muted");
+    const tagText = readCssVar("--color-plot-bg");
     const cursorColors = { a: readCssVar("--color-cursor-a"), b: readCssVar("--color-cursor-b") };
     const grid = { stroke: gridColor, width: 1 };
     const axisFont = `${readCssVar("--text-xs")} ${readCssVar("--font-mono")}`;
@@ -138,6 +153,7 @@ export function Plot(props: PlotProps) {
             ctx.save();
             ctx.setLineDash([5, 4]);
             ctx.lineWidth = 1;
+            const active = latest.current.activeCursor;
             for (const [which, x] of [
               ["a", a],
               ["b", b],
@@ -150,9 +166,18 @@ export function Plot(props: PlotProps) {
               ctx.moveTo(px, u.bbox.top);
               ctx.lineTo(px, u.bbox.top + u.bbox.height);
               ctx.stroke();
-              ctx.fillStyle = cursorColors[which];
               ctx.font = `bold ${axisFont}`;
-              ctx.fillText(which.toUpperCase(), px + 3, u.bbox.top + 11);
+              const label = which.toUpperCase();
+              ctx.fillStyle = cursorColors[which];
+              if (which === active) {
+                // A filled tag with the label knocked out, so the active cursor shows without colour.
+                const w = ctx.measureText(label).width + TAG_PAD * 2;
+                ctx.fillRect(px + 1, u.bbox.top, w, TAG_HEIGHT);
+                ctx.fillStyle = tagText;
+                ctx.fillText(label, px + 1 + TAG_PAD, u.bbox.top + TAG_HEIGHT - TAG_PAD);
+              } else {
+                ctx.fillText(label, px + 3, u.bbox.top + 11);
+              }
             }
             ctx.restore();
           },
@@ -161,11 +186,63 @@ export function Plot(props: PlotProps) {
     };
     const u = new uPlot(opts, toData(latest.current.x, series), el);
     chart.current = u;
-    const onClick = (e: MouseEvent) => {
+    const toPx = (x: number) => u.valToPos(x, "x");
+    /** Pointer x in CSS pixels relative to the plot area, clamped to it. */
+    const pointerPx = (e: PointerEvent | MouseEvent) => {
       const rect = u.over.getBoundingClientRect();
-      const x = u.posToVal(e.clientX - rect.left, "x");
-      if (Number.isFinite(x)) latest.current.onCursor(e.shiftKey ? "b" : "a", x);
+      return Math.max(0, Math.min(rect.width, e.clientX - rect.left));
     };
+    let dragging: CursorId | null = null;
+    let swallowClick = false;
+    const setGrab = (on: boolean) => {
+      el.classList.toggle(GRAB_CLASS, on);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      const hit = cursorUnderPointer(latest.current.cursors, pointerPx(e), toPx);
+      if (hit === null) return;
+      dragging = hit;
+      u.over.setPointerCapture(e.pointerId);
+      latest.current.onActiveCursor(hit);
+      setGrab(true);
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      const px = pointerPx(e);
+      if (dragging !== null) {
+        const x = u.posToVal(px, "x");
+        if (Number.isFinite(x)) latest.current.onCursor(dragging, x);
+        return;
+      }
+      setGrab(cursorUnderPointer(latest.current.cursors, px, toPx) !== null);
+    };
+    const endDrag = (e: PointerEvent) => {
+      if (dragging === null) return;
+      dragging = null;
+      if (u.over.hasPointerCapture(e.pointerId)) u.over.releasePointerCapture(e.pointerId);
+      // The click that follows pointerup must not also place a cursor.
+      swallowClick = true;
+      setTimeout(() => {
+        swallowClick = false;
+      }, 0);
+    };
+    const onPointerLeave = () => {
+      if (dragging === null) setGrab(false);
+    };
+    const onClick = (e: MouseEvent) => {
+      if (swallowClick) {
+        swallowClick = false;
+        return;
+      }
+      const px = pointerPx(e);
+      const x = u.posToVal(px, "x");
+      if (!Number.isFinite(x)) return;
+      latest.current.onCursor(cursorForClick(latest.current.cursors, px, toPx, e.shiftKey), x);
+    };
+    u.over.addEventListener("pointerdown", onPointerDown);
+    u.over.addEventListener("pointermove", onPointerMove);
+    u.over.addEventListener("pointerup", endDrag);
+    u.over.addEventListener("pointercancel", endDrag);
+    u.over.addEventListener("pointerleave", onPointerLeave);
     u.over.addEventListener("click", onClick);
     const ro = new ResizeObserver(() => {
       const w = el.clientWidth;
@@ -174,7 +251,13 @@ export function Plot(props: PlotProps) {
     ro.observe(el);
     return () => {
       ro.disconnect();
+      u.over.removeEventListener("pointerdown", onPointerDown);
+      u.over.removeEventListener("pointermove", onPointerMove);
+      u.over.removeEventListener("pointerup", endDrag);
+      u.over.removeEventListener("pointercancel", endDrag);
+      u.over.removeEventListener("pointerleave", onPointerLeave);
       u.over.removeEventListener("click", onClick);
+      el.classList.remove(GRAB_CLASS);
       u.destroy();
       chart.current = null;
     };
@@ -186,7 +269,29 @@ export function Plot(props: PlotProps) {
 
   useEffect(() => {
     chart.current?.redraw(false);
-  }, [props.cursors.a, props.cursors.b]);
+  }, [props.cursors.a, props.cursors.b, props.activeCursor]);
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const { x, cursors, activeCursor: active } = props;
+    const move = (to: number) => {
+      props.onCursor(active, to);
+    };
+    const key = e.key.toLowerCase();
+    if (key === "a" || key === "b") props.onActiveCursor(key);
+    else if (key === "arrowleft" || key === "arrowright") {
+      move(stepCursor(x, cursors[active], key === "arrowright" ? 1 : -1));
+    } else if (key === "home" || key === "end") {
+      // The axis is monotone, so its ends are the first and last samples.
+      const ends = [x[0], x[x.length - 1]].filter((v): v is number => v !== undefined);
+      if (ends.length === 0) return;
+      move(key === "home" ? Math.min(...ends) : Math.max(...ends));
+    } else if (key === "delete" || key === "backspace") props.onClearCursor(active);
+    else return;
+    // Handled: keep it from the page and from the editor's window-level shortcuts.
+    e.preventDefault();
+    e.stopPropagation();
+  };
 
   // The axis labels are drawn on the canvas; the attributes make them readable to tests.
   return (
@@ -194,6 +299,10 @@ export function Plot(props: PlotProps) {
       ref={host}
       className="nodal-plot"
       data-testid="plot"
+      role="group"
+      tabIndex={0}
+      aria-label={`${props.yLabel} plot. Keys: A or B picks a cursor, left and right arrows move it, Home and End jump to the ends, Delete clears it.`}
+      onKeyDown={onKeyDown}
       data-x-label={props.xLabel}
       data-y-label={props.yLabel}
       style={{ width: "100%", height: props.height }}

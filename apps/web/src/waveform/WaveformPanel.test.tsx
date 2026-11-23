@@ -18,7 +18,10 @@ vi.mock("./Plot", () => ({
     xLabel: string;
     yLabel: string;
     cursors: { a: number | null; b: number | null };
+    activeCursor: "a" | "b";
     onCursor(which: "a" | "b", x: number): void;
+    onActiveCursor(which: "a" | "b"): void;
+    onClearCursor(which: "a" | "b"): void;
   }) => (
     <div
       data-testid="plot"
@@ -28,14 +31,32 @@ vi.mock("./Plot", () => ({
       data-ylabel={p.yLabel}
       data-cursor-a={String(p.cursors.a)}
       data-cursor-b={String(p.cursors.b)}
+      data-active={p.activeCursor}
     >
       <button
         type="button"
         onClick={(e) => {
-          p.onCursor(e.shiftKey ? "b" : "a", 2.5);
+          // Stands for Plot's cursorForClick: Shift is B, else A until set, then B.
+          p.onCursor(e.shiftKey || p.cursors.a !== null ? "b" : "a", 2.5);
         }}
       >
         plot click
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          p.onActiveCursor("b");
+        }}
+      >
+        plot pick b
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          p.onClearCursor(p.activeCursor);
+        }}
+      >
+        plot clear active
       </button>
     </div>
   ),
@@ -138,15 +159,54 @@ describe("WaveformPanel", () => {
     expect(document.querySelector("[data-col='dx']")?.textContent).toBe("1.5 s");
   });
 
-  it("click_sets_cursor_a_shift_sets_b", () => {
-    setup(tran, ["V(a)"]);
+  it("placements_set_the_active_cursor", () => {
+    const store = setup(tran, ["V(a)"]);
     const click = screen.getByRole("button", { name: "plot click" });
     fireEvent.click(click);
     expect(screen.getByTestId("plot").dataset.cursorA).toBe("2.5");
     expect(screen.getByTestId("plot").dataset.cursorB).toBe("null");
-    fireEvent.click(click, { shiftKey: true });
+    expect(store.getState().activeCursor).toBe("a");
+    fireEvent.click(click);
     expect(screen.getByTestId("plot").dataset.cursorB).toBe("2.5");
+    expect(store.getState().activeCursor).toBe("b");
     expect(screen.getByLabelText<HTMLInputElement>("Cursor A").value).toBe("2.5");
+    // A typed value counts as a placement too.
+    const a = screen.getByLabelText("Cursor A");
+    fireEvent.change(a, { target: { value: "1" } });
+    fireEvent.blur(a);
+    expect(store.getState().activeCursor).toBe("a");
+  });
+
+  it("picking_and_clearing_the_active_cursor", () => {
+    const store = setup(tran, ["V(a)"]);
+    const click = screen.getByRole("button", { name: "plot click" });
+    fireEvent.click(click);
+    fireEvent.click(click);
+    fireEvent.click(screen.getByRole("button", { name: "plot pick b" }));
+    expect(store.getState().activeCursor).toBe("b");
+    fireEvent.click(screen.getByRole("button", { name: "plot clear active" }));
+    expect(screen.getByTestId("plot").dataset.cursorB).toBe("null");
+    expect(screen.getByTestId("plot").dataset.cursorA).toBe("2.5");
+  });
+
+  it("clear_cursors_empties_both_and_resets_active_to_a", () => {
+    const store = setup(tran, ["V(a)"]);
+    const click = screen.getByRole("button", { name: "plot click" });
+    fireEvent.click(click);
+    fireEvent.click(click);
+    expect(store.getState().activeCursor).toBe("b");
+    fireEvent.click(screen.getByRole("button", { name: "Clear cursors" }));
+    expect(store.getState().cursors.cursors).toEqual({ a: null, b: null });
+    expect(store.getState().activeCursor).toBe("a");
+    expect(screen.getByTestId("plot").dataset.active).toBe("a");
+  });
+
+  it("shows_the_cursor_hint_and_marks_the_active_field", () => {
+    setup(tran, ["V(a)"]);
+    expect(screen.getByText(/Click to place cursor A, click again for B/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "plot click" }));
+    const marked = document.querySelector(".nodal-cursor-input[data-active='true']");
+    expect(marked?.textContent).toContain("Active");
   });
 
   it("cursors_reset_when_result_type_changes", () => {

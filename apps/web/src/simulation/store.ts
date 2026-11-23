@@ -5,6 +5,7 @@ import { createStore, type StoreApi } from "zustand/vanilla";
 import { CancelledError, EngineRunError, type EngineRunner } from "../engine/client";
 import { type SimResult, signalKey } from "../engine/results";
 import { type CircuitMap, projectToNetlist } from "../netlist/netlister";
+import type { CursorId } from "../waveform/cursorInput";
 import type { CursorState } from "../waveform/cursors";
 import { withDerivedCurrents } from "../waveform/traces";
 import { type ErrorTargets, errorTargets } from "./errorTargets";
@@ -32,7 +33,10 @@ export interface SimulationState {
   analysisIndex: number;
   /** Cursor positions, owned by one analysis kind; a different kind starts clean. */
   cursors: { type: SimResult["type"] | null; cursors: CursorState };
+  /** The cursor the keyboard moves; every placement makes the placed cursor active. */
+  activeCursor: CursorId;
   setAnalysisIndex(index: number): void;
+  setActiveCursor(id: CursorId): void;
   setCursors(type: SimResult["type"], cursors: CursorState): void;
   run(project: Project, index: number): Promise<void>;
   cancel(): void;
@@ -72,9 +76,13 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
       probes: [],
       analysisIndex: 0,
       cursors: NO_CURSORS,
+      activeCursor: "a",
 
       setAnalysisIndex(index) {
         set({ analysisIndex: index });
+      },
+      setActiveCursor(id) {
+        set({ activeCursor: id });
       },
       setCursors(type, cursors) {
         set({ cursors: { type, cursors } });
@@ -148,6 +156,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
           probes: [],
           analysisIndex: 0,
           cursors: NO_CURSORS,
+          activeCursor: "a",
         });
       },
 
