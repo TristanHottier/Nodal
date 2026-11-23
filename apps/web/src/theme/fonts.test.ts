@@ -15,12 +15,12 @@ describe("fonts", () => {
     expect(themes.light["--font-mono"]).toMatch(/^"JetBrains Mono Variable",\s*ui-monospace/);
   });
 
-  it("declares one Latin variable face per family with font-display swap", () => {
+  it("declares a Latin and a Greek variable face per family with font-display swap", () => {
     const faces = fontsCss.match(/@font-face\s*\{[^}]*\}/g) ?? [];
-    expect(faces).toHaveLength(2);
+    expect(faces).toHaveLength(4);
     for (const face of faces) {
       expect(face).toContain("font-display: swap");
-      expect(face).toMatch(/-latin-wght-normal\.woff2/);
+      expect(face).toMatch(/-(latin|greek)-wght-normal\.woff2/);
       expect(face).toContain("unicode-range");
     }
     expect(fontsCss).toContain('font-family: "Inter Variable"');

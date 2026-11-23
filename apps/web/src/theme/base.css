@@ -42,11 +42,7 @@ select {
 input,
 textarea {
   padding: 0 var(--space-1);
-}
-
-/* Inputs keep the strong border: it is the 3:1 boundary of a text field. */
-input,
-textarea {
+  /* The strong border is the 3:1 boundary of a text field. */
   border-color: var(--color-border-strong);
 }
 

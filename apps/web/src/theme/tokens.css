@@ -69,7 +69,6 @@
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
-  --weight-strong: 600;
 
   /* Space: the canvas grid at zoom 1, and multiples of half a grid unit */
   --grid: 10px;

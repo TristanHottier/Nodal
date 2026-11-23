@@ -102,7 +102,7 @@
 }
 
 .nodal-status strong {
-  font-weight: var(--weight-strong);
+  font-weight: var(--weight-semibold);
 }
 
 .nodal-theme-select {
