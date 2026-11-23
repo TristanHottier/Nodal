@@ -159,7 +159,7 @@ Neutrals with a warm cast in light (hue 95) and a cool graphite in dark (hue 235
 - **Text** and **Text Muted**: at least 4.5:1 on canvas and panel in both themes.
 
 ### Data
-- **Traces**: cyan, brown, green, violet, red and ochre. Trace 1 is cyan, away from the accent family. Traces are drawn at 1.75 px. Each pair stays at least 0.06 apart in OKLab under normal vision and the three colour-vision simulations, and each reaches 3:1 on the plot background.
+- **Traces**: cyan, brown, green, violet, red and ochre. Trace 1 is cyan, away from the accent family. Traces are drawn at 1.75 px. Plot drawing sizes (tag size, line widths, dash patterns, axis sizes) are constants in `waveform/Plot.tsx`, the documented exception to the tokens rule because uPlot draws on a canvas; colors and fonts still come from tokens. Each pair stays at least 0.06 apart in OKLab under normal vision and the three colour-vision simulations, and each reaches 3:1 on the plot background.
 
 ### Named Rules
 **The One Job Rule.** Indigo means act or select, slate means information, magenta means measurement, and the traces mean signals. If a screen needs more indigo, something else is carrying the wrong signal.
@@ -211,14 +211,13 @@ Flat by default with tonal layering. The canvas is ply 0, panels ply 1 and popov
 ### Shadow Vocabulary
 - **Panel outline** (`box-shadow: 0 0 0 1px oklch(0.9 0.006 95)`): panels.
 - **Popover** (`0 1px 2px oklch(0.2 0.012 95 / 0.06), 0 4px 12px oklch(0.2 0.012 95 / 0.1), 0 0 0 1px oklch(0.88 0.006 95)`): menus and popovers. Dark uses black shadows at 0.3 and 0.5 alpha.
-- **Overlay** (`--elevation-3`): the largest floating surfaces.
 
 ### Named Rules
 **The Flat-At-Rest Rule.** Surfaces carry no shadow at rest. Only things that float get one.
 
 ## Shapes
 
-Rounded but tight: 6 px on controls (`--radius-sm`), 8 px on cards and panels (`--radius-md`), 12 px on large containers (`--radius-lg`), a pill for legend chips and cursor tags. Borders are 1 px. Schematic symbols are IEC 60617 line drawings on the grid, not rounded or filled. Icons are 14 or 16 px Lucide strokes.
+Rounded but tight: 6 px on controls (`--radius-sm`), 8 px on cards and panels (`--radius-md`), 12 px on large containers (`--radius-lg`), a pill for legend chips. Cursor tags on the plot are small rectangles. Borders are 1 px. Schematic symbols are IEC 60617 line drawings on the grid, not rounded or filled. Icons are 16 px Lucide strokes.
 
 ## Components
 

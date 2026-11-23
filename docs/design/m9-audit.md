@@ -126,7 +126,7 @@ Result: no must-fix remains. The audit is clean.
 
 ### Decisions
 
-- **M9-A4.** A minimum fit zoom would crop the circuit, and showing the whole circuit on load is what the fit exists for (M9-C4, M9-A5). The labels stay at the scale the fit gives. A student who needs larger labels can zoom, and the fit is spent after the first run, so a zoom is kept. Re-audit evidence: after a zoom, resizing the window through 1000 and 1100 px left the view transform unchanged, so crossing 1024 px never refits.
+- **M9-A4.** A minimum fit zoom would crop the circuit, and showing the whole circuit on load is what the fit exists for (M9-C4, M9-A5). The labels stay at the scale the fit gives. A student who needs larger labels can zoom, and a refit happens only when a new result resizes the canvas, so a rerun of the same analysis keeps the zoom. Re-audit evidence: after a zoom, resizing the window through 1000 and 1100 px left the view transform unchanged, so crossing 1024 px never refits.
 - **M9-A6, 1/Δx for DC.** Period and frequency read from Δx make sense for time and frequency axes. For a swept source the reciprocal has no use and no honest unit, so the row is not shown.
 
 ### Other checks in this pass

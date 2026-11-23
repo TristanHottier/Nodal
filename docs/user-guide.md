@@ -162,9 +162,9 @@ DC sweep and transient runs draw one plot, with the swept source or time on the 
 
 Click the plot to place cursor A, then click again to place cursor B. After that, a click moves whichever cursor is nearer. Shift+click always places B. Drag a cursor line to move it; the pointer changes to a resize arrow when it is over a line. You can also type a position into the Cursor A and Cursor B fields, using the same suffixes as values (`1m`), and "Clear cursors" removes both.
 
-The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot (the other cursor's tag is an outline), and the cursor panel names it as "Active". Cursor A is a dashed line and B is dotted, so the two stay apart without colour.
+The keyboard works too. Tab to the plot, press `A` or `B` to choose a cursor, then use the left and right arrows to move it one sample at a time, or hold Shift to move ten samples. `Home` and `End` jump to the ends of the axis, and `Delete` clears the chosen cursor. The cursor you placed or chose last is the active one: its letter sits in a filled tag on the plot (the other cursor's tag is an outline), and the cursor panel names it as "Active". Cursor A is a dashed line and B is dotted, so the two stay apart without colour.
 
-The table lists each signal at A, at B and the difference, followed by Δx and 1/Δx. Values between samples are interpolated.
+The table lists each signal at A, at B and the difference, followed by Δx and, except on a DC sweep, 1/Δx. Values between samples are interpolated.
 
 ![Transient response of the RC low-pass with two cursors](user-guide/waveform-rc-transient.png)
 
@@ -178,7 +178,7 @@ An AC sweep draws two plots with a shared log frequency axis: magnitude in dB on
 
 Nodal saves your work in the browser automatically. It writes the project to IndexedDB half a second after your last edit and again when the tab is hidden or closed, and restores it when you reload the page. Autosave belongs to one browser profile and one tab at a time. If you open Nodal in a second tab, the older tab pauses autosave and says so in the status bar. Reload that tab to use it again.
 
-For a copy you can keep or share, use the project bar:
+For a copy you can keep or share, use the top bar:
 
 - New starts an empty project named "Untitled".
 - Open… loads a `.nodal.json` file.

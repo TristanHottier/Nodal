@@ -162,3 +162,12 @@
 - Subagents: implementers and reviewers on Sonnet, per-task reviews, Opus for the final review.
 
 ## Findings not fixed (filled in during Task 7)
+
+The full list, with before and after, is in `docs/design/m9-audit.md`.
+
+- M9-A4 (schematic text about 9.1 px after the refit at 1024 px): a minimum fit zoom would crop the circuit, and showing it whole is what the fit is for. Owner-level decision; a user who needs larger labels can zoom.
+- M9-A8 (stale canvas text at about 2.2:1 and 2.8:1): by design. Stale results are meant to look dimmed, and the status bar says "stale".
+- M9-A9 (the DC sweep opens on V(in) as its default probe): not fixed, nice-to-have, and a default-probe change belongs to a later milestone.
+- M9-A10 (main chunk 537.73 kB, Vite size warning): not fixed, nice-to-have. Code splitting is outside the scope of this milestone.
+- Detector warnings on Inter (3 `overused-font`, 6 `design-system-font`): kept by the owner's ruling to use Inter. Both are advisories, not errors.
+- Remaining detector advisory (1 `design-system-color` in `Plot.test.ts`): a test fixture colour, not shipped UI.

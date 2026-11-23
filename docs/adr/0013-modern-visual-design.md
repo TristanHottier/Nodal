@@ -83,7 +83,7 @@ Colour (M9-C2, and the cursor and trace part of M9-C3):
 
 Layout (M9-C4, C5, C7, C8, C9):
 
-- The schematic refits once whenever a new result resizes the canvas, so the circuit stays whole when the results panel opens. If the whole circuit is already visible the view is left alone, and the refit never zooms in. A rerun of the same analysis keeps the user's zoom. The parts palette spans the rows beside the results, so it keeps its height.
+- The schematic fits the view once per loaded document, so a loaded circuit is whole at the first paint. It also refits whenever a new result resizes the canvas, so the circuit stays whole when the results panel opens. If the whole circuit is already visible the view is left alone, and the refit never zooms in. A rerun of the same analysis keeps the user's zoom. The parts palette spans the rows beside the results, so it keeps its height.
 - The parts palette is grouped into Sources, Passives, Semiconductors and Other.
 - Each tool-rail icon shows its shortcut underneath.
 - The inspector is compact. Options and Models are collapsed by default with a chevron, and analysis cards use one row per field. When several analyses exist, the one the run bar will run is marked with a stronger border and the line "Runs when you press Run".
