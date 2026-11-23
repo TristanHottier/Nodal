@@ -125,9 +125,9 @@ The whole web app gets one coherent visual design, replacing the per-milestone s
 
 ## v1.1 milestones
 
-### M9 — Cursor B fix and modern redesign (v1.1.0) · not started
+### M9 — Cursor B fix and modern redesign (v1.1.0) · done
 
-Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable way to place waveform cursor B, and the app looks dated. This milestone fixes both and ships as `v1.1.0`. The draft plan is [`docs/plans/2026-11-22-m9-v1.1-draft.md`](plans/2026-11-22-m9-v1.1-draft.md). A planning session turns it into a task-by-task plan, and Tristan approves that plan before any code.
+Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable way to place waveform cursor B, and the app looks dated. This milestone fixes both and ships as `v1.1.0`. The plan is [`docs/plans/2026-11-22-m9-cursor-b-and-redesign.md`](plans/2026-11-22-m9-cursor-b-and-redesign.md), approved by Tristan on 2026-11-22.
 
 - **Cursor B:** a user who has never read the guide can place, move and remove both cursors with the mouse or the keyboard. Shift+click keeps working.
 - **Modern look, in two passes:**
@@ -143,6 +143,8 @@ Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable w
 - All M8 exit checks still pass in both themes: axe WCAG 2.2 AA (editor, inspector, analysis editor, waveform, stale state), keyboard reach and canvas keyboard selection, the token contrast tests, the colour-share role order, the Lighthouse limits on the Pages URL, and the M7 performance budget.
 - Visual baselines are re-rendered on CI, and the user-guide screenshots are regenerated.
 - Version `1.1.0` in every pinned place, and the `v1.1.0` tag.
+
+**Evidence:** CI run [45284350475](https://github.com/TristanHottier/Nodal/actions/runs/45284350475) at `2e82370`: Rust, web (unit, e2e on Chromium and Firefox including `cursors.spec.ts` for the mouse and keyboard paths, axe in both themes and the stale state, keyboard reach, responsive, layout, visual regression on CI baselines, colour shares, perf), deploy and Lighthouse all green. Lighthouse medians on the job re-run: mobile LCP 772 ms, CLS 0.000, TBT 61 ms; desktop LCP 230 ms, CLS 0.000, TBT 0 ms (the first attempt measured mobile TBT 235 ms). Perf in CI run [45278492943](https://github.com/TristanHottier/Nodal/actions/runs/45278492943) at `951bdb6`: editor pan/zoom with 500 parts 59.5 fps, 2 of 240 slow frames; transient 732.0 ms; AC 78.9 ms; WASM 246,485 bytes gzipped. Design: ADR 0013, `docs/design/m9-critique.md`, `docs/design/m9-audit.md` (re-audit: no must-fix), regenerated `apps/web/DESIGN.md` and user-guide screenshots. The `v1.1.0` tag is created by Tristan (the sandbox can't push tags).
 
 ## After v1 (not designed yet)
 

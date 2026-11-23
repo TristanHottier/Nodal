@@ -44,7 +44,7 @@ Measured by `pnpm --filter @nodal/web e2e:perf`, which opens `bench.html` in hea
 | Transient, 50 nodes, at least 10,000 accepted points | < 1 s | 732.0 ms (median of 5) |
 | AC sweep, 50 nodes, 1,001 frequencies | < 200 ms | 78.9 ms (median) |
 | Editor pan and zoom, 500 parts | 60 fps | 59.5 fps (pan 60.0, zoom 59.0), 2 slow frames (> 25 ms) of 240 |
-| WASM module, gzipped | < 1 MB | 246,484 bytes |
+| WASM module, gzipped | < 1 MB | 246,485 bytes |
 
 The test passes with a mean of at least 58 fps and at most 5 % slow frames, to allow for timer jitter. On Tristan's laptop in desktop Chrome (2026-11-22, deployed app at 93c38f1) the same page gave a transient median of 599.6 ms (samples 572.6 to 860.3 ms), an AC median of 82.1 ms, and 60.3 fps for pan and zoom with 7 slow frames of 240. Anyone can run it at https://tristanhottier.github.io/Nodal/bench.html.
 
@@ -56,6 +56,8 @@ Lighthouse lab runs against https://tristanhottier.github.io/Nodal/ in the `ligh
 |---|---|---|---|
 | Mobile | 784 ms | 0.000 | 139 ms |
 | Desktop | 249 ms | 0.000 | 0 ms |
+
+Lighthouse varies between runners. In CI run [45284350475](https://github.com/TristanHottier/Nodal/actions/runs/45284350475) at 2e82370 the first attempt measured a mobile TBT of 235 ms, over the limit; the re-run of the job measured 61 ms.
 
 In the same run, `e2e:perf` measured editor pan and zoom with 500 parts at 59.5 fps with 2 slow frames of 240 (limit 12). The CI job also runs axe-core (WCAG 2.2 AA) on the editor, inspector, analysis panel and waveform viewer in both themes; it finds no violations.
 
