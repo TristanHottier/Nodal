@@ -90,7 +90,11 @@
   --topbar-height: 40px;
   --rail-width: 44px;
   --brand-height: 20px;
-  --part-icon: 28px;
+  --part-icon: 24px;
+  --palette-row-height: 26px;
+  --rail-button-height: 40px;
+  --field-label-width: 50px;
+  --topbar-name-max: 320px;
 
   /* Shape and elevation: canvas is ply 0, panels ply 1, popovers ply 2 */
   --radius-sm: 6px;

@@ -111,7 +111,7 @@
 
 /* The checkbox is 13 px; its label row is at least one control tall (WCAG 2.5.8) and clear of the Remove button. */
 .nodal-check {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--space-1);
   min-height: var(--control-height);
@@ -130,4 +130,97 @@
   min-height: var(--control-height);
   margin: 0;
   cursor: pointer;
+}
+
+/* Inside a card (analysis, options, model) a short label and its input share one row. The label
+   column is fixed, so the inputs and units line up down the card. Hints and errors take the row
+   below, under the input. */
+.nodal-rows .nodal-field {
+  grid-template-columns: var(--field-label-width) minmax(0, 1fr);
+  margin-bottom: var(--space-1);
+}
+
+.nodal-rows .nodal-field[data-unit="true"] {
+  grid-template-columns: var(--field-label-width) minmax(0, 1fr) var(--unit-width);
+}
+
+.nodal-rows .nodal-field > .nodal-field-label {
+  grid-column: 1;
+}
+
+.nodal-rows .nodal-field > input,
+.nodal-rows .nodal-field > select,
+.nodal-rows .nodal-field > textarea {
+  grid-column: 2;
+}
+
+.nodal-rows .nodal-field[data-unit="true"] > input,
+.nodal-rows .nodal-field[data-unit="true"] > textarea {
+  grid-column: 2;
+}
+
+/* !important: Field sets the unit's column inline (column 2 of the stacked layout). */
+.nodal-rows .nodal-field > .nodal-unit {
+  grid-column: 3 !important;
+}
+
+.nodal-rows .nodal-field > .nodal-hint,
+.nodal-rows .nodal-field > .nodal-error {
+  grid-column: 2 / -1;
+}
+
+/* An analysis card: number, type and Remove on one line, then its fields. The one the run bar
+   will run carries a stronger border and a line of text. */
+.nodal-analysis {
+  margin-top: 0;
+  margin-bottom: var(--space-1);
+}
+
+.nodal-analysis[data-active="true"] {
+  border-color: var(--color-border-strong);
+}
+
+.nodal-analysis-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.nodal-analysis-head .nodal-field {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.nodal-analysis-head .nodal-field-label {
+  display: none;
+}
+
+.nodal-analysis-head .nodal-field > select {
+  grid-column: 1;
+}
+
+.nodal-analysis-remove {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height);
+  padding: 0;
+}
+
+.nodal-analysis-index {
+  flex: none;
+  min-width: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-analysis-runs {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }

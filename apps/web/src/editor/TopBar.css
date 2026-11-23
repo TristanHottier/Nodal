@@ -24,8 +24,9 @@
 }
 
 .nodal-topbar-name {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: var(--topbar-name-max);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -37,9 +38,13 @@
   margin-right: var(--space-2);
 }
 
-.nodal-topbar .nodal-projectbar {
+/* Right group: file actions, then the theme. The left group is the brand and the project name. */
+.nodal-topbar-actions {
+  display: flex;
   flex: none;
-  margin-left: var(--space-2);
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
 }
 
 .nodal-theme-select {
@@ -47,5 +52,4 @@
   flex: none;
   align-items: center;
   gap: var(--space-1);
-  margin-left: auto;
 }

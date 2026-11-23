@@ -15,10 +15,12 @@
 
 .nodal-rail-button {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: var(--control-height);
-  min-height: var(--control-height);
+  gap: 0;
+  width: calc(var(--rail-width) - 2 * var(--space-1));
+  min-height: var(--rail-button-height);
   padding: 0;
   background: none;
   border-color: transparent;
@@ -32,4 +34,14 @@
   flex: none;
   width: var(--icon-md);
   height: var(--icon-md);
+}
+
+/* The shortcut under the icon, so a first-time user sees it without hovering. It is generated
+   content: the button's accessible name stays the tool name. */
+.nodal-rail-button::after {
+  content: attr(data-key);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+  color: var(--color-text-muted);
 }

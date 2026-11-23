@@ -96,6 +96,7 @@ const NO_RESULT = createStore<SimulationState>(
       result: null,
       map: null,
       probes: [],
+      analysisIndex: 0,
       ranDoc: null,
       ranSimulation: null,
     }) as unknown as SimulationState,
@@ -112,6 +113,18 @@ export function useOpView(): OpView | null {
   const simulation = useEditor((s) => s.project.simulation);
   if (!result || !map || result.type !== "op") return null;
   return { result, map, stale: doc !== ranDoc || simulation !== ranSimulation };
+}
+
+/** Index of the analysis the run bar will run. 0 outside a provider. */
+export function useRunIndex(): number {
+  const store = useContext(SimulationContext) ?? NO_RESULT;
+  return useStore(store, (s) => s.analysisIndex);
+}
+
+/** True while a result is shown, so the results panel is open. False outside a provider. */
+export function useHasResult(): boolean {
+  const store = useContext(SimulationContext) ?? NO_RESULT;
+  return useStore(store, (s) => s.result !== null);
 }
 
 /** Resets the simulation whenever a project is loaded (Open, New): nothing from the old one may linger. */

@@ -1,5 +1,5 @@
 // The parts panel: one button per placeable item, an icon and a one-line label each.
-import { LABEL_SYMBOL, PALETTE, SYMBOLS } from "../symbols/catalog";
+import { LABEL_SYMBOL, type PALETTE, SYMBOLS } from "../symbols/catalog";
 import { useEditor, useEditorStore } from "./EditorContext";
 import { keepFocus } from "./keepFocus";
 
@@ -14,6 +14,14 @@ const SHORT: Partial<Record<Item, string>> = {
   opamp: "Op amp",
   switch: "Switch",
 };
+
+/** Palette groups, in reading order. Every palette item appears in exactly one group. */
+export const GROUPS: readonly { title: string; items: readonly Item[] }[] = [
+  { title: "Sources", items: ["vsource", "isource", "vcvs", "vccs", "ccvs", "cccs"] },
+  { title: "Passives", items: ["resistor", "capacitor", "inductor"] },
+  { title: "Semiconductors", items: ["diode", "npn", "pnp", "nmos", "pmos"] },
+  { title: "Other", items: ["switch", "opamp", "ground", "label"] },
+];
 
 const fullName = (item: Item) => (item === "label" ? LABEL_SYMBOL.label : SYMBOLS[item].label);
 
@@ -52,25 +60,29 @@ export function Palette() {
   const tool = useEditor((s) => s.tool);
   return (
     <nav className="nodal-palette" aria-label="Palette">
-      <p className="nodal-panel-title" aria-hidden="true">
-        Parts
-      </p>
-      {PALETTE.map((item) => (
-        <button
-          type="button"
-          onMouseDown={keepFocus}
-          key={item}
-          aria-label={partButtonName(item)}
-          aria-pressed={tool.kind === "place" && tool.item === item}
-          onClick={() => {
-            store.getState().setTool({ kind: "place", item, rotation: 0, mirror: false });
-          }}
-        >
-          <Preview item={item} />
-          <span aria-hidden="true" className="nodal-palette-label">
-            {partLabel(item)}
-          </span>
-        </button>
+      {GROUPS.map(({ title, items }) => (
+        <div key={title} role="group" aria-label={title} className="nodal-palette-group">
+          <p className="nodal-panel-title" aria-hidden="true">
+            {title}
+          </p>
+          {items.map((item) => (
+            <button
+              type="button"
+              onMouseDown={keepFocus}
+              key={item}
+              aria-label={partButtonName(item)}
+              aria-pressed={tool.kind === "place" && tool.item === item}
+              onClick={() => {
+                store.getState().setTool({ kind: "place", item, rotation: 0, mirror: false });
+              }}
+            >
+              <Preview item={item} />
+              <span aria-hidden="true" className="nodal-palette-label">
+                {partLabel(item)}
+              </span>
+            </button>
+          ))}
+        </div>
       ))}
     </nav>
   );

@@ -46,6 +46,16 @@ describe("TopBar", () => {
     expect(screen.getByRole("combobox", { name: "Theme" })).toBeTruthy();
   });
 
+  it("shows_only_the_title_before_the_colon_and_keeps_the_full_name_as_tooltip", () => {
+    const store = setup();
+    act(() => {
+      store.getState().setProjectName("Common-emitter amplifier: NPN, divider bias");
+    });
+    const el = screen.getByTestId("project-name");
+    expect(el.textContent).toBe("Common-emitter amplifier");
+    expect(el.getAttribute("title")).toBe("Common-emitter amplifier: NPN, divider bias");
+  });
+
   it("read_only_has_the_mark_and_theme_but_no_editing_actions", () => {
     setup(true);
     expect(screen.getByRole("img", { name: "Nodal" })).toBeTruthy();

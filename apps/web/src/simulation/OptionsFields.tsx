@@ -24,7 +24,7 @@ export function OptionsFields({
   // The schema keeps cleared options as explicit undefined; JSON drops them.
   const without = (key: keyof SimOptions): SimOptions => ({ ...options, [key]: undefined });
   return (
-    <fieldset className="nodal-model" aria-label="Options">
+    <fieldset className="nodal-model nodal-rows" aria-label="Options">
       <SelectField
         label="method"
         value={options.method ?? ""}

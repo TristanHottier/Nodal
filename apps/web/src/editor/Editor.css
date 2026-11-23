@@ -6,17 +6,26 @@
   height: 100%;
 }
 
+/* The palette runs beside the results too, so it keeps its height when a plot opens. */
 .nodal-palette {
-  grid-row: 2;
+  grid-row: 2 / span 2;
   grid-column: 2;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
   min-height: 0;
   padding: var(--space-1);
   overflow-y: auto;
   background: var(--color-panel);
   border-right: var(--border-width) solid var(--color-border-subtle);
+}
+
+.nodal-palette-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nodal-palette-group + .nodal-palette-group {
+  margin-top: var(--space-1);
 }
 
 .nodal-panel-title {
@@ -30,6 +39,7 @@
 
 .nodal-palette button {
   flex: none;
+  min-height: var(--palette-row-height);
   display: flex;
   align-items: center;
   gap: var(--space-2);

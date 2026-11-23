@@ -60,6 +60,7 @@ export function ToolRail() {
                 ref={refs[i] ?? null}
                 type="button"
                 className="nodal-rail-button"
+                data-key={shortcut}
                 aria-label={label}
                 aria-describedby={describedBy}
                 aria-pressed={tool.kind === kind}
