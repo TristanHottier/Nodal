@@ -1,4 +1,4 @@
-// Editor layout: palette on the left, canvas filling the rest, status bar below.
+// Editor layout: top bar, tool rail, parts panel, canvas, inspector, results and status bar.
 import { type ReactNode, useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
 import { EngineClient } from "../engine/client";
@@ -16,7 +16,8 @@ import { EditorProvider, useEditor, useEditorStore } from "./EditorContext";
 import { Inspector } from "./inspector/Inspector";
 import { NarrowNotice } from "./NarrowNotice";
 import { Palette } from "./Palette";
-import { ThemeSelect } from "../theme/ThemeSelect";
+import { ToolRail } from "./ToolRail";
+import { TopBar } from "./TopBar";
 import type { EditorState } from "./store";
 import { usePlaceTool } from "./tools/place";
 import { useProbeTool } from "./tools/probe";
@@ -29,14 +30,13 @@ function StatusBar({ status }: { status?: ReactNode }) {
   const message = useEditor((s) => s.statusMessage);
   return (
     <footer className="nodal-status">
-      <strong>Nodal</strong> {status}
+      {status}
       {message === null ? null : (
         <>
           {" "}
           <span data-testid="project-message">{message}</span>
         </>
       )}
-      <ThemeSelect />
     </footer>
   );
 }
@@ -73,6 +73,7 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
   }, [store]);
   return (
     <div className="nodal-editor nodal-editor-readonly">
+      <TopBar readOnly />
       <NarrowNotice />
       <main className="nodal-canvas-pane">
         <h1 className="nodal-visually-hidden">Nodal</h1>
@@ -101,6 +102,8 @@ function EditorBody({ status }: { status?: ReactNode }) {
           : undefined;
   return (
     <div className="nodal-editor">
+      <TopBar />
+      <ToolRail />
       <Palette />
       <main className="nodal-canvas-pane">
         <h1 className="nodal-visually-hidden">Nodal</h1>

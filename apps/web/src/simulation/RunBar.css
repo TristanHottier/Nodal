@@ -1,6 +1,6 @@
 .nodal-results {
-  grid-row: 2;
-  grid-column: 1 / span 3;
+  grid-row: 3;
+  grid-column: 2 / -1;
   background: var(--color-panel);
   box-shadow: var(--elevation-1);
 }

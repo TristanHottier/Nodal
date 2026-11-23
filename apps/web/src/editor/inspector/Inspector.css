@@ -1,6 +1,6 @@
 .nodal-inspector {
-  grid-row: 1;
-  grid-column: 3;
+  grid-row: 2;
+  grid-column: 4;
   padding: var(--space-2);
   overflow-y: auto;
   font-size: var(--text-md);

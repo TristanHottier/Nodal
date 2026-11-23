@@ -2,14 +2,14 @@ import type { Schematic } from "@nodal/schema";
 import { EMPTY_SCHEMATIC } from "@nodal/schema";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { PALETTE, SYMBOLS } from "../symbols/catalog";
+import { PALETTE } from "../symbols/catalog";
 import { Editor } from "./Editor";
+import { partButtonName } from "./Palette";
 import { click, drag, key, makeStore, moveTo, redo, type Store, undo } from "./testUtils";
 
-type Item = (typeof PALETTE)[number];
 type AnyItem = { id: string; x: number; y: number; rotation: number; mirror?: boolean };
 
-const buttonName = (item: Item) => `Place ${item === "label" ? "net label" : SYMBOLS[item].label}`;
+const buttonName = partButtonName;
 
 const items = (doc: Schematic): AnyItem[] => [...doc.parts, ...doc.labels];
 
@@ -40,10 +40,11 @@ describe("Editor", () => {
     expect(screen.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe(
       "true",
     );
-    const toolButtons = screen
-      .getAllByRole("button")
-      .filter((b) => b.closest(".nodal-palette") && !b.closest(".nodal-projectbar"));
-    expect(toolButtons).toHaveLength(PALETTE.length + 3);
+    const partButtons = screen.getAllByRole("button").filter((b) => b.closest(".nodal-palette"));
+    expect(partButtons).toHaveLength(PALETTE.length);
+    expect(screen.getAllByRole("button").filter((b) => b.closest("[role=toolbar]"))).toHaveLength(
+      3,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Wire" }));
     expect(screen.getByRole("button", { name: "Wire" }).getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe(

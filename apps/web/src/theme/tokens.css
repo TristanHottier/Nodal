@@ -83,6 +83,8 @@
   --icon-md: 16px;
   --topbar-height: 40px;
   --rail-width: 44px;
+  --brand-height: 20px;
+  --part-icon: 28px;
 
   /* Shape and elevation: canvas is ply 0, panels ply 1, popovers ply 2 */
   --radius-sm: 6px;

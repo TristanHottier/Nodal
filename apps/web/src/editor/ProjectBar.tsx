@@ -1,7 +1,7 @@
-// New, Open… and Save as… for `.nodal.json` files, shown above the tools.
+// Examples, New, Open… and Save as… for `.nodal.json` files, shown in the top bar.
 import { newProject } from "@nodal/schema";
+import { Download, FilePlus, FolderOpen } from "lucide-react";
 import { useRef } from "react";
-import { LogoMark } from "../brand/LogoMark";
 import { EXAMPLES } from "../examples";
 import { downloadProject, readProjectFile } from "../storage/files";
 import { useEditorStore } from "./EditorContext";
@@ -41,6 +41,27 @@ export function ProjectBar() {
 
   return (
     <div className="nodal-projectbar" role="group" aria-label="Project">
+      <select
+        aria-label="Open example"
+        value=""
+        onChange={(e) => {
+          const example = EXAMPLES.find((x) => x.id === e.currentTarget.value);
+          e.currentTarget.value = "";
+          if (!example || !mayReplace()) return;
+          const s = store.getState();
+          s.loadProject(example.load());
+          s.setStatusMessage(null);
+        }}
+      >
+        <option value="" disabled>
+          Examples…
+        </option>
+        {EXAMPLES.map((x) => (
+          <option key={x.id} value={x.id} title={x.summary}>
+            {x.title}
+          </option>
+        ))}
+      </select>
       <button
         type="button"
         onMouseDown={keepFocus}
@@ -51,6 +72,7 @@ export function ProjectBar() {
           s.setStatusMessage(null);
         }}
       >
+        <FilePlus aria-hidden="true" className="nodal-icon" />
         New
       </button>
       <button
@@ -60,6 +82,7 @@ export function ProjectBar() {
           fileInput.current?.click();
         }}
       >
+        <FolderOpen aria-hidden="true" className="nodal-icon" />
         Open…
       </button>
       <button
@@ -69,32 +92,9 @@ export function ProjectBar() {
           downloadProject(store.getState().getProject());
         }}
       >
+        <Download aria-hidden="true" className="nodal-icon" />
         Save as…
       </button>
-      <div className="nodal-projectbar-examples">
-        <LogoMark size={20} decorative />
-        <select
-          aria-label="Open example"
-          value=""
-          onChange={(e) => {
-            const example = EXAMPLES.find((x) => x.id === e.currentTarget.value);
-            e.currentTarget.value = "";
-            if (!example || !mayReplace()) return;
-            const s = store.getState();
-            s.loadProject(example.load());
-            s.setStatusMessage(null);
-          }}
-        >
-          <option value="" disabled>
-            Examples…
-          </option>
-          {EXAMPLES.map((x) => (
-            <option key={x.id} value={x.id} title={x.summary}>
-              {x.title}
-            </option>
-          ))}
-        </select>
-      </div>
       <input
         ref={fileInput}
         type="file"

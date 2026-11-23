@@ -1,0 +1,50 @@
+.nodal-tip {
+  position: relative;
+  display: flex;
+}
+
+/* The transparent padding keeps the tooltip under the pointer while it travels from the control. */
+.nodal-tip-pos {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  z-index: 10;
+  padding-left: var(--space-1);
+  transform: translateY(-50%);
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    visibility var(--duration-fast) var(--ease-standard);
+}
+
+.nodal-tip:hover .nodal-tip-pos,
+.nodal-tip:focus-within .nodal-tip-pos {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nodal-tip-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  color: var(--color-tooltip-text);
+  background: var(--color-tooltip-bg);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--elevation-2);
+}
+
+.nodal-tip kbd {
+  padding: 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  border: var(--border-width) solid var(--color-tooltip-text);
+  border-radius: var(--radius-sm);
+  opacity: 0.8;
+}

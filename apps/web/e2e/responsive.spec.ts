@@ -82,6 +82,27 @@ for (const [width, height] of [
   });
 }
 
+for (const [width, height] of [
+  [1024, 768],
+  [1280, 800],
+] as const) {
+  test(`no parts panel label wraps or is clipped at ${String(width)} px`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("./");
+    const labels = page.locator(".nodal-palette-label");
+    expect(await labels.count()).toBeGreaterThan(10);
+    const bad = await labels.evaluateAll((els) =>
+      els.flatMap((el) => {
+        const line = parseFloat(getComputedStyle(el).lineHeight);
+        const clipped = el.scrollWidth > el.clientWidth;
+        const wrapped = el.getBoundingClientRect().height > line + 0.5;
+        return clipped || wrapped ? [`${el.textContent} wrapped=${String(wrapped)}`] : [];
+      }),
+    );
+    expect(bad, "labels that wrap or are cut").toEqual([]);
+  });
+}
+
 test("below 1024 px the notice shows and the schematic stays visible", async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 700 });
   await page.goto("./");
