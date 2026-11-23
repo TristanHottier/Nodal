@@ -46,3 +46,8 @@
 .nodal-runbar [data-failed="true"] {
   color: var(--color-error);
 }
+
+/* Informational state: the status icon uses the quiet info color, not the action accent. */
+.nodal-runbar-status svg {
+  color: var(--color-info);
+}

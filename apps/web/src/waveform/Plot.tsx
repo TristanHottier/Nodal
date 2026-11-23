@@ -1,4 +1,4 @@
-// A uPlot chart: thin traces, optional log x axis, two cursors drawn as dashed vertical lines.
+// A uPlot chart: heavier traces, optional log x axis, two cursors drawn as dashed vertical lines.
 // Clicks place the cursors (see cursorForClick), a cursor can be dragged, and the focused plot
 // takes keys: A or B pick the active cursor, arrows, Home and End move it, Delete clears it.
 import { type KeyboardEvent, useEffect, useRef } from "react";
@@ -57,8 +57,10 @@ export const xRange = (min: number, max: number, logX: boolean): [number, number
 };
 
 /** Canvas geometry of the active cursor tag, in canvas pixels (not CSS). */
-const TAG_PAD = 3;
-const TAG_HEIGHT = 15;
+const TAG_PAD = 4;
+const TAG_HEIGHT = 16;
+const CURSOR_WIDTH = 1.5;
+const TRACE_WIDTH = 1.75;
 
 /** Tick labels in engineering notation: 1m, 2.5k. */
 const engineering = (_u: uPlot, ticks: number[]) =>
@@ -99,6 +101,9 @@ export function Plot(props: PlotProps) {
     const gridColor = readCssVar("--color-plot-grid");
     const textColor = readCssVar("--color-text-muted");
     const tagText = readCssVar("--color-plot-bg");
+    const tagBg = tagText;
+    const tagSize = Number.parseFloat(readCssVar("--text-xs"));
+    const monoFamily = readCssVar("--font-mono");
     const cursorColors = { a: readCssVar("--color-cursor-a"), b: readCssVar("--color-cursor-b") };
     const grid = { stroke: gridColor, width: 1 };
     // Tick numbers in mono, axis titles in the UI face one step up and heavier.
@@ -124,7 +129,7 @@ export function Plot(props: PlotProps) {
         ...series.map((s) => ({
           label: s.label,
           stroke: resolveColor(s.color),
-          width: 1,
+          width: TRACE_WIDTH,
           spanGaps: false,
           points: { show: false },
         })),
@@ -163,9 +168,9 @@ export function Plot(props: PlotProps) {
           (u) => {
             const { a, b } = latest.current.cursors;
             const { ctx } = u;
+            const k = uPlot.pxRatio;
             ctx.save();
-            ctx.setLineDash([5, 4]);
-            ctx.lineWidth = 1;
+            ctx.lineWidth = CURSOR_WIDTH * k;
             const active = latest.current.activeCursor;
             for (const [which, x] of [
               ["a", a],
@@ -174,23 +179,32 @@ export function Plot(props: PlotProps) {
               if (x === null || (logX && x <= 0)) continue;
               const px = Math.round(u.valToPos(x, "x", true));
               if (px < u.bbox.left || px > u.bbox.left + u.bbox.width) continue;
-              ctx.strokeStyle = cursorColors[which];
+              const color = cursorColors[which];
+              // A is dashed and B is dotted, so the two stay apart without color.
+              ctx.setLineDash(which === "a" ? [6 * k, 4 * k] : [2 * k, 3 * k]);
+              ctx.strokeStyle = color;
               ctx.beginPath();
               ctx.moveTo(px, u.bbox.top);
               ctx.lineTo(px, u.bbox.top + u.bbox.height);
               ctx.stroke();
-              ctx.font = `bold ${axisFont}`;
+              ctx.setLineDash([]);
+              // The tag sits beside the line, on the side with room, and never over the line.
               const label = which.toUpperCase();
-              ctx.fillStyle = cursorColors[which];
-              if (which === active) {
-                // A filled tag with the label knocked out, so the active cursor shows without colour.
-                const w = ctx.measureText(label).width + TAG_PAD * 2;
-                ctx.fillRect(px + 1, u.bbox.top, w, TAG_HEIGHT);
-                ctx.fillStyle = tagText;
-                ctx.fillText(label, px + 1 + TAG_PAD, u.bbox.top + TAG_HEIGHT - TAG_PAD);
-              } else {
-                ctx.fillText(label, px + 3, u.bbox.top + 11);
-              }
+              ctx.font = `bold ${String(tagSize * k)}px ${monoFamily}`;
+              const w = ctx.measureText(label).width + TAG_PAD * 2 * k;
+              const h = TAG_HEIGHT * k;
+              const room = u.bbox.left + u.bbox.width - px;
+              const left = room >= w + 2 * k ? px + 2 * k : px - 2 * k - w;
+              const top = u.bbox.top + k;
+              ctx.fillStyle = which === active ? color : tagBg;
+              ctx.fillRect(left, top, w, h);
+              // The inactive tag is an outline, the active one a solid fill: visible without color.
+              if (which !== active) ctx.strokeRect(left + 0.5 * k, top + 0.5 * k, w - k, h - k);
+              ctx.fillStyle = which === active ? tagText : color;
+              // uPlot leaves the axis alignment on the context; the label starts at the tag edge.
+              ctx.textAlign = "left";
+              ctx.textBaseline = "middle";
+              ctx.fillText(label, left + TAG_PAD * k, top + h / 2 + k);
             }
             ctx.restore();
           },

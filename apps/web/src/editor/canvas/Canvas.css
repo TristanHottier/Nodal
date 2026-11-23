@@ -42,7 +42,7 @@
   color: var(--color-accent);
 }
 
-/* Selection is not carried by color alone (trace 1 and the accent share a hue): a selected wire
+/* Selection is not carried by color alone (a probed wire takes its trace color): a selected wire
    is heavier and sits in a canvas-colored halo; a selected part or label gets a dashed outline. */
 .nodal-canvas .selected .nodal-wire-line {
   stroke-width: var(--stroke-selected);

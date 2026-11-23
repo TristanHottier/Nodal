@@ -179,8 +179,9 @@
   margin-bottom: 0;
 }
 
+/* The active cursor field takes the measurement color, not the action accent. */
 .nodal-cursor-input[data-active="true"] input {
-  border-color: var(--color-accent);
+  border-color: var(--color-cursor-a);
 }
 
 .nodal-cursor-actions {

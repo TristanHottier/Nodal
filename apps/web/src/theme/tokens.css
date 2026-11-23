@@ -1,6 +1,6 @@
 /*
  * Nodal design tokens (ADR 0013, modern engineering tool). The only file with raw colors and sizes.
- * Colors are OKLCH. Cool neutral scale (hue 270), one indigo accent, rounded controls, quiet borders.
+ * Colors are OKLCH. Warm paper neutrals in light (hue 95), graphite neutrals in dark (hue 235), one indigo accent for action, selection and focus, a quiet slate for information, cyan-first instrument traces and one magenta measurement color for the cursors, rounded controls, quiet borders.
  * Light: near-white canvas, panels a step darker. Dark: near-black canvas, panels a step lighter.
  * Contrast and color-vision checks: src/theme/tokens.test.ts.
  * The dark block appears twice: under [data-theme="dark"] and for the "system" choice.
@@ -11,40 +11,41 @@
   color-scheme: light;
 
   /* 60: the board (canvas and page background) */
-  --color-canvas: oklch(0.99 0.002 270);
-  --color-canvas-grid: oklch(0.86 0.008 270);
-  --color-ink: oklch(0.27 0.015 270);
+  --color-canvas: oklch(0.99 0.004 95);
+  --color-canvas-grid: oklch(0.86 0.0064 95);
+  --color-ink: oklch(0.27 0.012 95);
   /* 30: panels, toolbars, inspector */
-  --color-panel: oklch(0.965 0.004 270);
+  --color-panel: oklch(0.965 0.006 95);
   --color-panel-raised: oklch(1 0 0);
-  --color-border: oklch(0.9 0.006 270);
-  --color-border-strong: oklch(0.58 0.015 270);
-  --color-border-subtle: oklch(0.935 0.005 270);
-  --color-panel-hover: oklch(0.94 0.006 270);
-  --color-text: oklch(0.21 0.015 270);
-  --color-text-muted: oklch(0.47 0.015 270);
+  --color-border: oklch(0.9 0.0048 95);
+  --color-border-strong: oklch(0.58 0.012 95);
+  --color-border-subtle: oklch(0.935 0.004 95);
+  --color-panel-hover: oklch(0.94 0.0048 95);
+  --color-text: oklch(0.21 0.012 95);
+  --color-text-muted: oklch(0.47 0.012 95);
   /* 10: rail blue for primary actions, selection and focus */
   --color-accent: oklch(0.56 0.19 275);
   --color-on-accent: oklch(0.99 0 0);
   --color-accent-soft: oklch(0.93 0.025 275);
   --color-focus: oklch(0.56 0.19 275);
   /* Tooltips: dark chip in both themes */
-  --color-tooltip-bg: oklch(0.25 0.015 270);
-  --color-tooltip-text: oklch(0.97 0.004 270);
+  --color-tooltip-bg: oklch(0.25 0.012 95);
+  --color-tooltip-text: oklch(0.97 0.0032 95);
   /* Semantic (exempt from 60/30/10) */
   --color-error: oklch(0.52 0.2 27);
   --color-warning: oklch(0.52 0.1 70);
   --color-success: oklch(0.52 0.12 150);
-  --color-op-tag: oklch(0.46 0.075 195);
+  --color-info: oklch(0.47 0.06 235);
+  --color-op-tag: oklch(0.47 0.06 235);
   /* Brand mark: cyan to mint, outside the 60/30/10 split (ADR 0012) */
   --color-brand-1: oklch(0.6 0.1 200);
   --color-brand-2: oklch(0.6 0.12 165);
   /* Waveform viewer; traces are jumper-wire colors */
-  --color-plot-bg: oklch(0.99 0.002 270);
-  --color-plot-grid: oklch(0.93 0.004 270);
-  --color-cursor-a: oklch(0.27 0.015 270);
-  --color-cursor-b: oklch(0.5 0.02 270);
-  --color-trace-1: oklch(0.55 0.2 258);
+  --color-plot-bg: oklch(0.99 0.004 95);
+  --color-plot-grid: oklch(0.93 0.0032 95);
+  --color-cursor-a: oklch(0.55 0.22 350);
+  --color-cursor-b: oklch(0.55 0.22 350);
+  --color-trace-1: oklch(0.56 0.09 220);
   --color-trace-2: oklch(0.4 0.08 55);
   --color-trace-3: oklch(0.5 0.11 150);
   --color-trace-4: oklch(0.4 0.2 305);
@@ -136,34 +137,35 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --color-canvas: oklch(0.17 0.01 270);
-  --color-canvas-grid: oklch(0.34 0.012 270);
-  --color-ink: oklch(0.9 0.008 270);
-  --color-panel: oklch(0.205 0.012 270);
-  --color-panel-raised: oklch(0.24 0.014 270);
-  --color-panel-hover: oklch(0.27 0.014 270);
-  --color-border: oklch(0.3 0.012 270);
-  --color-border-subtle: oklch(0.25 0.01 270);
-  --color-border-strong: oklch(0.56 0.02 270);
-  --color-text: oklch(0.94 0.006 270);
-  --color-text-muted: oklch(0.72 0.014 270);
+  --color-canvas: oklch(0.17 0.008 235);
+  --color-canvas-grid: oklch(0.34 0.0096 235);
+  --color-ink: oklch(0.9 0.0064 235);
+  --color-panel: oklch(0.205 0.0096 235);
+  --color-panel-raised: oklch(0.24 0.0112 235);
+  --color-panel-hover: oklch(0.27 0.0112 235);
+  --color-border: oklch(0.3 0.0096 235);
+  --color-border-subtle: oklch(0.25 0.008 235);
+  --color-border-strong: oklch(0.56 0.016 235);
+  --color-text: oklch(0.94 0.0048 235);
+  --color-text-muted: oklch(0.72 0.0112 235);
   --color-accent: oklch(0.57 0.19 275);
   --color-on-accent: oklch(0.99 0 0);
   --color-accent-soft: oklch(0.32 0.08 275);
   --color-focus: oklch(0.7 0.13 275);
-  --color-tooltip-bg: oklch(0.33 0.015 270);
-  --color-tooltip-text: oklch(0.97 0.004 270);
+  --color-tooltip-bg: oklch(0.33 0.012 235);
+  --color-tooltip-text: oklch(0.97 0.0032 235);
   --color-error: oklch(0.71 0.17 25);
   --color-warning: oklch(0.78 0.13 75);
   --color-success: oklch(0.75 0.13 150);
-  --color-op-tag: oklch(0.8 0.1 190);
+  --color-info: oklch(0.76 0.06 225);
+  --color-op-tag: oklch(0.76 0.06 225);
   --color-brand-1: oklch(0.8 0.13 200);
   --color-brand-2: oklch(0.86 0.17 165);
-  --color-plot-bg: oklch(0.17 0.01 270);
-  --color-plot-grid: oklch(0.27 0.01 270);
-  --color-cursor-a: oklch(0.92 0.008 270);
-  --color-cursor-b: oklch(0.68 0.02 270);
-  --color-trace-1: oklch(0.62 0.2 258);
+  --color-plot-bg: oklch(0.17 0.008 235);
+  --color-plot-grid: oklch(0.27 0.008 235);
+  --color-cursor-a: oklch(0.74 0.18 350);
+  --color-cursor-b: oklch(0.74 0.18 350);
+  --color-trace-1: oklch(0.74 0.12 210);
   --color-trace-2: oklch(0.72 0.17 55);
   --color-trace-3: oklch(0.87 0.2 150);
   --color-trace-4: oklch(0.62 0.14 305);
@@ -179,34 +181,35 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --color-canvas: oklch(0.17 0.01 270);
-    --color-canvas-grid: oklch(0.34 0.012 270);
-    --color-ink: oklch(0.9 0.008 270);
-    --color-panel: oklch(0.205 0.012 270);
-    --color-panel-raised: oklch(0.24 0.014 270);
-    --color-panel-hover: oklch(0.27 0.014 270);
-    --color-border: oklch(0.3 0.012 270);
-    --color-border-subtle: oklch(0.25 0.01 270);
-    --color-border-strong: oklch(0.56 0.02 270);
-    --color-text: oklch(0.94 0.006 270);
-    --color-text-muted: oklch(0.72 0.014 270);
+    --color-canvas: oklch(0.17 0.008 235);
+    --color-canvas-grid: oklch(0.34 0.0096 235);
+    --color-ink: oklch(0.9 0.0064 235);
+    --color-panel: oklch(0.205 0.0096 235);
+    --color-panel-raised: oklch(0.24 0.0112 235);
+    --color-panel-hover: oklch(0.27 0.0112 235);
+    --color-border: oklch(0.3 0.0096 235);
+    --color-border-subtle: oklch(0.25 0.008 235);
+    --color-border-strong: oklch(0.56 0.016 235);
+    --color-text: oklch(0.94 0.0048 235);
+    --color-text-muted: oklch(0.72 0.0112 235);
     --color-accent: oklch(0.57 0.19 275);
     --color-on-accent: oklch(0.99 0 0);
     --color-accent-soft: oklch(0.32 0.08 275);
     --color-focus: oklch(0.7 0.13 275);
-    --color-tooltip-bg: oklch(0.33 0.015 270);
-    --color-tooltip-text: oklch(0.97 0.004 270);
+    --color-tooltip-bg: oklch(0.33 0.012 235);
+    --color-tooltip-text: oklch(0.97 0.0032 235);
     --color-error: oklch(0.71 0.17 25);
     --color-warning: oklch(0.78 0.13 75);
     --color-success: oklch(0.75 0.13 150);
-    --color-op-tag: oklch(0.8 0.1 190);
+    --color-info: oklch(0.76 0.06 225);
+    --color-op-tag: oklch(0.76 0.06 225);
     --color-brand-1: oklch(0.8 0.13 200);
     --color-brand-2: oklch(0.86 0.17 165);
-    --color-plot-bg: oklch(0.17 0.01 270);
-    --color-plot-grid: oklch(0.27 0.01 270);
-    --color-cursor-a: oklch(0.92 0.008 270);
-    --color-cursor-b: oklch(0.68 0.02 270);
-    --color-trace-1: oklch(0.62 0.2 258);
+    --color-plot-bg: oklch(0.17 0.008 235);
+    --color-plot-grid: oklch(0.27 0.008 235);
+    --color-cursor-a: oklch(0.74 0.18 350);
+    --color-cursor-b: oklch(0.74 0.18 350);
+    --color-trace-1: oklch(0.74 0.12 210);
     --color-trace-2: oklch(0.72 0.17 55);
     --color-trace-3: oklch(0.87 0.2 150);
     --color-trace-4: oklch(0.62 0.14 305);
