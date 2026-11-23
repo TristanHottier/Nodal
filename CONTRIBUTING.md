@@ -35,11 +35,11 @@ Before sending a change, run the checks that apply:
 
 The full list is in [`AGENTS.md`](AGENTS.md). In short:
 
-- **Tests ship with the change.** Every device needs an analytic or golden test, and every nonlinear device needs a finite-difference Jacobian test.
-- **Tokens only.** Colours and sizes live in `apps/web/src/theme/tokens.css`. No colour literal or `px`, `rem` or `em` value in other CSS or components. `pnpm --filter @nodal/web test` enforces it.
-- **Validation is binding.** Don't loosen a tolerance in [`docs/VALIDATION.md`](docs/VALIDATION.md) or regenerate a golden to make a test pass. A change to a golden needs a stated reason.
-- **Decisions are recorded.** If a change contradicts an [ADR](docs/adr/), write a superseding ADR first.
-- **Docs match reality.** Update the README and the roadmap status in the same change. Don't claim accuracy, performance or features that no test shows.
+- Tests ship with the change. Every device needs an analytic or golden test, and every nonlinear device needs a finite-difference Jacobian test.
+- Tokens only. Colours and sizes live in `apps/web/src/theme/tokens.css`. No colour literal or `px`, `rem` or `em` value in other CSS or components. `pnpm --filter @nodal/web test` enforces it.
+- Validation is binding. Don't loosen a tolerance in [`docs/VALIDATION.md`](docs/VALIDATION.md) or regenerate a golden to make a test pass. A change to a golden needs a stated reason.
+- Decisions are recorded. If a change contradicts an [ADR](docs/adr/), write a superseding ADR first.
+- Docs match reality. Update the README and the roadmap status in the same change. Don't claim accuracy, performance or features that no test shows.
 - Code, comments and docs are in English.
 
 ## Commits and pull requests
