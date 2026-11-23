@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide
+    url: https://github.com/TristanHottier/Nodal/blob/main/docs/user-guide.md
+    about: How to draw, simulate and read results. Check it before opening an issue.
+  - name: Report a security vulnerability
+    url: https://github.com/TristanHottier/Nodal/security/advisories/new
+    about: Report vulnerabilities privately, not in a public issue.
