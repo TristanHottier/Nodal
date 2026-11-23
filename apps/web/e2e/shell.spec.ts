@@ -37,3 +37,26 @@ test("shell reports an error when the WASM module fails to load", async ({ page 
     timeout: 5_000,
   });
 });
+
+test("built index.html preloads exactly one font, the Inter Latin file, and the browser uses it", async ({
+  page,
+  request,
+}) => {
+  const fontRequests: string[] = [];
+  page.on("request", (r) => {
+    if (r.resourceType() === "font") fontRequests.push(new URL(r.url()).pathname);
+  });
+  await page.goto("./");
+  await expect(page.getByTestId("engine-status")).toHaveText(/Engine/, { timeout: 10_000 });
+
+  const hrefs = await page
+    .locator('link[rel="preload"][as="font"]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute("href")));
+  expect(hrefs).toHaveLength(1);
+  const href = hrefs[0] ?? "";
+  expect(href).toMatch(/\/Nodal\/assets\/inter-latin-wght-normal-.*\.woff2$/);
+  expect((await request.get(href)).ok()).toBe(true);
+  // The preload is the file the page actually uses, so it is not fetched twice.
+  expect(fontRequests.filter((p) => p === href).length).toBeGreaterThan(0);
+  expect(await page.evaluate(() => document.fonts.check('13px "Inter Variable"'))).toBe(true);
+});

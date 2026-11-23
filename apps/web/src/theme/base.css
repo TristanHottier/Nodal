@@ -10,9 +10,11 @@ body {
   margin: 0;
   font-family: var(--font-ui);
   font-size: var(--text-md);
+  font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
   color: var(--color-text);
   background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -22,7 +24,7 @@ textarea {
   font: inherit;
   color: var(--color-text);
   background: var(--color-panel-raised);
-  border: var(--border-width) solid var(--color-border-strong);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-sm);
 }
 
@@ -30,8 +32,11 @@ button,
 select {
   min-height: var(--control-height);
   padding: 0 var(--space-2);
+  font-weight: var(--weight-medium);
   cursor: pointer;
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
 }
 
 input,
@@ -39,9 +44,15 @@ textarea {
   padding: 0 var(--space-1);
 }
 
+/* Inputs keep the strong border: it is the 3:1 boundary of a text field. */
+input,
+textarea {
+  border-color: var(--color-border-strong);
+}
+
 button:hover:not(:disabled),
 select:hover:not(:disabled) {
-  background: var(--color-accent-soft);
+  background: var(--color-panel-hover);
 }
 
 button:disabled,
@@ -64,7 +75,8 @@ textarea:disabled {
   outline-offset: var(--focus-offset);
 }
 
-[aria-pressed="true"] {
+[aria-pressed="true"],
+[aria-pressed="true"]:hover:not(:disabled) {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
 }

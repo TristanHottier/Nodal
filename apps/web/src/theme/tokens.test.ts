@@ -70,6 +70,11 @@ describe("tokens.css", () => {
             expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
         expect(ratio("--color-on-accent", "--color-accent")).toBeGreaterThanOrEqual(4.5);
         expect(ratio("--color-text", "--color-accent-soft")).toBeGreaterThanOrEqual(4.5);
+        for (const fg of ["--color-text", "--color-text-muted"])
+          expect(ratio(fg, "--color-panel-hover"), `${fg} on panel-hover`).toBeGreaterThanOrEqual(
+            4.5,
+          );
+        expect(ratio("--color-tooltip-text", "--color-tooltip-bg")).toBeGreaterThanOrEqual(4.5);
       });
 
       it("gives UI components and focus rings at least 3:1", () => {

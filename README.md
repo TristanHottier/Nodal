@@ -100,6 +100,17 @@ Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on
 | [`docs/reference/`](docs/reference/) | MNA stamps, device equations, numerical methods |
 | [`AGENTS.md`](AGENTS.md) | Rules for anyone (human or AI) writing code here |
 
+## Credits
+
+| Asset | Source | Licence |
+| --- | --- | --- |
+| Inter (UI font, self-hosted Latin subset) | [Inter](https://rsms.me/inter/) via `@fontsource-variable/inter` | SIL Open Font License 1.1 |
+| JetBrains Mono (numbers and code, self-hosted Latin subset) | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) via `@fontsource-variable/jetbrains-mono` | SIL Open Font License 1.1 |
+| Lucide (UI icons) | [`lucide-react`](https://lucide.dev/) | ISC |
+| Poppins (outlined in the wordmark) | [Poppins](https://fonts.google.com/specimen/Poppins) | SIL Open Font License 1.1 |
+
+Details and copyright lines are in [`docs/brand/CREDITS.md`](docs/brand/CREDITS.md).
+
 ## License
 
 [MIT](LICENSE) © 2026 Tristan Hottier
