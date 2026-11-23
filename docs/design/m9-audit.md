@@ -102,3 +102,65 @@ The carried items about the quiet info colour and the inactive outline tag are v
 | 4 | `layout` | M9-A4 and M9-A5 fit and scale |
 | 5 | `clarify` | M9-A6 DC units |
 | 6 | `polish` | M9-A7 and M9-A8 as time allows |
+
+## Re-audit (after fixes)
+
+Date: 2026-11-23. Target: the production build at HEAD `a788b76` (fixes `f9888a8`, cleanups `d7a98d5`, polish `aa52324`, review fix `3cf2578`, CI baselines), built with `NODAL_WASM_NO_OPT=1` and served by `vite preview`. Method as in the first audit: Playwright screenshots in both themes at 1024x768 and 1440x900 (`reaudit-*.png` in the shots folder), DOM measurements, the full e2e suite and `impeccable detect --json src`. Views: empty project, CE amplifier freshly loaded, AC with cursors at 0, 6 and 15 px and far apart, a stale AC result, DC sweep, transient with close cursors, Options open at 1024 px, the 1024 px crossing after a zoom, and the read-only view at 900 px with the prompt and a loaded example.
+
+Result: no must-fix remains. The audit is clean.
+
+### Before and after
+
+| ID | Was | Now | Status |
+|----|-----|-----|--------|
+| M9-A1 | Cursor tags collide when the cursors are close (must-fix) | `placeCursorTags` sends the tags to the outer sides on collision. At 6 px and 15 px, in both themes and sizes, A and B are both readable and neither tag covers the other's line. A and B at the same pixel can only be placed by the keyboard or the inputs, so the 0 px case rests on the unit test, which sweeps separations 0 to 40 px. | Fixed |
+| M9-A2 | Cursor table 4 px wider than its panel (must-fix) | `.nodal-waveform-side` has `scrollWidth` 320 and `clientWidth` 320 on AC, transient and DC, in both themes at 1024 and 1440 px. No `th` or `td` lies past the panel edge. Layout specs now cover the table. | Fixed |
+| M9-A3 | Cursor colour within 0.06 of two traces under colour-vision simulation (should-fix) | Cursor retuned and the distance added to `tokens.test.ts` (threshold 0.06, minimum now about 0.087). The suite passes. | Fixed |
+| M9-A4 | Schematic text about 9.1 px after the refit at 1024 px (should-fix) | Unchanged. The label box measures 11 px high at 1024 px with results open and 15 px at 1440 px, a ratio of 0.73, so the scale effect is still there. | Decision, see below |
+| M9-A5 | CE amplifier opens cropped at 1024 px (should-fix) | The fresh CE amplifier at 1024x768 sits fully inside the canvas in both themes, with 0 items outside. | Fixed |
+| M9-A6 | DC readout has no unit on Δx (should-fix) | Δx shows "1.317 V" and the cursor inputs show V. The 1/Δx row is omitted for DC, because a reciprocal volt has no meaning for a sweep. | Fixed, with a decision on the row |
+| M9-A7 | Weak disclosure affordance (nice-to-have) | Chevron raised to the `--chevron-size` token with a 2 px stroke, and the label darkens on hover. | Fixed |
+| M9-A8 | Stale canvas text at about 2.2:1 and 2.8:1 (nice-to-have) | Unchanged. The stale 1440 dark capture shows the intended dimmed state, and the status bar reads `· stale`. | By design |
+| M9-A9 | DC default probe is V(in) (nice-to-have) | Unchanged. The DC capture still opens on V(in). | Not fixed |
+| M9-A10 | Main chunk 536.52 kB (nice-to-have) | 537.73 kB (163.53 kB gzip), up 1.21 kB with the fixes. The Vite size warning still shows. | Not fixed |
+
+### Decisions
+
+- **M9-A4.** A minimum fit zoom would crop the circuit, and showing the whole circuit on load is what the fit exists for (M9-C4, M9-A5). The labels stay at the scale the fit gives. A student who needs larger labels can zoom, and the fit is spent after the first run, so a zoom is kept. Re-audit evidence: after a zoom, resizing the window through 1000 and 1100 px left the view transform unchanged, so crossing 1024 px never refits.
+- **M9-A6, 1/Δx for DC.** Period and frequency read from Δx make sense for time and frequency axes. For a swept source the reciprocal has no use and no honest unit, so the row is not shown.
+
+### Other checks in this pass
+
+- Crossing 1024 px after zooming: the transform stayed identical at 1280, 1000 and 1100 px wide.
+- Read-only view at 900 px: no horizontal overflow and no schematic item outside the canvas, light and dark, with the prompt and with a loaded example.
+- Page overflow: 0 px at 1024 and 1440 in every captured view.
+- Stale state: plots and value cells dim, the status bar shows `· stale`, and the cursor table stays inside its panel.
+
+### Axe and e2e
+
+`NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web e2e`: 110 passed, 0 failed, in Chromium and Firefox. This includes `a11y.spec.ts` (axe with wcag2a, wcag2aa, wcag21a, wcag21aa and wcag22aa, in both themes, including the stale states) and the new layout specs for the cursor table and fit-on-load. Axe reports no violation. The first audit ran 96 tests, and the 14 added tests are the layout, cursor-tag and fit specs. The `visual` project was not run locally, since its baselines are CI renders.
+
+### Detector
+
+`impeccable detect --json src` exits 2 (warnings only) with 10 findings, 0 errors, the same set as the first audit: 3 `overused-font` (Inter in `fonts.css` twice and `fonts.test.ts`), 6 `design-system-font` (`fonts.css` four times, `fonts.test.ts` twice) and 1 `design-system-color` (`Plot.test.ts`).
+
+### Audit health (after fixes)
+
+| # | Dimension | Before | After | Key finding |
+|---|-----------|--------|-------|-------------|
+| 1 | Accessibility | 3 | 3 | Axe is clean. Stale canvas text stays at low contrast by design (M9-A8). |
+| 2 | Performance | 3 | 3 | Chunk grew 1.21 kB to 537.73 kB. Nothing slower observed (M9-A10). |
+| 3 | Theming | 4 | 4 | Cursor colour now covered by the colour-vision test. |
+| 4 | Responsive | 2 | 3 | Table fits, CE amplifier loads whole. Labels still small after a 1024 px refit (M9-A4). |
+| 5 | Implementation integrity | 3 | 3 | The three untested behaviours now have tests. Detector warnings remain, all explained, and DESIGN.md drift is open until Task 8. |
+| **Total** | | **15/20** | **16/20** | Good. No must-fix. |
+
+### Findings not fixed
+
+- **M9-A4.** Decision above. Label size after a 1024 px refit is the price of a whole circuit on load.
+- **M9-A8.** By design. Stale plots dim to `--opacity-stale`, which is the M8 rule. Canvas text is outside axe.
+- **M9-A9.** The default DC probe is a product choice outside the scope of the redesign.
+- **M9-A10.** Informational. The M7 budget and the CI Lighthouse limits cover load and runtime.
+- **Inter detector warnings (3 `overused-font`).** Kept by owner ruling, recorded in ADR 0013.
+- **DESIGN.md detector warnings (6 `design-system-font`, 1 `design-system-color`).** They compare the code to a `DESIGN.md` that still describes ADR 0012. Task 8 regenerates it, and they should clear then.
+- **New in this pass.** Nothing new found.
