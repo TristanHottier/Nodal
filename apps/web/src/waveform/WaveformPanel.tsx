@@ -8,7 +8,7 @@ import {
   useSimulation,
   useSimulationStore,
 } from "../simulation/SimulationContext";
-import { xLabelOf, yLabelOf } from "./axisLabels";
+import { signalUnit, xLabelOf, yLabelOf } from "./axisLabels";
 import { CursorTable } from "./CursorTable";
 import type { CursorId } from "./cursorInput";
 import type { CursorState } from "./cursors";
@@ -33,6 +33,9 @@ const CURSOR_HINT =
 const MAG_INCRS = [1, 2, 5, 10, 20, 50, 100];
 const PHASE_INCRS = [5, 15, 30, 45, 90, 180];
 
+// Coupling: the tick `space` and `incrs` below are tuned for these plot heights. The Bode pair gets half
+// of PLOTS_HEIGHT each (about 120 px), so its y tick spacing is small; changing the panel height means
+// retuning ySpace here and the x/y `space` options in Plot.tsx.
 const NO_CURSORS: CursorState = { a: null, b: null };
 
 function OpTable({ result, stale }: { result: SimResult; stale: boolean }) {
@@ -42,11 +45,12 @@ function OpTable({ result, stale }: { result: SimResult; stale: boolean }) {
         <tbody>
           {listSignals(result).map((s) => {
             const sig = result.signals.find((x) => signalKey(x) === s.key);
-            const unit = s.key.startsWith("I(") ? "A" : "V";
             return (
               <tr key={s.key}>
                 <th scope="row">{s.key}</th>
-                <td className="nodal-num">{sig ? formatQuantity(sig.re[0] ?? NaN, unit) : ""}</td>
+                <td className="nodal-num">
+                  {sig ? formatQuantity(sig.re[0] ?? NaN, signalUnit(s.key)) : ""}
+                </td>
               </tr>
             );
           })}

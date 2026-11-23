@@ -26,4 +26,17 @@ describe("Field", () => {
     const input = screen.getByRole("textbox", { name: "Resistance" });
     expect(input.parentElement).toBe(screen.getByText("Ω").parentElement);
   });
+
+  it("numeric_or_unit_marks_the_field_for_mono_figures", () => {
+    const plain = render(<Field label="Name" value="x" onCommit={() => undefined} />);
+    expect(plain.container.querySelector(".nodal-field")?.getAttribute("data-numeric")).toBeNull();
+    plain.unmount();
+    const numeric = render(<Field label="Gain" value="1" numeric onCommit={() => undefined} />);
+    expect(numeric.container.querySelector(".nodal-field")?.getAttribute("data-numeric")).toBe(
+      "true",
+    );
+    numeric.unmount();
+    const unit = render(<Field label="R" value="1k" unit="Ω" onCommit={() => undefined} />);
+    expect(unit.container.querySelector(".nodal-field")?.getAttribute("data-numeric")).toBe("true");
+  });
 });

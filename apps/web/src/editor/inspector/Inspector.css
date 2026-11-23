@@ -16,15 +16,10 @@
   letter-spacing: var(--tracking-title);
 }
 
-/* Section label: small, tracked capitals. */
+/* Section label: margins only; the capitals style is in theme/base.css. */
 .nodal-inspector h3,
 .nodal-models > summary {
   margin: var(--space-2) 0 var(--space-1);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
 }
 
 /* Label on its own row; input and unit below. The unit sits in a fixed column so units line up. */

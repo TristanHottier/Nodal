@@ -30,11 +30,6 @@
 
 .nodal-panel-title {
   margin: var(--space-1) var(--space-1) 0;
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-label);
-  color: var(--color-text-muted);
-  text-transform: uppercase;
 }
 
 .nodal-palette button {

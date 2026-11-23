@@ -1,6 +1,8 @@
 /*
  * Nodal design tokens (ADR 0013, modern engineering tool). The only file with raw colors and sizes.
- * Colors are OKLCH. Warm paper neutrals in light (hue 95), graphite neutrals in dark (hue 235), one indigo accent for action, selection and focus, a quiet slate for information, cyan-first instrument traces and one magenta measurement color for the cursors, rounded controls, quiet borders.
+ * Colors are OKLCH: warm paper neutrals in light (hue 95), graphite neutrals in dark (hue 235).
+ * One indigo accent (action, selection, focus), a quiet slate for information, cyan-first traces,
+ * one violet-magenta (hue 310 to 320) for the cursors.
  * Light: near-white canvas, panels a step darker. Dark: near-black canvas, panels a step lighter.
  * Contrast and color-vision checks: src/theme/tokens.test.ts.
  * The dark block appears twice: under [data-theme="dark"] and for the "system" choice.
@@ -69,7 +71,6 @@
      Numbers are mono at 12 or 13; labels and prose are Inter. Hierarchy comes from size, case and weight. */
   --tracking-label: 0.06em;
   --tracking-title: -0.01em;
-  --tracking-body: 0;
   --leading-tight: 1.25;
   --leading-normal: 1.45;
   --weight-regular: 400;
@@ -104,13 +105,13 @@
   --border-width: 1px;
   --focus-width: 2px;
   --focus-offset: 2px;
-  --elevation-1: 0 0 0 1px oklch(0.9 0.006 270);
+  --elevation-1: 0 0 0 1px oklch(0.9 0.006 95);
   --elevation-2:
-    0 1px 2px oklch(0.2 0.02 270 / 0.06), 0 4px 12px oklch(0.2 0.02 270 / 0.1),
-    0 0 0 1px oklch(0.88 0.006 270);
+    0 1px 2px oklch(0.2 0.012 95 / 0.06), 0 4px 12px oklch(0.2 0.012 95 / 0.1),
+    0 0 0 1px oklch(0.88 0.006 95);
   --elevation-3:
-    0 2px 6px oklch(0.2 0.02 270 / 0.08), 0 12px 32px oklch(0.2 0.02 270 / 0.16),
-    0 0 0 1px oklch(0.88 0.006 270);
+    0 2px 6px oklch(0.2 0.012 95 / 0.08), 0 12px 32px oklch(0.2 0.012 95 / 0.16),
+    0 0 0 1px oklch(0.88 0.006 95);
 
   /* Motion */
   --duration-fast: 100ms;
@@ -177,11 +178,11 @@
   --color-trace-4: oklch(0.62 0.14 305);
   --color-trace-5: oklch(0.62 0.2 25);
   --color-trace-6: oklch(0.82 0.14 90);
-  --elevation-1: 0 0 0 1px oklch(0.3 0.012 270);
+  --elevation-1: 0 0 0 1px oklch(0.3 0.012 235);
   --elevation-2:
-    0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 270);
+    0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 235);
   --elevation-3:
-    0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 270);
+    0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 235);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -221,10 +222,10 @@
     --color-trace-4: oklch(0.62 0.14 305);
     --color-trace-5: oklch(0.62 0.2 25);
     --color-trace-6: oklch(0.82 0.14 90);
-    --elevation-1: 0 0 0 1px oklch(0.3 0.012 270);
+    --elevation-1: 0 0 0 1px oklch(0.3 0.012 235);
     --elevation-2:
-      0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 270);
+      0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 235);
     --elevation-3:
-      0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 270);
+      0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 235);
   }
 }

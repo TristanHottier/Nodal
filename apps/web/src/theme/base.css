@@ -14,7 +14,6 @@ body {
   line-height: var(--leading-normal);
   color: var(--color-text);
   background: var(--color-canvas);
-  letter-spacing: var(--tracking-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -89,8 +88,14 @@ p {
   text-wrap: pretty;
 }
 
-/* Section label: the smallest, tracked, upper-case step; sits above a group of fields or rows. */
-.nodal-label-caps {
+/* Section label: the smallest, tracked, upper-case step. One block for every label of this role
+   (palette titles, inspector sections, disclosure rows, cursor column heads); the component CSS
+   adds only margins. */
+.nodal-label-caps,
+.nodal-panel-title,
+.nodal-inspector h3,
+.nodal-models > summary,
+.nodal-cursors th {
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-label);
