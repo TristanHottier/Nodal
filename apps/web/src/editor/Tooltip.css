@@ -48,3 +48,9 @@
   border-radius: var(--radius-sm);
   opacity: 0.8;
 }
+
+.nodal-tip[data-dismissed] .nodal-tip-pos {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}

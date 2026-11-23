@@ -70,4 +70,26 @@ describe("ToolRail", () => {
     fireEvent.keyDown(probe as HTMLElement, { key: "Home" });
     expect(document.activeElement).toBe(select);
   });
+
+  it("esc_hides_the_tooltip_until_focus_returns", () => {
+    const store = setup();
+    const wire = screen.getByRole("button", { name: "Wire" });
+    const wrap = wire.closest(".nodal-tip");
+    act(() => {
+      wire.focus();
+    });
+    expect(wrap?.hasAttribute("data-dismissed")).toBe(false);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(wrap?.hasAttribute("data-dismissed")).toBe(true);
+    expect(document.activeElement).toBe(wire);
+    expect(store.getState().tool.kind).toBe("select");
+    act(() => {
+      wire.blur();
+    });
+    expect(wrap?.hasAttribute("data-dismissed")).toBe(false);
+    act(() => {
+      wire.focus();
+    });
+    expect(wrap?.hasAttribute("data-dismissed")).toBe(false);
+  });
 });
