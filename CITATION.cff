@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: If you use Nodal, please cite it as below.
+title: Nodal
+type: software
+authors:
+  - family-names: Hottier
+    given-names: Tristan
+version: 1.1.0
+date-released: 2026-11-23
+license: MIT
+repository-code: https://github.com/TristanHottier/Nodal
+url: https://tristanhottier.github.io/Nodal/
+abstract: Schematic editor and analog circuit simulator in the browser. The simulation engine is written in Rust and runs as WebAssembly.
