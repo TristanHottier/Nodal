@@ -22,6 +22,7 @@ import { JunctionDots } from "./JunctionDots";
 import { LabelView } from "./LabelView";
 import { OpOverlay } from "./OpOverlay";
 import { PartView } from "./PartView";
+import { useFitOnLoad } from "./useFitOnLoad";
 import { useRefitOnResults } from "./useRefitOnResults";
 import { SelectionBox } from "./SelectionBox";
 import { type CanvasToolHandlers, useCanvasPointer } from "./useCanvasPointer";
@@ -87,6 +88,7 @@ export function Canvas({
   const errorIds = useErrorIds();
   const probeSlots = useProbeSlots();
   const { preview, handlers } = useCanvasPointer(svgRef, tool, readOnly);
+  useFitOnLoad(svgRef);
   useRefitOnResults(svgRef, !readOnly);
 
   const shown = useMemo(

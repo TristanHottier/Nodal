@@ -10,6 +10,13 @@ const sweepUnit = (source: string): string => {
   return c === "V" ? "V" : c === "I" ? "A" : c === "R" ? "Ω" : "";
 };
 
+/** The unit of the x axis: seconds, hertz, or the swept source's unit (empty when it has none). */
+export function xUnitOf(result: SimResult): string {
+  if (result.type === "tran") return "s";
+  if (result.type === "ac") return "Hz";
+  return result.type === "dc" ? sweepUnit(result.source ?? "") : "";
+}
+
 /** The x axis title: time, frequency, or the swept source with its unit. */
 export function xLabelOf(result: SimResult): string {
   if (result.type === "tran") return "Time (s)";

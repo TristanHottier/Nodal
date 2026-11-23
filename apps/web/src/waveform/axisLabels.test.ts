@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SimResult } from "../engine/results";
-import { signalUnit, xLabelOf, yLabelOf } from "./axisLabels";
+import { signalUnit, xLabelOf, xUnitOf, yLabelOf } from "./axisLabels";
 
 const result = (type: SimResult["type"], source?: string): SimResult => ({
   type,
@@ -40,5 +40,17 @@ describe("yLabelOf", () => {
   it("signal_unit_follows_the_key", () => {
     expect(signalUnit("I(R1)")).toBe("A");
     expect(signalUnit("V(out)")).toBe("V");
+  });
+});
+
+describe("xUnitOf", () => {
+  it("gives the x axis unit per analysis, the swept source's unit for a DC sweep", () => {
+    expect(xUnitOf(result("tran"))).toBe("s");
+    expect(xUnitOf(result("ac"))).toBe("Hz");
+    expect(xUnitOf(result("dc", "V1"))).toBe("V");
+    expect(xUnitOf(result("dc", "Iload"))).toBe("A");
+    expect(xUnitOf(result("dc", "R2"))).toBe("Ω");
+    expect(xUnitOf(result("dc", "X1"))).toBe("");
+    expect(xUnitOf(result("op"))).toBe("");
   });
 });

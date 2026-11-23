@@ -165,6 +165,21 @@ describe("WaveformPanel", () => {
     expect(document.querySelector("[data-col='dx']")?.textContent).toBe("1.5 s");
   });
 
+  it("dc_readout_shows_the_sweep_unit_and_no_reciprocal", () => {
+    setup({ ...tran, type: "dc", source: "V1" }, ["V(a)"]);
+    for (const [label, value] of [
+      ["Cursor A", "500m"],
+      ["Cursor B", "2"],
+    ] as const) {
+      const input = screen.getByLabelText(label);
+      fireEvent.change(input, { target: { value } });
+      fireEvent.blur(input);
+    }
+    expect(document.querySelector("[data-col='dx']")?.textContent).toBe("1.5 V");
+    // A reciprocal volt has no meaning for a sweep, so the row is left out.
+    expect(document.querySelector("[data-col='inverse-dx']")).toBeNull();
+  });
+
   it("placements_set_the_active_cursor", () => {
     const store = setup(tran, ["V(a)"]);
     const click = screen.getByRole("button", { name: "plot click" });

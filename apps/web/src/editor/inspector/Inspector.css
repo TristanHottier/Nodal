@@ -241,8 +241,8 @@
 .nodal-models > summary::before {
   content: "";
   flex: none;
-  width: var(--space-1);
-  height: var(--space-1);
+  width: var(--chevron-size);
+  height: var(--chevron-size);
   margin-right: var(--space-1);
   border-right: var(--stroke-chevron) solid currentColor;
   border-bottom: var(--stroke-chevron) solid currentColor;

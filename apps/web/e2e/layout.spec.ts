@@ -37,6 +37,23 @@ test("opening the waveform panel at 1024x768 refits the whole circuit into the c
   await expect.poll(() => outside(page)).toEqual([]);
 });
 
+test("an example opened at 1024x768 is fitted into the canvas before any run", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  await expect.poll(() => outside(page)).toEqual([]);
+  // The fit is spent: a zoom afterwards stays.
+  const world = page.locator('[data-testid="schematic-canvas"] > g').last();
+  const box = await page.getByTestId("schematic-canvas").boundingBox();
+  if (!box) throw new Error("no canvas");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -300);
+  const before = await world.getAttribute("transform");
+  await page.waitForTimeout(600);
+  expect(await world.getAttribute("transform")).toBe(before);
+});
+
 test("running an operating point first, then AC, still refits the circuit at 1024x768", async ({
   page,
 }) => {
@@ -166,3 +183,66 @@ test("a DC plot with voltage and current probes fits its y title in the plot hei
   });
   expect(width).toBeLessThan(box.height - 44);
 });
+
+for (const [width, height] of [
+  [1024, 768],
+  [1280, 800],
+] as const) {
+  for (const [name, example, pick] of [
+    ["AC", "ce-amplifier", "AC"],
+    ["transient", "rc-lowpass", "Transient"],
+    ["DC sweep", "cmos-inverter", "DC sweep"],
+  ] as const) {
+    test(`the ${name} cursor table stays inside the side panel at ${String(width)} px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto("./");
+      await page.getByLabel("Open example").selectOption(example);
+      await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+      const choices = await page.getByLabel("Analysis to run").locator("option").allTextContents();
+      const index = choices.findIndex((t) => t.includes(pick));
+      expect(index, `${pick} analysis`).toBeGreaterThanOrEqual(0);
+      await page.getByLabel("Analysis to run").selectOption({ index });
+      await page.getByRole("button", { name: "Run", exact: true }).click();
+      await expect(page.locator(".nodal-runbar").getByRole("status")).toHaveText("Done");
+      await expect(page.getByTestId("waveform-panel")).toBeVisible();
+      // Add a current probe when there is one, so the table has a long row too.
+      const picker = page.locator(".nodal-signalpicker select");
+      const current = await picker
+        .locator("option")
+        .evaluateAll((os) =>
+          os.map((o) => (o as HTMLOptionElement).value).find((v) => v.startsWith("I(")),
+        );
+      if (current !== undefined) {
+        await picker.selectOption(current);
+        await page.getByRole("button", { name: "Add", exact: true }).click();
+      }
+      const over = page.locator(".u-over").first();
+      const box = await over.boundingBox();
+      if (!box) throw new Error("plot has no box");
+      const y = box.y + box.height / 2;
+      await page.mouse.click(box.x + box.width * 0.3, y);
+      await page.mouse.click(box.x + box.width * 0.7, y);
+      await expect(page.getByLabel("Cursor B", { exact: true })).not.toHaveValue("");
+      const side = page.locator(".nodal-waveform-side");
+      const sizes = await side.evaluate((el) => ({
+        scroll: el.scrollWidth,
+        client: el.clientWidth,
+      }));
+      expect(sizes.scroll, "side panel scrollWidth").toBeLessThanOrEqual(sizes.client);
+      // Every cell lies inside the panel, not only the table box.
+      const panel = await side.boundingBox();
+      if (!panel) throw new Error("no side panel");
+      const strays = await side.locator("th, td").evaluateAll(
+        (els, edge) =>
+          els.flatMap((el) => {
+            const r = el.getBoundingClientRect();
+            return r.right > edge + 0.5 ? [el.textContent.trim()] : [];
+          }),
+        panel.x + panel.width,
+      );
+      expect(strays, "cells past the panel edge").toEqual([]);
+    });
+  }
+}

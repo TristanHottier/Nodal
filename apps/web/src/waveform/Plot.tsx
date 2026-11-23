@@ -1,6 +1,9 @@
-// A uPlot chart: heavier traces, optional log x axis, two cursors drawn as dashed vertical lines.
-// Clicks place the cursors (see cursorForClick), a cursor can be dragged, and the focused plot
-// takes keys: A or B pick the active cursor, arrows, Home and End move it, Delete clears it.
+// A uPlot chart: heavier traces, optional log x axis, and two cursors: A is a dashed vertical line and
+// B a dotted one, each with a letter tag (placeCursorTags keeps the two tags apart). Clicks place the
+// cursors (see cursorForClick), a cursor can be dragged by its line, and the focused plot takes keys:
+// A or B pick the active cursor, arrows, Home and End move it, Delete clears it.
+// Tick spacing and plot height are coupled: the `space` options below and the height the panel passes
+// (WAVEFORM_PANEL_HEIGHT in WaveformPanel.tsx) decide how many ticks a short Bode plot gets.
 import { type KeyboardEvent, useEffect, useRef } from "react";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -8,6 +11,7 @@ import { formatValue } from "../netlist/value";
 import { readCssVar } from "../theme/cssVar";
 import { useResolvedTheme } from "../theme/theme";
 import { type CursorId, cursorForClick, cursorUnderPointer, stepCursor } from "./cursorInput";
+import { placeCursorTags } from "./cursorTags";
 
 export interface PlotSeries {
   label: string;
@@ -101,7 +105,6 @@ export function Plot(props: PlotProps) {
     const gridColor = readCssVar("--color-plot-grid");
     const textColor = readCssVar("--color-text-muted");
     const tagText = readCssVar("--color-plot-bg");
-    const tagBg = tagText;
     const tagSize = Number.parseFloat(readCssVar("--text-xs"));
     const monoFamily = readCssVar("--font-mono");
     const cursorColors = { a: readCssVar("--color-cursor-a"), b: readCssVar("--color-cursor-b") };
@@ -172,13 +175,25 @@ export function Plot(props: PlotProps) {
             ctx.save();
             ctx.lineWidth = CURSOR_WIDTH * k;
             const active = latest.current.activeCursor;
-            for (const [which, x] of [
-              ["a", a],
-              ["b", b],
-            ] as const) {
-              if (x === null || (logX && x <= 0)) continue;
+            ctx.font = `bold ${String(tagSize * k)}px ${monoFamily}`;
+            const w = ctx.measureText("A").width + TAG_PAD * 2 * k;
+            const h = TAG_HEIGHT * k;
+            const visible = (x: number | null) => {
+              if (x === null || (logX && x <= 0)) return null;
               const px = Math.round(u.valToPos(x, "x", true));
-              if (px < u.bbox.left || px > u.bbox.left + u.bbox.width) continue;
+              return px < u.bbox.left || px > u.bbox.left + u.bbox.width ? null : px;
+            };
+            const lines = { a: visible(a), b: visible(b) };
+            const tags = placeCursorTags(
+              lines,
+              w,
+              { left: u.bbox.left, width: u.bbox.width },
+              2 * k,
+            );
+            for (const which of ["a", "b"] as const) {
+              const px = lines[which];
+              const tag = tags[which];
+              if (px === null || tag === null) continue;
               const color = cursorColors[which];
               // A is dashed and B is dotted, so the two stay apart without color.
               ctx.setLineDash(which === "a" ? [6 * k, 4 * k] : [2 * k, 3 * k]);
@@ -188,15 +203,11 @@ export function Plot(props: PlotProps) {
               ctx.lineTo(px, u.bbox.top + u.bbox.height);
               ctx.stroke();
               ctx.setLineDash([]);
-              // The tag sits beside the line, on the side with room, and never over the line.
+              // The tag sits beside the line, never over it, and never over the other tag.
               const label = which.toUpperCase();
-              ctx.font = `bold ${String(tagSize * k)}px ${monoFamily}`;
-              const w = ctx.measureText(label).width + TAG_PAD * 2 * k;
-              const h = TAG_HEIGHT * k;
-              const room = u.bbox.left + u.bbox.width - px;
-              const left = room >= w + 2 * k ? px + 2 * k : px - 2 * k - w;
-              const top = u.bbox.top + k;
-              ctx.fillStyle = which === active ? color : tagBg;
+              const left = tag.left;
+              const top = u.bbox.top + k + tag.row * (h + k);
+              ctx.fillStyle = which === active ? color : tagText;
               ctx.fillRect(left, top, w, h);
               // The inactive tag is an outline, the active one a solid fill: visible without color.
               if (which !== active) ctx.strokeRect(left + 0.5 * k, top + 0.5 * k, w - k, h - k);

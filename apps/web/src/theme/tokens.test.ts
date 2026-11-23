@@ -106,6 +106,22 @@ describe("tokens.css", () => {
             }
         }
       });
+
+      it("keeps the cursor colors apart from every trace, normal and under each deficiency", () => {
+        const traces = TRACES.map(rgb);
+        for (const cursor of CURSORS) {
+          const c = rgb(cursor);
+          for (const view of ["normal", "protan", "deutan", "tritan"] as const) {
+            const seen = (v: Rgb) => (view === "normal" ? v : simulateCvd(v, view));
+            traces.forEach((t, i) => {
+              expect(
+                oklabDistance(seen(c), seen(t)),
+                `${view}: ${cursor} vs trace ${String(i + 1)}`,
+              ).toBeGreaterThanOrEqual(0.06);
+            });
+          }
+        }
+      });
     });
   }
 });

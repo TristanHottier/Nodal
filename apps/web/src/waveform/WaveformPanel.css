@@ -80,11 +80,16 @@
   border-collapse: collapse;
 }
 
+/* The readout must fit the side panel at any width: names break anywhere, and a value wraps between
+   number and unit instead of widening the table. Padding on one side only keeps the columns narrow. */
 .nodal-cursors th,
 .nodal-cursors td {
-  padding: 0 var(--space-1);
+  padding: 0 0 0 var(--space-1);
   text-align: right;
-  white-space: nowrap;
+}
+
+.nodal-cursors td:first-child {
+  overflow-wrap: anywhere;
 }
 
 /* Column heads are section labels; signal names and readouts are mono. */

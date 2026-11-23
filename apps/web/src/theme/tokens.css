@@ -43,8 +43,8 @@
   /* Waveform viewer; traces are jumper-wire colors */
   --color-plot-bg: oklch(0.99 0.004 95);
   --color-plot-grid: oklch(0.93 0.0032 95);
-  --color-cursor-a: oklch(0.55 0.22 350);
-  --color-cursor-b: oklch(0.55 0.22 350);
+  --color-cursor-a: oklch(0.53 0.24 320);
+  --color-cursor-b: oklch(0.53 0.24 320);
   --color-trace-1: oklch(0.56 0.09 220);
   --color-trace-2: oklch(0.4 0.08 55);
   --color-trace-3: oklch(0.5 0.11 150);
@@ -136,7 +136,8 @@
   --stroke-selected: 3;
   --stroke-halo: 7;
   --stroke-outline: 1.5;
-  --stroke-chevron: 1.5px;
+  --stroke-chevron: 2px;
+  --chevron-size: 7px;
   --dash-outline: 4 3;
 }
 
@@ -168,8 +169,8 @@
   --color-brand-2: oklch(0.86 0.17 165);
   --color-plot-bg: oklch(0.17 0.008 235);
   --color-plot-grid: oklch(0.27 0.008 235);
-  --color-cursor-a: oklch(0.74 0.18 350);
-  --color-cursor-b: oklch(0.74 0.18 350);
+  --color-cursor-a: oklch(0.71 0.2 310);
+  --color-cursor-b: oklch(0.71 0.2 310);
   --color-trace-1: oklch(0.74 0.12 210);
   --color-trace-2: oklch(0.72 0.17 55);
   --color-trace-3: oklch(0.87 0.2 150);
@@ -212,8 +213,8 @@
     --color-brand-2: oklch(0.86 0.17 165);
     --color-plot-bg: oklch(0.17 0.008 235);
     --color-plot-grid: oklch(0.27 0.008 235);
-    --color-cursor-a: oklch(0.74 0.18 350);
-    --color-cursor-b: oklch(0.74 0.18 350);
+    --color-cursor-a: oklch(0.71 0.2 310);
+    --color-cursor-b: oklch(0.71 0.2 310);
     --color-trace-1: oklch(0.74 0.12 210);
     --color-trace-2: oklch(0.72 0.17 55);
     --color-trace-3: oklch(0.87 0.2 150);

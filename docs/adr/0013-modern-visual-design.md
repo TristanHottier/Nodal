@@ -78,7 +78,7 @@ Colour (M9-C2, and the cursor and trace part of M9-C3):
 - The accent (indigo, hue 275) keeps its job: the primary action, selection, focus and pressed toggles. It no longer marks the active cursor field.
 - A quiet slate `--color-info` marks informational states, such as the run-bar status icon and the operating-point tag.
 - The instrument traces follow the plot. Trace 1 moved from blue, which shared the accent family, to the brand cyan, and the probed wire, legend chip and cursor-row swatch follow it. Traces are drawn at 1.75 px.
-- One magenta measurement colour (hue 350) serves both cursors. Cursor A is a dashed line and B is dotted. A tag beside the line shows the letter, filled with the letter knocked out for the active cursor and outlined for the other. Colour alone never separates A from B.
+- One violet-magenta measurement colour (hue 320 in light, 310 in dark; retuned in M9 so it stays apart from every trace under colour-vision simulation) serves both cursors. Cursor A is a dashed line and B is dotted. A tag beside the line shows the letter, filled with the letter knocked out for the active cursor and outlined for the other. Colour alone never separates A from B.
 - The neutrals were retinted. Light is a warm paper and dark is a graphite so the canvas reads as a drawing surface. Contrast, the six-trace separation and the 60/30/10 role order are still checked by the token tests and `colorShare.spec.ts`.
 
 Layout (M9-C4, C5, C7, C8, C9):

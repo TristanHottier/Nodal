@@ -1,6 +1,7 @@
 // Cursor inputs (A, B) and the readout: one row per probe with A, B and the difference.
 import { Field } from "../editor/inspector/Field";
 import type { SimResult } from "../engine/results";
+import { signalUnit, xUnitOf } from "./axisLabels";
 import { formatQuantity, formatValue, parseValue } from "../netlist/value";
 import type { CursorId } from "./cursorInput";
 import { type CursorState, cursorReadout } from "./cursors";
@@ -9,15 +10,11 @@ import type { TraceView } from "./traces";
 
 export type { CursorState };
 
-const X_UNIT = { tran: "s", ac: "Hz", dc: "", op: "" } as const;
-
 function fmt(v: number | null, unit: string): string {
   if (v === null) return "–";
   if (unit === "dB" || unit === "°") return `${String(Number(v.toPrecision(4)))} ${unit}`;
   return formatQuantity(v, unit).trim();
 }
-
-const unitOf = (key: string) => (key.startsWith("I(") ? "A" : "V");
 
 function CursorInput({
   which,
@@ -76,12 +73,12 @@ export function CursorTable({
         { view: "mag", suffix: " dB", unit: () => "dB" },
         { view: "phase", suffix: " °", unit: () => "°" },
       ]
-    : [{ view: "linear", suffix: "", unit: unitOf }];
+    : [{ view: "linear", suffix: "", unit: signalUnit }];
   const readouts = views.map((v) => ({
     ...v,
     readout: cursorReadout(result, probes, v.view, cursors.a, cursors.b),
   }));
-  const xUnit = X_UNIT[result.type];
+  const xUnit = xUnitOf(result);
   const first = readouts[0]?.readout;
   return (
     <div className="nodal-cursors">
@@ -153,12 +150,15 @@ export function CursorTable({
               {fmt(first?.dx ?? null, xUnit)}
             </td>
           </tr>
-          <tr>
-            <td>1/Δx</td>
-            <td colSpan={3} data-col="inverse-dx" className="nodal-num">
-              {fmt(first?.inverseDx ?? null, xUnit === "s" ? "Hz" : xUnit === "Hz" ? "s" : "")}
-            </td>
-          </tr>
+          {/* The reciprocal reads as a period or a frequency; for a DC sweep it has no meaning. */}
+          {result.type === "dc" ? null : (
+            <tr>
+              <td>1/Δx</td>
+              <td colSpan={3} data-col="inverse-dx" className="nodal-num">
+                {fmt(first?.inverseDx ?? null, xUnit === "s" ? "Hz" : xUnit === "Hz" ? "s" : "")}
+              </td>
+            </tr>
+          )}
         </tfoot>
       </table>
     </div>
