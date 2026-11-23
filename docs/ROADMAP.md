@@ -123,6 +123,27 @@ The whole web app gets one coherent visual design, replacing the per-milestone s
 
 **Evidence:** CI run [45119585775](https://github.com/TristanHottier/Nodal/actions/runs/45119585775) at `dea33b6`: Rust, web (unit, e2e on Chromium and Firefox including axe in both themes and the stale state, keyboard reach and keyboard selection, responsive, visual regression, colour shares), deploy and Lighthouse all green. Lighthouse medians: mobile LCP 807 ms, CLS 0.000, TBT 71 ms; desktop LCP 259 ms, CLS 0.000, TBT 0 ms. Editor pan/zoom with 500 parts: 60 fps, 0 of 240 slow frames. Impeccable re-audit: no must-fix (`docs/design/audit.md`). Plan: `docs/plans/2026-11-22-m8-design-overhaul.md`.
 
+## v1.1 milestones
+
+### M9 — Cursor B fix and modern redesign (v1.1.0) · not started
+
+Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable way to place waveform cursor B, and the app looks dated. This milestone fixes both and ships as `v1.1.0`. The draft plan is [`docs/plans/2026-11-22-m9-v1.1-draft.md`](plans/2026-11-22-m9-v1.1-draft.md). A planning session turns it into a task-by-task plan, and Tristan approves that plan before any code.
+
+- **Cursor B:** a user who has never read the guide can place, move and remove both cursors with the mouse or the keyboard. Shift+click keeps working.
+- **Modern look, in two passes:**
+  - First, a conventional modern web-app baseline (a "generic SaaS" look).
+  - Then impeccable runs to turn the baseline into a distinctive design: `critique`, then `bolder`/`quieter`/`colorize` as the critique calls for, then `audit` and `polish`.
+  - The new direction goes in an ADR that supersedes the visual parts of ADR 0012.
+- **Kept from M8:** design tokens as the only raw values, light and dark themes, the brand mark, the 1024 px read-only rule, the accessibility, contrast, visual-regression, colour-share and Lighthouse checks.
+- **Layout and controls may change** (icons, toolbars, panel structure, control styling). Features and the circuit and file formats don't change. Copy changes only where the new layout needs them.
+
+**Exit:**
+- Cursor B: an e2e test places A and B by the new interaction, moves each, and reads the delta row. A keyboard path does the same. The user guide documents both.
+- Design: a new ADR records the direction, and `apps/web/DESIGN.md` is regenerated from it. Impeccable `critique` and `audit` reports for M9 are committed under `docs/design/`, and `audit` reports no must-fix.
+- All M8 exit checks still pass in both themes: axe WCAG 2.2 AA (editor, inspector, analysis editor, waveform, stale state), keyboard reach and canvas keyboard selection, the token contrast tests, the colour-share role order, the Lighthouse limits on the Pages URL, and the M7 performance budget.
+- Visual baselines are re-rendered on CI, and the user-guide screenshots are regenerated.
+- Version `1.1.0` in every pinned place, and the `v1.1.0` tag.
+
 ## After v1 (not designed yet)
 
 Listed to bound v1 scope. None of these is a commitment. Order is not fixed.
