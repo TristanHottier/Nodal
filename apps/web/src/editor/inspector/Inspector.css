@@ -19,29 +19,28 @@
   margin-top: var(--space-2);
 }
 
+/* Label on its own row; input and unit below. The unit sits in a fixed column so units line up. */
 .nodal-field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--unit-width);
+  align-items: center;
   gap: var(--space-1);
   margin-bottom: var(--space-2);
+}
+
+.nodal-field > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.nodal-field[data-unit="true"] > input,
+.nodal-field[data-unit="true"] > textarea {
+  grid-column: 1;
 }
 
 .nodal-field-label {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-}
-
-.nodal-field-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.nodal-field input,
-.nodal-field textarea,
-.nodal-field select {
-  flex: 1;
-  min-width: 0;
 }
 
 .nodal-field input,
@@ -53,7 +52,12 @@
   border-color: var(--color-error);
 }
 
-.nodal-unit,
+.nodal-unit {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .nodal-hint {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
@@ -89,5 +93,17 @@
   min-height: var(--control-height);
   min-width: var(--control-height);
   margin-bottom: var(--space-1);
+  cursor: pointer;
+}
+
+.nodal-models {
+  margin-top: var(--space-2);
+}
+
+.nodal-models > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
 }

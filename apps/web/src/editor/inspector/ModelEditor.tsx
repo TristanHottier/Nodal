@@ -100,7 +100,6 @@ export function ModelEditor() {
   };
   return (
     <section>
-      <h3>Models</h3>
       <SelectField
         label="Add model"
         value=""

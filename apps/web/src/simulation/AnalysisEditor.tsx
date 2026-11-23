@@ -30,7 +30,7 @@ export function AnalysisEditor() {
 
   return (
     <section>
-      <h3>Analyses</h3>
+      <h2>Analyses</h2>
       {analyses.map((a, i) => (
         // Analyses have no ids; the index is their identity.
         <fieldset key={i} className="nodal-model" aria-label={`Analysis ${String(i + 1)}`}>

@@ -6,23 +6,13 @@ import { EXAMPLES } from "../examples";
 import { downloadProject, readProjectFile } from "../storage/files";
 import { useEditorStore } from "./EditorContext";
 import { keepFocus } from "./keepFocus";
-
-const CONFIRM = "Replace the current project? Export it first if you want to keep it.";
+import { loadExample, mayReplaceProject } from "./projectActions";
 
 export function ProjectBar() {
   const store = useEditorStore();
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const mayReplace = (): boolean => {
-    const { doc, project } = store.getState();
-    const empty =
-      doc.parts.length === 0 &&
-      doc.wires.length === 0 &&
-      doc.labels.length === 0 &&
-      project.models.length === 0 &&
-      project.name === "Untitled";
-    return empty || window.confirm(CONFIRM);
-  };
+  const mayReplace = () => mayReplaceProject(store);
 
   const onFile = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
@@ -47,10 +37,7 @@ export function ProjectBar() {
         onChange={(e) => {
           const example = EXAMPLES.find((x) => x.id === e.currentTarget.value);
           e.currentTarget.value = "";
-          if (!example || !mayReplace()) return;
-          const s = store.getState();
-          s.loadProject(example.load());
-          s.setStatusMessage(null);
+          if (example) loadExample(store, example);
         }}
       >
         <option value="" disabled>

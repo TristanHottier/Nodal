@@ -96,4 +96,23 @@ describe("RunBar", () => {
     fireEvent.click(btn("Run"));
     expect(runner.calls[0]?.index).toBe(1);
   });
+
+  it("has_a_visible_analysis_label", () => {
+    setup();
+    const label = screen.getByText("Analysis").closest("label");
+    expect(label).not.toBeNull();
+    expect(label?.contains(screen.getByRole("combobox", { name: "Analysis to run" }))).toBe(true);
+  });
+
+  it("shows_progress_only_while_running", async () => {
+    const { runner } = setup();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+    fireEvent.click(btn("Run"));
+    expect(screen.getByRole("progressbar")).toBeTruthy();
+    await act(async () => {
+      runner.calls[0]?.resolve(opResult());
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole("progressbar")).toBeNull();
+  });
 });

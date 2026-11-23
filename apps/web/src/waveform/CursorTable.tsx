@@ -50,7 +50,6 @@ function CursorInput({
           return undefined;
         }}
       />
-      {active && <span className="nodal-cursor-active">Active</span>}
     </div>
   );
 }
@@ -106,9 +105,14 @@ export function CursorTable({
           }}
         />
       </div>
-      <button type="button" className="nodal-cursor-clear" onClick={onClear}>
-        Clear cursors
-      </button>
+      <div className="nodal-cursor-actions">
+        <span className="nodal-cursor-active" data-testid="active-cursor">
+          {`Active: ${activeCursor === "a" ? "A" : "B"}`}
+        </span>
+        <button type="button" className="nodal-cursor-clear" onClick={onClear}>
+          Clear cursors
+        </button>
+      </div>
       <table aria-label="Cursor readout">
         <thead>
           <tr>

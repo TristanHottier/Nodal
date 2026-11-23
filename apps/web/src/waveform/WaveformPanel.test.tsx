@@ -206,7 +206,8 @@ describe("WaveformPanel", () => {
     expect(screen.getByText(/Click to place cursor A, click again for B/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "plot click" }));
     const marked = document.querySelector(".nodal-cursor-input[data-active='true']");
-    expect(marked?.textContent).toContain("Active");
+    expect(marked?.textContent).toContain("Cursor A");
+    expect(screen.getByTestId("active-cursor").textContent).toBe("Active: A");
   });
 
   it("cursors_reset_when_result_type_changes", () => {

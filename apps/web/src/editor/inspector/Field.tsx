@@ -91,12 +91,14 @@ export function Field({
   };
 
   return (
-    <div className="nodal-field">
+    <div className="nodal-field" data-unit={unit ? "true" : undefined}>
       <span className="nodal-field-label">{label}</span>
-      <div className="nodal-field-row">
-        {multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />}
-        {unit ? <span className="nodal-unit">{unit}</span> : null}
-      </div>
+      {multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />}
+      {unit ? (
+        <span className="nodal-unit" style={{ gridColumn: 2 }}>
+          {unit}
+        </span>
+      ) : null}
       {hintText ? (
         <small id={hintId} className="nodal-hint">
           {hintText}

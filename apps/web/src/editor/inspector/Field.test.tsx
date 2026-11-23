@@ -1,0 +1,29 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { Field } from "./Field";
+
+afterEach(cleanup);
+
+describe("Field", () => {
+  it("unit_cells_share_one_grid_column", () => {
+    render(
+      <>
+        <Field label="Resistance" value="1k" unit="Ω" onCommit={() => undefined} />
+        <Field label="Cursor A" value="" unit="Hz" onCommit={() => undefined} />
+      </>,
+    );
+    const units = [screen.getByText("Ω"), screen.getByText("Hz")];
+    const columns = units.map((u) => u.style.gridColumn);
+    expect(columns[0]).not.toBe("");
+    expect(columns[0]).toBe(columns[1]);
+    for (const u of units) {
+      expect(u.parentElement?.className).toContain("nodal-field");
+    }
+  });
+
+  it("input_and_unit_are_siblings_of_the_label_in_one_grid", () => {
+    render(<Field label="Resistance" value="1k" unit="Ω" onCommit={() => undefined} />);
+    const input = screen.getByRole("textbox", { name: "Resistance" });
+    expect(input.parentElement).toBe(screen.getByText("Ω").parentElement);
+  });
+});

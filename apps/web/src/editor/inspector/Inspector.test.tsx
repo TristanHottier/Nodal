@@ -370,4 +370,26 @@ describe("Inspector", () => {
     expect(screen.getByText("1: a = 2.5 V")).toBeTruthy();
     expect(screen.getByText("2: 0 = 0 V")).toBeTruthy();
   });
+
+  it("nothing_selected_lists_analyses_first_and_models_collapsed", () => {
+    setup([], []);
+    const inspector = screen.getByRole("complementary", { name: "Inspector" });
+    const headings = within(inspector).getAllByRole("heading");
+    expect(headings[0]?.textContent).toBe("Analyses");
+    const summary = within(inspector).getByText("Models");
+    expect(summary.tagName).toBe("SUMMARY");
+    const details = summary.closest("details");
+    expect(details?.open).toBe(false);
+    const order = [
+      within(inspector).getByRole("heading", { name: "Analyses" }),
+      input("Project name"),
+      summary,
+    ];
+    for (let i = 1; i < order.length; i++) {
+      const a = order[i - 1];
+      const b = order[i];
+      if (!a || !b) throw new Error("missing");
+      expect(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
 });

@@ -12,6 +12,7 @@ import {
 } from "../simulation/SimulationContext";
 import { createSimulationStore, type SimulationState } from "../simulation/store";
 import { Canvas } from "./canvas/Canvas";
+import { EmptyState } from "./canvas/EmptyState";
 import { EditorProvider, useEditor, useEditorStore } from "./EditorContext";
 import { Inspector } from "./inspector/Inspector";
 import { NarrowNotice } from "./NarrowNotice";
@@ -78,6 +79,7 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
       <main className="nodal-canvas-pane">
         <h1 className="nodal-visually-hidden">Nodal</h1>
         <Canvas readOnly />
+        <EmptyState readOnly />
       </main>
       <ReadOnlyRun />
       <StatusBar status={status} />
@@ -108,6 +110,7 @@ function EditorBody({ status }: { status?: ReactNode }) {
       <main className="nodal-canvas-pane">
         <h1 className="nodal-visually-hidden">Nodal</h1>
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
+        <EmptyState />
       </main>
       <Inspector />
       <section className="nodal-results" aria-label="Results">

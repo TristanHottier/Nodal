@@ -13,6 +13,27 @@
   font-size: var(--text-md);
 }
 
+.nodal-runbar button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nodal-runbar-analysis {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-runbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 .nodal-runbar progress {
   width: var(--progress-width);
 }

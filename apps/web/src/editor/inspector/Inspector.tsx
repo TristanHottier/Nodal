@@ -31,11 +31,13 @@ export function Inspector() {
         </>
       ) : (
         <>
-          <h2 className="nodal-visually-hidden">Project</h2>
           {selection.length > 1 ? <p>{String(selection.length)} items selected</p> : null}
-          <ProjectFields />
-          <ModelEditor />
           <AnalysisEditor />
+          <ProjectFields />
+          <details className="nodal-models">
+            <summary>Models</summary>
+            <ModelEditor />
+          </details>
         </>
       )}
       <Diagnostics />

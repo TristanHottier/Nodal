@@ -122,10 +122,15 @@ test("Tab reaches every button, select, input and the canvas, each with a visibl
   const expected = await page.evaluate(() => {
     const els = Array.from(
       document.querySelectorAll<HTMLElement>(
-        'button, select, input, [data-testid="schematic-canvas"]',
+        'button, select, input, summary, [data-testid="schematic-canvas"]',
       ),
     ).filter(
-      (el) => !el.matches(":disabled") && el.tabIndex >= 0 && el.getClientRects().length > 0,
+      (el) =>
+        !el.matches(":disabled") &&
+        el.tabIndex >= 0 &&
+        el.getClientRects().length > 0 &&
+        // Controls inside a closed <details> (the Models panel) are not tabbable.
+        !el.parentElement?.closest("details:not([open])"),
     );
     els.forEach((el) => {
       el.dataset.a11yExpect = "";

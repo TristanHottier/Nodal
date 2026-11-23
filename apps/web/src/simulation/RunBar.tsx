@@ -1,4 +1,5 @@
 // Top of the results panel: analysis choice, Run and Cancel, progress and status.
+import { CircleAlert, CircleCheck, Clock, LoaderCircle, Play, Square } from "lucide-react";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
 import { analysisLabel } from "./AnalysisFields";
 import { useResultsStale, useSimulation, useSimulationStore } from "./SimulationContext";
@@ -24,23 +25,36 @@ export function RunBar() {
           : stale
             ? "Out of date, run again"
             : "";
+  const StatusIcon =
+    status.kind === "failed"
+      ? CircleAlert
+      : status.kind === "running"
+        ? LoaderCircle
+        : status.kind === "done" && !stale
+          ? CircleCheck
+          : stale
+            ? Clock
+            : null;
 
   return (
     <div className="nodal-runbar">
-      <select
-        aria-label="Analysis to run"
-        value={index}
-        disabled={running}
-        onChange={(e) => {
-          sim.getState().setAnalysisIndex(Number(e.target.value));
-        }}
-      >
-        {analyses.map((a, i) => (
-          <option key={i} value={i}>
-            {`${String(i + 1)}. ${analysisLabel(a)}`}
-          </option>
-        ))}
-      </select>
+      <label className="nodal-runbar-analysis">
+        <span>Analysis</span>
+        <select
+          aria-label="Analysis to run"
+          value={index}
+          disabled={running}
+          onChange={(e) => {
+            sim.getState().setAnalysisIndex(Number(e.target.value));
+          }}
+        >
+          {analyses.map((a, i) => (
+            <option key={i} value={i}>
+              {`${String(i + 1)}. ${analysisLabel(a)}`}
+            </option>
+          ))}
+        </select>
+      </label>
       {running ? (
         <button
           type="button"
@@ -48,6 +62,7 @@ export function RunBar() {
             sim.getState().cancel();
           }}
         >
+          <Square aria-hidden="true" className="nodal-icon" />
           Cancel
         </button>
       ) : (
@@ -58,16 +73,24 @@ export function RunBar() {
             void sim.getState().run(editor.getState().getProject(), index);
           }}
         >
+          <Play aria-hidden="true" className="nodal-icon" />
           Run
         </button>
       )}
-      <progress
-        aria-label="Simulation progress"
-        max={1}
-        className="nodal-num"
-        value={status.kind === "running" ? status.progress : status.kind === "done" ? 1 : 0}
-      />
-      <span role="status" className="nodal-num" data-failed={status.kind === "failed"}>
+      {running ? (
+        <progress
+          aria-label="Simulation progress"
+          max={1}
+          className="nodal-num"
+          value={status.progress}
+        />
+      ) : null}
+      <span
+        role="status"
+        className="nodal-runbar-status nodal-num"
+        data-failed={status.kind === "failed"}
+      >
+        {StatusIcon ? <StatusIcon aria-hidden="true" className="nodal-icon" /> : null}
         {text}
       </span>
     </div>
