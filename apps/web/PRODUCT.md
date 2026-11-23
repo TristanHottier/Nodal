@@ -40,7 +40,8 @@ Serious SPICE in a tab. The engine is a Rust port of ngspice algorithms compiled
 - Name: Nodal.
 - IEC-style symbols drawn from scratch.
 - Voice: plain, factual English. No claim of accuracy, performance or features that a test does not show.
-- No other brand constraints; the visual direction is open.
+- Tone: a modern engineering tool, dense and quiet, in the spirit of current developer tools (ADR 0013). The audience is unchanged.
+- No other brand constraints.
 
 ## Evidence on Hand
 

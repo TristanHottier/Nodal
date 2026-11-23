@@ -1,6 +1,6 @@
 # 0012. Visual design: Solderless
 
-- Status: Accepted
+- Status: Accepted. Visual sections (palette, type, space and shape, motion) superseded by [0013](0013-modern-visual-design.md); brand mark, token architecture, 60/30/10 role order, traces and signature move carry over.
 - Date: 2026-11-22
 
 ## Context
