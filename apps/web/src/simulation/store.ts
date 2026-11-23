@@ -21,6 +21,8 @@ export type RunStatus =
 export interface SimulationState {
   status: RunStatus;
   result: SimResult | null;
+  /** Wall-clock time of the run that produced `result`, in ms (the engine does not report one). */
+  elapsedMs: number | null;
   /** The schematic and simulation settings the current result came from. */
   ranDoc: Schematic | null;
   ranSimulation: Project["simulation"] | null;
@@ -69,6 +71,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
     return {
       status: { kind: "idle" },
       result: null,
+      elapsedMs: null,
       ranDoc: null,
       ranSimulation: null,
       ranIr: null,
@@ -109,6 +112,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
         const ranSimulation = project.simulation;
         const index = Math.max(0, Math.min(requested, ir.analyses.length - 1));
         set({ status: { kind: "running", index, progress: 0 } });
+        const started = performance.now();
         try {
           const raw = await runner.run(JSON.stringify(ir), index, {
             onProgress: (progress) => {
@@ -120,6 +124,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
           set({
             status: { kind: "done" },
             result,
+            elapsedMs: performance.now() - started,
             ranDoc,
             ranSimulation,
             ranIr: ir,
@@ -149,6 +154,7 @@ export function createSimulationStore(opts: { runner: EngineRunner }): StoreApi<
         set({
           status: { kind: "idle" },
           result: null,
+          elapsedMs: null,
           ranDoc: null,
           ranSimulation: null,
           ranIr: null,

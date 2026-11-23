@@ -46,6 +46,7 @@ describe("simulation store", () => {
     await done;
     expect(get().status).toEqual({ kind: "done" });
     expect(get().result).toBe(result);
+    expect(get().elapsedMs).toBeGreaterThanOrEqual(0);
     expect(get().ranDoc).toBe(p.schematic);
     expect(get().ranSimulation).toBe(p.simulation);
     expect(get().map).not.toBeNull();

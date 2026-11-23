@@ -1,0 +1,9 @@
+.nodal-run-readout {
+  margin-inline-start: var(--space-3);
+  color: var(--color-text);
+}
+
+/* Stale: the readout falls back to the muted status color. */
+.nodal-run-readout[data-stale="true"] {
+  color: var(--color-text-muted);
+}

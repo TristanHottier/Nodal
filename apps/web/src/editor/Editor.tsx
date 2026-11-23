@@ -25,6 +25,7 @@ import { useProbeTool } from "./tools/probe";
 import { useWireTool } from "./tools/wire";
 import { EDITOR_MIN_WIDTH, useMinWidth } from "./useMinWidth";
 import { useShortcuts } from "./useShortcuts";
+import { RunReadout } from "../simulation/RunReadout";
 import "./Editor.css";
 
 function StatusBar({ status }: { status?: ReactNode }) {
@@ -32,6 +33,7 @@ function StatusBar({ status }: { status?: ReactNode }) {
   return (
     <footer className="nodal-status">
       {status}
+      <RunReadout />
       {message === null ? null : (
         <>
           {" "}
