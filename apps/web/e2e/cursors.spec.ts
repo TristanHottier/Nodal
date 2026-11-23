@@ -11,6 +11,8 @@ const num = (text: string): number => {
 
 const fieldA = (page: Page) => page.getByLabel("Cursor A", { exact: true });
 const fieldB = (page: Page) => page.getByLabel("Cursor B", { exact: true });
+const activeBadge = (page: Page) => page.getByTestId("active-cursor");
+const delta = (page: Page) => page.locator('tr[data-signal^="V("] td[data-col="delta"]').first();
 const read = async (field: Locator) => num(await field.inputValue());
 
 async function openTransient(page: Page) {
@@ -144,15 +146,104 @@ test("cursors_survive_theme_and_width_changes", async ({ page }) => {
   await page.mouse.click(p70.x, p70.y);
   const a = await fieldA(page).inputValue();
   const b = await fieldB(page).inputValue();
+  // The last click placed B; the keyboard picks A, and A stays active through both changes.
+  await page.getByLabel("Signal").focus();
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("a");
+  await expect(activeBadge(page)).toHaveText("Active: A");
 
   await page.getByLabel("Theme").selectOption("dark");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await expect(fieldA(page)).toHaveValue(a);
   await expect(fieldB(page)).toHaveValue(b);
+  await expect(activeBadge(page)).toHaveText("Active: A");
 
   await page.setViewportSize({ width: 900, height: 700 });
   await expect(page.getByRole("status").filter({ hasText: "at least 1024 px wide" })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(fieldA(page)).toHaveValue(a);
   await expect(fieldB(page)).toHaveValue(b);
+  await expect(activeBadge(page)).toHaveText("Active: A");
+});
+
+test("cursors_are_placed_and_stepped_by_keyboard_alone", async ({ page }) => {
+  await openTransient(page);
+  await expect(fieldA(page)).toHaveValue("");
+  await expect(fieldB(page)).toHaveValue("");
+
+  await page.getByLabel("Signal").focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.getByTestId("plot")).toBeFocused();
+
+  // An arrow with no cursor placed starts A at the middle sample.
+  await page.keyboard.press("ArrowRight");
+  await expect(fieldA(page)).not.toHaveValue("");
+  await expect(fieldB(page)).toHaveValue("");
+  await expect(delta(page)).toHaveText("–");
+
+  // The axis samples from the first one, read one key press at a time.
+  await page.keyboard.press("b");
+  await page.keyboard.press("Home");
+  const samples = [await fieldB(page).inputValue()];
+  for (let i = 0; i < 10; i += 1) {
+    await page.keyboard.press("ArrowRight");
+    samples.push(await fieldB(page).inputValue());
+  }
+  expect(new Set(samples).size).toBe(samples.length);
+  await expect(activeBadge(page)).toHaveText("Active: B");
+  // The delta row has a value now that both cursors are set.
+  await expect(delta(page)).not.toHaveText("–");
+
+  // Three presses from the first sample land exactly on the third sample.
+  await page.keyboard.press("Home");
+  for (let i = 0; i < 3; i += 1) await page.keyboard.press("ArrowRight");
+  await expect(fieldB(page)).toHaveValue(samples[3] as string);
+
+  // Shift moves ten samples at once.
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(fieldB(page)).toHaveValue(samples[10] as string);
+  await page.keyboard.press("Shift+ArrowLeft");
+  await expect(fieldB(page)).toHaveValue(samples[0] as string);
+});
+
+test("plot_focus_ring_is_visible_and_not_dimmed_when_stale", async ({ page }) => {
+  await openTransient(page);
+  const plot = page.getByTestId("plot");
+  // Make the results stale: select a part and rotate it.
+  await page.locator('[data-testid^="part-"]').first().click();
+  await page.keyboard.press("r");
+  await expect(page.getByTestId("waveform-panel")).toHaveAttribute("data-stale", "true");
+
+  await page.getByLabel("Signal").focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(plot).toBeFocused();
+
+  const ring = await plot.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const host = el.getBoundingClientRect();
+    const clip = (el.closest(".nodal-waveform-plots") as HTMLElement).getBoundingClientRect();
+    const chart = getComputedStyle(el.querySelector(".uplot") as Element);
+    return {
+      style: cs.outlineStyle,
+      width: Number.parseFloat(cs.outlineWidth),
+      offset: Number.parseFloat(cs.outlineOffset),
+      hostOpacity: cs.opacity,
+      chartOpacity: Number(chart.opacity),
+      // How far the ring's outer edge lies outside the host box (negative: inside it).
+      reach: Number.parseFloat(cs.outlineOffset) + Number.parseFloat(cs.outlineWidth),
+      host: { left: host.left, right: host.right, top: host.top, bottom: host.bottom },
+      clip: { left: clip.left, right: clip.right, top: clip.top, bottom: clip.bottom },
+    };
+  });
+  expect(ring.style).toBe("solid");
+  expect(ring.width).toBeGreaterThan(0);
+  // The whole ring sits inside the box that clips it, on all four sides.
+  expect(ring.host.left - ring.reach).toBeGreaterThanOrEqual(ring.clip.left);
+  expect(ring.host.right + ring.reach).toBeLessThanOrEqual(ring.clip.right);
+  expect(ring.host.top - ring.reach).toBeGreaterThanOrEqual(ring.clip.top);
+  expect(ring.host.bottom + ring.reach).toBeLessThanOrEqual(ring.clip.bottom);
+  // The stale dimming applies to the chart, never to the host that carries the ring.
+  expect(ring.hostOpacity).toBe("1");
+  expect(ring.chartOpacity).toBeLessThan(1);
 });

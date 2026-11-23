@@ -138,9 +138,15 @@
   vertical-align: baseline;
 }
 
+/* The plot is a keyboard stop. The ring sits inside the host: the plots column clips overflow. */
+.nodal-plot:focus-visible {
+  outline-offset: calc(-1 * var(--focus-width));
+}
+
 /* Stale results: dim the plots and mark the values (muted and italic). Controls, labels and
-   chips stay at full contrast because the user can still operate them. */
-.nodal-waveform[data-stale="true"] .nodal-plot {
+   chips stay at full contrast because the user can still operate them. The chart is dimmed, not
+   the host, so the focus ring keeps its contrast. */
+.nodal-waveform[data-stale="true"] .nodal-plot > .uplot {
   opacity: var(--opacity-stale);
 }
 

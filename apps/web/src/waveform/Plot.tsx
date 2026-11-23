@@ -1,7 +1,7 @@
 // A uPlot chart: heavier traces, optional log x axis, and two cursors: A is a dashed vertical line and
 // B a dotted one, each with a letter tag (placeCursorTags keeps the two tags apart). Clicks place the
 // cursors (see cursorForClick), a cursor can be dragged by its line, and the focused plot takes keys:
-// A or B pick the active cursor, arrows, Home and End move it, Delete clears it.
+// A or B pick the active cursor, arrows (Shift: ten samples), Home and End move it, Delete clears it.
 // Tick spacing and plot height are coupled: the `space` options below and the height the panel passes
 // (WAVEFORM_PANEL_HEIGHT in WaveformPanel.tsx) decide how many ticks a short Bode plot gets.
 import { type KeyboardEvent, useEffect, useRef } from "react";
@@ -60,7 +60,9 @@ export const xRange = (min: number, max: number, logX: boolean): [number, number
   return logX && min > 0 ? [min / 1.1, max * 1.1] : [min - 1, max + 1];
 };
 
-/** Canvas geometry of the active cursor tag, in canvas pixels (not CSS). */
+// Canvas drawing sizes (tag size, line widths, dash patterns, axis sizes) are constants here, in
+// canvas pixels. This is the documented exception to the "sizes only in tokens.css" rule, because
+// uPlot draws on a canvas that CSS cannot reach. Colors and fonts still come from tokens.
 const TAG_PAD = 4;
 const TAG_HEIGHT = 16;
 const CURSOR_WIDTH = 1.5;
@@ -319,7 +321,9 @@ export function Plot(props: PlotProps) {
     const key = e.key.toLowerCase();
     if (key === "a" || key === "b") props.onActiveCursor(key);
     else if (key === "arrowleft" || key === "arrowright") {
-      move(stepCursor(x, cursors[active], key === "arrowright" ? 1 : -1));
+      // Shift moves ten samples at a time.
+      const n = e.shiftKey ? 10 : 1;
+      move(stepCursor(x, cursors[active], key === "arrowright" ? n : -n));
     } else if (key === "home" || key === "end") {
       // The axis is monotone, so its ends are the first and last samples.
       const ends = [x[0], x[x.length - 1]].filter((v): v is number => v !== undefined);
@@ -340,7 +344,7 @@ export function Plot(props: PlotProps) {
       data-testid="plot"
       role="group"
       tabIndex={0}
-      aria-label={`${props.yLabel} plot. Keys: A or B picks a cursor, left and right arrows move it, Home and End jump to the ends, Delete clears it.`}
+      aria-label={`${props.yLabel} plot. Keys: A or B picks a cursor, left and right arrows move it (Shift: ten samples), Home and End jump to the ends, Delete clears it.`}
       onKeyDown={onKeyDown}
       data-x-label={props.xLabel}
       data-y-label={props.yLabel}
