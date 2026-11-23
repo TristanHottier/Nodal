@@ -87,6 +87,29 @@
   white-space: nowrap;
 }
 
+/* Column heads are section labels; signal names and readouts are mono. */
+.nodal-cursors th {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.nodal-cursors td:first-child,
+.nodal-chip,
+.nodal-optable th {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  font-variant-ligatures: none;
+}
+
+.nodal-cursors td.nodal-num,
+.nodal-optable td.nodal-num {
+  font-size: var(--text-sm);
+}
+
 .nodal-cursors th:first-child,
 .nodal-cursors td:first-child {
   text-align: left;

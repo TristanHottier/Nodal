@@ -8,6 +8,7 @@ import {
   useSimulation,
   useSimulationStore,
 } from "../simulation/SimulationContext";
+import { xLabelOf, yLabelOf } from "./axisLabels";
 import { CursorTable } from "./CursorTable";
 import type { CursorId } from "./cursorInput";
 import type { CursorState } from "./cursors";
@@ -27,6 +28,10 @@ const PLOTS_HEIGHT = WAVEFORM_PANEL_HEIGHT - 4 - WAVEFORM_HINT_HEIGHT;
 
 const CURSOR_HINT =
   "Click to place cursor A, click again for B. Drag a cursor to move it. Keys: A/B, ←/→, Delete.";
+
+/** Tick steps for the Bode pair: 20 dB is the usual grid line; phase steps are fractions of 180. */
+const MAG_INCRS = [1, 2, 5, 10, 20, 50, 100];
+const PHASE_INCRS = [5, 15, 30, 45, 90, 180];
 
 const NO_CURSORS: CursorState = { a: null, b: null };
 
@@ -49,12 +54,6 @@ function OpTable({ result, stale }: { result: SimResult; stale: boolean }) {
       </table>
     </div>
   );
-}
-
-function xLabelOf(result: SimResult): string {
-  if (result.type === "tran") return "Time (s)";
-  if (result.type === "ac") return "Frequency (Hz)";
-  return result.source ?? "Sweep";
 }
 
 interface CursorHandlers {
@@ -87,12 +86,29 @@ function Plots({
   }, [result, probes, ac]);
   const common = { x: result.axis, logX: ac, xLabel: xLabelOf(result), cursors, ...handlers };
   if ("linear" in series)
-    return <Plot {...common} series={series.linear} yLabel="Value" height={PLOTS_HEIGHT} />;
+    return (
+      <Plot {...common} series={series.linear} yLabel={yLabelOf(probes)} height={PLOTS_HEIGHT} />
+    );
   const half = PLOTS_HEIGHT / 2;
   return (
     <>
-      <Plot {...common} xLabel="" series={series.mag} yLabel="Magnitude (dB)" height={half} />
-      <Plot {...common} series={series.phase} yLabel="Phase (°)" height={half} />
+      <Plot
+        {...common}
+        xLabel=""
+        series={series.mag}
+        yLabel="Magnitude (dB)"
+        yIncrs={MAG_INCRS}
+        ySpace={14}
+        height={half}
+      />
+      <Plot
+        {...common}
+        series={series.phase}
+        yLabel="Phase (°)"
+        yIncrs={PHASE_INCRS}
+        ySpace={22}
+        height={half}
+      />
     </>
   );
 }

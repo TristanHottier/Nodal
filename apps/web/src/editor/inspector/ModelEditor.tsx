@@ -66,6 +66,7 @@ function ModelCard({ model }: { model: ProjectModel }) {
         <Field
           key={`${model.name}:${model.type}:${spec.key}`}
           label={spec.key}
+          numeric
           value={model.params[spec.key] ?? ""}
           placeholder={placeholder(spec)}
           hint={describeRange(spec.range)}

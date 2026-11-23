@@ -109,7 +109,7 @@ test("dc_sweep_plot", async ({ page }) => {
   await expect(status(page)).toHaveText("Done");
   const panel = page.getByTestId("waveform-panel");
   await expect(panel.getByTestId("plot")).toHaveCount(1);
-  await expect(panel.getByTestId("plot")).toHaveAttribute("data-x-label", "V1");
+  await expect(panel.getByTestId("plot")).toHaveAttribute("data-x-label", "V1 (V)");
 });
 
 test("cancel_long_run", async ({ page }) => {

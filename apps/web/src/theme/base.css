@@ -14,6 +14,7 @@ body {
   line-height: var(--leading-normal);
   color: var(--color-text);
   background: var(--color-canvas);
+  letter-spacing: var(--tracking-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -81,6 +82,20 @@ h1,
 h2,
 h3 {
   line-height: var(--leading-tight);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Section label: the smallest, tracked, upper-case step; sits above a group of fields or rows. */
+.nodal-label-caps {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* Text for assistive technology only; takes no space and does not move the layout. */
@@ -96,9 +111,11 @@ h3 {
   border: 0;
 }
 
+/* Numbers, values and identifiers: mono, tabular figures, no ligatures. */
 .nodal-num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-variant-ligatures: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

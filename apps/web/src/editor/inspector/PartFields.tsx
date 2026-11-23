@@ -161,6 +161,7 @@ export function PartFields({ part }: { part: Part }) {
             label={f.label}
             value={value}
             multiline={f.kind === "pwl"}
+            numeric
             {...(f.unit ? { unit: f.unit } : {})}
             validate={(t) => numberError(part, f, t)}
             {...(f.kind === "number" && defaultOf(part, f) !== ""

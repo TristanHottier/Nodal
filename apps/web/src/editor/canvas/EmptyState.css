@@ -21,6 +21,7 @@
   margin: 0 0 var(--space-2);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-title);
 }
 
 .nodal-empty-list {

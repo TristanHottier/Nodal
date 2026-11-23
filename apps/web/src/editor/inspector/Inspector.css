@@ -8,15 +8,23 @@
   box-shadow: var(--elevation-1);
 }
 
-.nodal-inspector h2,
-.nodal-inspector h3 {
+/* Panel title: one step up from body, semibold, slightly tight. */
+.nodal-inspector h2 {
   margin: 0 0 var(--space-1);
-  font-size: var(--text-md);
+  font-size: var(--text-base);
   font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-title);
 }
 
-.nodal-inspector h3 {
-  margin-top: var(--space-2);
+/* Section label: small, tracked capitals. */
+.nodal-inspector h3,
+.nodal-models > summary {
+  margin: var(--space-2) 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 /* Label on its own row; input and unit below. The unit sits in a fixed column so units line up. */
@@ -38,9 +46,25 @@
   grid-column: 1;
 }
 
+/* A placeholder is prose, not a value: Inter, so "click the plot" fits the field. */
+.nodal-field[data-numeric="true"] > input::placeholder {
+  font-family: var(--font-ui);
+}
+
 .nodal-field-label {
   font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
   color: var(--color-text-muted);
+}
+
+/* Number fields: the value is mono with tabular figures, so 10u, 4.7k and 10Meg line up with the
+   readouts. */
+.nodal-field[data-numeric="true"] > input,
+.nodal-field[data-numeric="true"] > textarea {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  font-variant-ligatures: none;
 }
 
 .nodal-field input,
@@ -54,7 +78,7 @@
 
 .nodal-unit {
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 
@@ -104,6 +128,6 @@
   display: flex;
   align-items: center;
   min-height: var(--control-height);
-  font-weight: var(--weight-semibold);
+  margin: 0;
   cursor: pointer;
 }

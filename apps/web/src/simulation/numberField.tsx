@@ -36,6 +36,7 @@ export function NumberField({
   return (
     <Field
       label={label}
+      numeric
       value={value === undefined ? "" : formatValue(value)}
       {...(unit ? { unit } : {})}
       {...(hint ? { hint } : {})}

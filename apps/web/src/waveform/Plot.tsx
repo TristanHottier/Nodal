@@ -22,6 +22,10 @@ export interface PlotProps {
   logX: boolean;
   xLabel: string;
   yLabel: string;
+  /** Tick steps the y axis may use, in value units (dB plots use 10, 20, 50; phase uses 15, 30, 45). */
+  yIncrs?: number[];
+  /** Minimum distance between y ticks in CSS px. */
+  ySpace?: number;
   cursors: { a: number | null; b: number | null };
   /** The cursor the keyboard moves; drawn with a filled tag. */
   activeCursor: CursorId;
@@ -82,6 +86,8 @@ export function Plot(props: PlotProps) {
     props.logX,
     props.xLabel,
     props.yLabel,
+    props.yIncrs,
+    props.ySpace,
     props.height,
     theme,
   ]);
@@ -89,13 +95,15 @@ export function Plot(props: PlotProps) {
   useEffect(() => {
     const el = host.current;
     if (!el) return;
-    const { series, logX, xLabel, yLabel, height } = latest.current;
+    const { series, logX, xLabel, yLabel, yIncrs, ySpace, height } = latest.current;
     const gridColor = readCssVar("--color-plot-grid");
     const textColor = readCssVar("--color-text-muted");
     const tagText = readCssVar("--color-plot-bg");
     const cursorColors = { a: readCssVar("--color-cursor-a"), b: readCssVar("--color-cursor-b") };
     const grid = { stroke: gridColor, width: 1 };
+    // Tick numbers in mono, axis titles in the UI face one step up and heavier.
     const axisFont = `${readCssVar("--text-xs")} ${readCssVar("--font-mono")}`;
+    const titleFont = `${readCssVar("--weight-medium")} ${readCssVar("--text-sm")} ${readCssVar("--font-ui")}`;
     const opts: uPlot.Options = {
       width: Math.max(el.clientWidth, 100),
       height,
@@ -129,9 +137,11 @@ export function Plot(props: PlotProps) {
           ticks: { stroke: gridColor, width: 1 },
           values: engineering,
           font: axisFont,
-          labelFont: axisFont,
-          size: xLabel === "" ? 30 : 40,
-          labelSize: xLabel === "" ? 0 : 14,
+          labelFont: titleFont,
+          // A tick label at least every 80 px keeps decades and engineering ticks apart.
+          space: 80,
+          size: xLabel === "" ? 30 : 44,
+          labelSize: xLabel === "" ? 0 : 18,
         },
         {
           label: yLabel,
@@ -140,9 +150,12 @@ export function Plot(props: PlotProps) {
           ticks: { stroke: gridColor, width: 1 },
           values: engineering,
           font: axisFont,
-          labelFont: axisFont,
+          labelFont: titleFont,
+          // Short plots (the Bode pair is about 120 px tall) still get four or five ticks.
+          space: ySpace ?? 28,
+          ...(yIncrs ? { incrs: yIncrs } : {}),
           size: 56,
-          labelSize: 14,
+          labelSize: 18,
         },
       ],
       hooks: {

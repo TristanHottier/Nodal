@@ -64,6 +64,11 @@
   --text-base: 14px;
   --text-lg: 16px;
   --text-xl: 20px;
+  /* Roles: label (11 caps, tracked), meta (12), body (13), title (14 semibold), headline (16).
+     Numbers are mono at 12 or 13; labels and prose are Inter. Hierarchy comes from size, case and weight. */
+  --tracking-label: 0.06em;
+  --tracking-title: -0.01em;
+  --tracking-body: 0;
   --leading-tight: 1.25;
   --leading-normal: 1.45;
   --weight-regular: 400;

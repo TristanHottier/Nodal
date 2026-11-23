@@ -103,6 +103,12 @@ describe("WaveformPanel", () => {
     expect(plots[0]?.dataset.labels).toBe("V(a),V(b)");
     expect(plots[0]?.dataset.logx).toBe("false");
     expect(plots[0]?.dataset.xlabel).toBe("Time (s)");
+    expect(plots[0]?.dataset.ylabel).toBe("Voltage (V)");
+  });
+
+  it("tran_single_probe_names_signal_and_unit_on_y", () => {
+    setup(tran, ["V(b)"]);
+    expect(screen.getByTestId("plot").dataset.ylabel).toBe("V(b) (V)");
   });
 
   it("ac_shows_bode_pair_log_x", () => {
@@ -116,7 +122,7 @@ describe("WaveformPanel", () => {
 
   it("dc_labels_axis_with_source", () => {
     setup({ ...tran, type: "dc", source: "V1" }, ["V(a)"]);
-    expect(screen.getByTestId("plot").dataset.xlabel).toBe("V1");
+    expect(screen.getByTestId("plot").dataset.xlabel).toBe("V1 (V)");
   });
 
   it("op_shows_table", () => {

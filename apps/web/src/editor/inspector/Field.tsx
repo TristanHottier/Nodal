@@ -12,6 +12,8 @@ export interface FieldProps {
   /** Shown only while the field is empty. */
   emptyHint?: string;
   multiline?: boolean;
+  /** The text is a number (or has a unit): set in mono with tabular figures. */
+  numeric?: boolean;
   /** Error for the displayed text, computed live. */
   validate?: (text: string) => string | null;
   /**
@@ -30,6 +32,7 @@ export function Field({
   hint,
   emptyHint,
   multiline,
+  numeric,
   validate,
   onCommit,
 }: FieldProps) {
@@ -91,7 +94,11 @@ export function Field({
   };
 
   return (
-    <div className="nodal-field" data-unit={unit ? "true" : undefined}>
+    <div
+      className="nodal-field"
+      data-unit={unit ? "true" : undefined}
+      data-numeric={numeric || unit ? "true" : undefined}
+    >
       <span className="nodal-field-label">{label}</span>
       {multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />}
       {unit ? (
