@@ -50,12 +50,12 @@ The test passes with a mean of at least 58 fps and at most 5 % slow frames, to a
 
 ### Page load
 
-Lighthouse lab runs against https://tristanhottier.github.io/Nodal/ in the `lighthouse` CI job (median of 3 runs, CI run [45082190902](https://github.com/TristanHottier/Nodal/actions/runs/45082190902) at 876a528). The limits are LCP 2.5 s, CLS 0.1 and TBT 200 ms.
+Lighthouse lab runs against https://tristanhottier.github.io/Nodal/ in the `lighthouse` CI job (median of 3 runs, CI run [45119585775](https://github.com/TristanHottier/Nodal/actions/runs/45119585775) at dea33b6). The limits are LCP 2.5 s, CLS 0.1 and TBT 200 ms.
 
 | Profile | LCP | CLS | TBT |
 |---|---|---|---|
-| Mobile | 768 ms | 0.000 | 88 ms |
-| Desktop | 209 ms | 0.000 | 0 ms |
+| Mobile | 807 ms | 0.000 | 71 ms |
+| Desktop | 259 ms | 0.000 | 0 ms |
 
 In the same run, `e2e:perf` measured editor pan and zoom with 500 parts at 60 fps with 0 slow frames of 240 (limit 12). The CI job also runs axe-core (WCAG 2.2 AA) on the editor, inspector, analysis panel and waveform viewer in both themes; it finds no violations.
 

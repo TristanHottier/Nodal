@@ -143,7 +143,7 @@ A cool neutral field with a single saturated accent. All values are OKLCH custom
 - **Traces**: jumper-wire blue, brown, green, violet, red and ochre. Each pair stays at least 0.06 apart in OKLab under normal vision, protanopia, deuteranopia and tritanopia, and each reaches 3:1 on the plot background.
 
 ### Named Rules
-**The Ten Percent Rule.** Rail blue covers about a tenth of any screen: primary actions, selection, focus. If a screen needs more blue, something else is carrying the wrong signal.
+**The Accent Rule.** Rail blue marks only primary actions, selection and focus. On the CI screenshots it covers about 0.1 % of the screen, below the canvas (75–79 %) and the panels (21–25 %); the 60/30/10 rule is read as this role order. If a screen needs more blue, something else is carrying the wrong signal.
 
 **The Not-Color-Alone Rule.** A trace color never carries a signal alone. The legend chip and the cursor row name every trace.
 

@@ -22,7 +22,8 @@ Four directions were compared, and Tristan chose the first on 2026-11-22:
 
 Colors are OKLCH custom properties in `apps/web/src/theme/tokens.css`.
 
-- Light theme: a cool white-ABS board for the canvas and page (the 60 %), pale grey plastic panels for the palette column, inspector, run bar and status bar (the 30 %), and rail blue as the only accent (the 10 %: primary actions, selection, focus). Rail red is used only for errors.
+- Light theme: a cool white-ABS board for the canvas and page (the dominant role), pale grey plastic panels for the palette column, inspector, run bar and status bar (the secondary role), and rail blue as the only accent (primary actions, selection, focus). Rail red is used only for errors.
+- The 60/30/10 rule is applied as a role order, not as fixed shares (Tristan's ruling, 2026-11-22). Measured on the CI screenshots, the canvas covers 75–79 %, the panels 21–25 % and the accent about 0.1 %. The accent stays rare on purpose: in an editor the schematic carries the screen, and blue marks only what can be acted on or is selected.
 - Dark theme: a black "carbon" board with the same roles, the rails lifted for contrast. The theme follows `prefers-color-scheme`, with a manual choice stored per browser.
 - Semantic colors (error, warning, success, op tags) and the waveform palette are tokens but sit outside the 60/30/10 split.
 

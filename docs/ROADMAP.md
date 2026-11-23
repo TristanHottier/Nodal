@@ -98,13 +98,13 @@ Evidence: CI run https://github.com/TristanHottier/Nodal/actions/runs/4500161347
 | Editor pan/zoom with 500 parts | 60 fps |
 | WASM module, gzipped | < 1 MB |
 
-### M8 — Web design overhaul and v1 release · not started
+### M8 — Web design overhaul and v1 release · done
 
 The whole web app gets one coherent visual design, replacing the per-milestone styling from M0–M7. The app is an Operate surface in impeccable terms: an editor and a tool, where scanability and precision come before expression. Behaviour, copy and features stay as they are; this milestone changes only how the app looks and feels.
 
 - **Product and design context:** run impeccable `init` to write `PRODUCT.md`, then `shape` the visual direction. Record the chosen direction, palette and type scale in an ADR before any restyling.
 - **Design tokens:** one token file (CSS custom properties, colors in OKLCH) for color, type scale, spacing, radius, elevation and motion. Components use tokens only; no raw color or size values in component code. Impeccable `document` writes `DESIGN.md` from the result.
-- **60/30/10 color rule:** about 60% dominant neutral (canvas and page background), 30% secondary (panels, toolbars, inspector), 10% accent (primary actions, selection, focus). Each share is checked on screenshots of the editor and of the waveform viewer. Exempt from the rule, but still defined as tokens: semantic colors (error, warning, success) and the waveform trace palette.
+- **60/30/10 color rule:** dominant neutral (canvas and page background), then secondary (panels, toolbars, inspector), then accent (primary actions, selection, focus), checked on screenshots of the editor and of the waveform viewer. Applied as a role order rather than fixed shares (Tristan's ruling, 2026-11-22): measured shares are 75–79 % canvas, 21–25 % panels and about 0.1 % accent. Exempt from the rule, but still defined as tokens: semantic colors (error, warning, success) and the waveform trace palette.
 - **Light and dark themes** from the same tokens, following `prefers-color-scheme`, with a manual toggle stored per browser.
 - **Trace and schematic colors:** waveform traces, net highlights and operating-point tags stay distinguishable under the three common color-vision deficiencies (simulated protanopia, deuteranopia, tritanopia), and never rely on color alone: each trace also has a label in the legend and at the cursor readout.
 - **Typography:** a type scale with at most two families (UI and monospace for values and code); tabular numerals in every numeric readout.
@@ -120,6 +120,8 @@ The whole web app gets one coherent visual design, replacing the per-milestone s
 - No raw color or spacing values outside the token file (lint rule or test).
 - All existing unit and Playwright tests pass. Visual regression screenshots of the main views in both themes are committed.
 - `v1.0.0` tag.
+
+**Evidence:** CI run [45119585775](https://github.com/TristanHottier/Nodal/actions/runs/45119585775) at `dea33b6`: Rust, web (unit, e2e on Chromium and Firefox including axe in both themes and the stale state, keyboard reach and keyboard selection, responsive, visual regression, colour shares), deploy and Lighthouse all green. Lighthouse medians: mobile LCP 807 ms, CLS 0.000, TBT 71 ms; desktop LCP 259 ms, CLS 0.000, TBT 0 ms. Editor pan/zoom with 500 parts: 60 fps, 0 of 240 slow frames. Impeccable re-audit: no must-fix (`docs/design/audit.md`). Plan: `docs/plans/2026-11-22-m8-design-overhaul.md`.
 
 ## After v1 (not designed yet)
 
