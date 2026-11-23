@@ -154,4 +154,11 @@
 
 ## Rulings (filled in during execution)
 
+- Task 1: the rc-lowpass example's first analysis is AC, so the cursor e2e uses its transient (index 1). A `--waveform-hint-height` token keeps the hint inside the 280 px panel.
+- Task 3: Fontsource ships no per-subset CSS, so `theme/fonts.css` declares Latin and Greek faces. U+2192 (→) is in no Fontsource subset and uses the system fallback. A small Vite plugin injects the one Inter Latin preload.
+- Task 4: the parts panel is a single-column list with short labels (VCVS, VCCS, CCVS, CCCS, Op amp); a grid could not fit the full catalog names. Tooltips close on Esc (WCAG 1.4.13). The rail keeps a `nav` landmark because a11y.spec requires every control inside a region.
+- Task 5: the Tab-reach check in a11y.spec skips controls inside a closed `<details>`; the summary itself stays reachable. `editor/projectActions.ts` is shared by the top bar and the first-run prompt.
+- Task 6: the critique chose typeset, colorize, layout and delight; bolder and quieter were not needed. Inter stays despite the detector's flag (owner's decision). The layout pass refits the schematic once each time a new result resizes the canvas; a rerun of the same analysis keeps the user's zoom.
+- Subagents: implementers and reviewers on Sonnet, per-task reviews, Opus for the final review.
+
 ## Findings not fixed (filled in during Task 7)
