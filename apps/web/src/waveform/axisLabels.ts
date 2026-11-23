@@ -23,7 +23,7 @@ export function xLabelOf(result: SimResult): string {
   if (result.type === "ac") return "Frequency (Hz)";
   const source = result.source ?? "";
   if (source === "") return "Sweep";
-  const unit = sweepUnit(source);
+  const unit = xUnitOf(result);
   return unit === "" ? source : `${source} (${unit})`;
 }
 

@@ -29,13 +29,13 @@ const PLOTS_HEIGHT = WAVEFORM_PANEL_HEIGHT - 4 - WAVEFORM_HINT_HEIGHT;
 const CURSOR_HINT =
   "Click to place cursor A, click again for B. Drag a cursor to move it. Keys: A/B, ←/→, Delete.";
 
+// Coupling with the plot height: MAG_INCRS, PHASE_INCRS and the ySpace values passed to Plot below are
+// tuned for these heights. The Bode pair gets half of PLOTS_HEIGHT each (about 120 px), so its y tick
+// spacing is small; changing the panel height means retuning them and the `space` options in Plot.tsx.
 /** Tick steps for the Bode pair: 20 dB is the usual grid line; phase steps are fractions of 180. */
 const MAG_INCRS = [1, 2, 5, 10, 20, 50, 100];
 const PHASE_INCRS = [5, 15, 30, 45, 90, 180];
 
-// Coupling: the tick `space` and `incrs` below are tuned for these plot heights. The Bode pair gets half
-// of PLOTS_HEIGHT each (about 120 px), so its y tick spacing is small; changing the panel height means
-// retuning ySpace here and the x/y `space` options in Plot.tsx.
 const NO_CURSORS: CursorState = { a: null, b: null };
 
 function OpTable({ result, stale }: { result: SimResult; stale: boolean }) {

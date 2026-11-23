@@ -11,7 +11,7 @@ import { formatValue } from "../netlist/value";
 import { readCssVar } from "../theme/cssVar";
 import { useResolvedTheme } from "../theme/theme";
 import { type CursorId, cursorForClick, cursorUnderPointer, stepCursor } from "./cursorInput";
-import { placeCursorTags } from "./cursorTags";
+import { placeCursorTags, TAG_GAP } from "./cursorTags";
 
 export interface PlotSeries {
   label: string;
@@ -188,7 +188,7 @@ export function Plot(props: PlotProps) {
               lines,
               w,
               { left: u.bbox.left, width: u.bbox.width },
-              2 * k,
+              TAG_GAP * k,
             );
             for (const which of ["a", "b"] as const) {
               const px = lines[which];

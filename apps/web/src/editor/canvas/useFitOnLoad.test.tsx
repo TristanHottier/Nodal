@@ -98,6 +98,26 @@ describe("fit on load", () => {
     expect(store.getState().view).toEqual({ x: 10, y: 20, zoom: 1.5 });
   });
 
+  it("does_not_refit_when_the_canvas_remounts_after_the_user_zoomed", () => {
+    const store = createEditorStore({ doc: WIDE });
+    const tree = (
+      <EditorProvider store={store}>
+        <Canvas />
+      </EditorProvider>
+    );
+    const first = render(tree);
+    act(() => {
+      store.getState().setView({ x: 10, y: 20, zoom: 1.5 });
+    });
+    // Crossing the 1024 px breakpoint swaps the read-only and editor canvases: a new mount.
+    first.unmount();
+    render(tree);
+    act(() => {
+      fire();
+    });
+    expect(store.getState().view).toEqual({ x: 10, y: 20, zoom: 1.5 });
+  });
+
   it("waits_for_a_measured_canvas", () => {
     size = { width: 0, height: 0 };
     const store = mount(WIDE);

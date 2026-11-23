@@ -122,6 +122,8 @@
 .nodal-models > summary {
   display: flex;
   align-items: center;
+  list-style: none;
+  transition: color var(--duration-fast) var(--ease-standard);
   min-height: var(--control-height);
   margin: 0;
   cursor: pointer;
@@ -224,16 +226,8 @@
   color: var(--color-text-muted);
 }
 
-/* Disclosure marker for the collapsible sections (Options, Models): a chevron that turns when open. */
-.nodal-models > summary {
-  list-style: none;
-}
-
-/* The row is a control: its label and chevron darken on hover, like the other quiet controls. */
-.nodal-models > summary {
-  transition: color var(--duration-fast) var(--ease-standard);
-}
-
+/* Disclosure marker for the collapsible sections (Options, Models): a chevron that turns when open.
+   The row is a control: its label and chevron darken on hover, like the other quiet controls. */
 .nodal-models > summary:hover {
   color: var(--color-text);
 }

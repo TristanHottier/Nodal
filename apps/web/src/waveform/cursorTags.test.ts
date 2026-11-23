@@ -34,6 +34,23 @@ describe("placeCursorTags", () => {
     }
   });
 
+  it("keeps each tag clear of the other cursor's line when there is room", () => {
+    for (const x of [100, 200]) {
+      for (const sep of [0, 1, 3, 6, 10, 14, 15, 16, 17, 18, 19, 20, 25, 40]) {
+        for (const [a, b] of [
+          [x, x + sep],
+          [x + sep, x],
+        ] as const) {
+          const t = placeCursorTags({ a, b }, W, PLOT);
+          if (t.a === null || t.b === null) throw new Error("both tags expected");
+          const covers = (r: TagRect, line: number) => r.left <= line && line <= r.left + W;
+          expect(covers(t.a, b), `a=${String(a)} b=${String(b)}: A covers B's line`).toBe(false);
+          expect(covers(t.b, a), `a=${String(a)} b=${String(b)}: B covers A's line`).toBe(false);
+        }
+      }
+    }
+  });
+
   it("moves the tags to the outer sides when the tags would collide", () => {
     const t = placeCursorTags({ a: 100, b: 106 }, W, PLOT);
     // The left cursor's tag goes left and the right cursor's tag goes right.

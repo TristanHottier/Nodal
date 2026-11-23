@@ -11,7 +11,7 @@ export const TAG_GAP = 2;
 
 /**
  * Places the tags of cursors A and B. Each prefers the right of its line and falls to the left when the
- * right has no room. If the two tags would collide, they go to the outer sides (the left cursor's tag on
+ * right has no room. If the two tags would collide, or a tag would cover the other cursor's line, they go to the outer sides (the left cursor's tag on
  * its left, the right cursor's tag on its right; at equal positions A is right and B left). If that does
  * not fit either, B moves down one row. Both letters stay readable at any separation.
  *
@@ -37,9 +37,11 @@ export function placeCursorTags(
   if (a === null || b === null) {
     return { a: a === null ? null : rect(preferred(a)), b: b === null ? null : rect(preferred(b)) };
   }
+  const covers = (r: TagRect, line: number) => r.left <= line && line <= r.left + width;
   const pa = rect(preferred(a));
   const pb = rect(preferred(b));
-  if (!hit(pa, pb)) return { a: pa, b: pb };
+  // Collision means a tag over the other tag or over the other cursor's line.
+  if (!hit(pa, pb) && !covers(pa, b) && !covers(pb, a)) return { a: pa, b: pb };
   // Outer sides: the tags then sit away from each other whatever the separation.
   const aLeft = a < b;
   const oa = rect(aLeft ? onLeft(a) : onRight(a));

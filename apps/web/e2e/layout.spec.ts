@@ -48,10 +48,12 @@ test("an example opened at 1024x768 is fitted into the canvas before any run", a
   const box = await page.getByTestId("schematic-canvas").boundingBox();
   if (!box) throw new Error("no canvas");
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.wheel(0, -300);
   const before = await world.getAttribute("transform");
+  await page.mouse.wheel(0, -300);
+  await expect.poll(async () => await world.getAttribute("transform")).not.toBe(before);
+  const zoomed = await world.getAttribute("transform");
   await page.waitForTimeout(600);
-  expect(await world.getAttribute("transform")).toBe(before);
+  expect(await world.getAttribute("transform")).toBe(zoomed);
 });
 
 test("running an operating point first, then AC, still refits the circuit at 1024x768", async ({

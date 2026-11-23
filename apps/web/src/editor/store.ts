@@ -63,6 +63,9 @@ export interface EditorState {
   setSimulation(sim: Project["simulation"]): void;
   /** Bumped by every `loadProject`; lets other stores reset state tied to the old project. */
   projectGeneration: number;
+  /** The `projectGeneration` the canvas already fitted, or null before the first fit. Lives here so a canvas remount does not refit. */
+  fittedGeneration: number | null;
+  setFittedGeneration(generation: number): void;
   /** Replace the whole project and reset history, selection, clipboard and view. */
   loadProject(p: Project): void;
   /** The current project in schema key order, ready to serialize. */
@@ -108,6 +111,7 @@ export function createEditorStore(opts?: {
     gestureActive: false,
     statusMessage: null,
     projectGeneration: 0,
+    fittedGeneration: null,
     newId,
 
     commit(next, select) {
@@ -175,6 +179,9 @@ export function createEditorStore(opts?: {
         view: { x: 0, y: 0, zoom: 1 },
         projectGeneration: get().projectGeneration + 1,
       });
+    },
+    setFittedGeneration(generation) {
+      set({ fittedGeneration: generation });
     },
     getProject() {
       const { doc, project: m } = get();
