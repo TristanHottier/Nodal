@@ -25,7 +25,7 @@
   --color-panel-hover: oklch(0.94 0.0048 95);
   --color-text: oklch(0.21 0.012 95);
   --color-text-muted: oklch(0.47 0.012 95);
-  /* 10: rail blue for primary actions, selection and focus */
+  /* 10: indigo for primary actions, selection and focus */
   --color-accent: oklch(0.56 0.19 275);
   --color-on-accent: oklch(0.99 0 0);
   --color-accent-soft: oklch(0.93 0.025 275);
@@ -39,10 +39,10 @@
   --color-success: oklch(0.52 0.12 150);
   --color-info: oklch(0.47 0.06 235);
   --color-op-tag: oklch(0.47 0.06 235);
-  /* Brand mark: cyan to mint, outside the 60/30/10 split (ADR 0012) */
+  /* Brand mark: cyan to mint, outside the 60/30/10 split */
   --color-brand-1: oklch(0.6 0.1 200);
   --color-brand-2: oklch(0.6 0.12 165);
-  /* Waveform viewer; traces are jumper-wire colors */
+  /* Waveform viewer; traces are distinct hues, tested for contrast and color-vision separation */
   --color-plot-bg: oklch(0.99 0.004 95);
   --color-plot-grid: oklch(0.93 0.0032 95);
   --color-cursor-a: oklch(0.53 0.24 320);
@@ -66,7 +66,6 @@
   --text-md: 13px;
   --text-base: 14px;
   --text-lg: 16px;
-  --text-xl: 20px;
   /* Roles: label (11 caps, tracked), meta (12), body (13), title (14 semibold), headline (16).
      Numbers are mono at 12 or 13; labels and prose are Inter. Hierarchy comes from size, case and weight. */
   --tracking-label: 0.06em;
@@ -86,7 +85,6 @@
   --space-5: 30px;
   --space-6: 40px;
   --control-height: 28px;
-  --icon-sm: 14px;
   --icon-md: 16px;
   --topbar-height: 40px;
   --rail-width: 44px;
@@ -108,9 +106,6 @@
   --elevation-1: 0 0 0 1px oklch(0.9 0.006 95);
   --elevation-2:
     0 1px 2px oklch(0.2 0.012 95 / 0.06), 0 4px 12px oklch(0.2 0.012 95 / 0.1),
-    0 0 0 1px oklch(0.88 0.006 95);
-  --elevation-3:
-    0 2px 6px oklch(0.2 0.012 95 / 0.08), 0 12px 32px oklch(0.2 0.012 95 / 0.16),
     0 0 0 1px oklch(0.88 0.006 95);
 
   /* Motion */
@@ -181,8 +176,6 @@
   --elevation-1: 0 0 0 1px oklch(0.3 0.012 235);
   --elevation-2:
     0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 235);
-  --elevation-3:
-    0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 235);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -225,7 +218,5 @@
     --elevation-1: 0 0 0 1px oklch(0.3 0.012 235);
     --elevation-2:
       0 1px 2px oklch(0 0 0 / 0.3), 0 4px 12px oklch(0 0 0 / 0.5), 0 0 0 1px oklch(0.34 0.012 235);
-    --elevation-3:
-      0 2px 6px oklch(0 0 0 / 0.35), 0 12px 32px oklch(0 0 0 / 0.6), 0 0 0 1px oklch(0.36 0.012 235);
   }
 }

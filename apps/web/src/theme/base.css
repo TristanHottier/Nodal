@@ -91,7 +91,6 @@ p {
 /* Section label: the smallest, tracked, upper-case step. One block for every label of this role
    (palette titles, inspector sections, disclosure rows, cursor column heads); the component CSS
    adds only margins. */
-.nodal-label-caps,
 .nodal-panel-title,
 .nodal-inspector h3,
 .nodal-models > summary,

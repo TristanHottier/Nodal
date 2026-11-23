@@ -101,11 +101,7 @@ export function Field({
     >
       <span className="nodal-field-label">{label}</span>
       {multiline ? <textarea rows={3} {...common} /> : <input type="text" {...common} />}
-      {unit ? (
-        <span className="nodal-unit" style={{ gridColumn: 2 }}>
-          {unit}
-        </span>
-      ) : null}
+      {unit ? <span className="nodal-unit">{unit}</span> : null}
       {hintText ? (
         <small id={hintId} className="nodal-hint">
           {hintText}

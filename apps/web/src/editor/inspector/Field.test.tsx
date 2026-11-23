@@ -13,10 +13,10 @@ describe("Field", () => {
       </>,
     );
     const units = [screen.getByText("Ω"), screen.getByText("Hz")];
-    const columns = units.map((u) => u.style.gridColumn);
-    expect(columns[0]).not.toBe("");
-    expect(columns[0]).toBe(columns[1]);
     for (const u of units) {
+      // The column comes from the shared class in Inspector.css, not from an inline style.
+      expect(u.className).toBe("nodal-unit");
+      expect(u.getAttribute("style")).toBeNull();
       expect(u.parentElement?.className).toContain("nodal-field");
     }
   });

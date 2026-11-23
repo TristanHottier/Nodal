@@ -41,6 +41,10 @@
   grid-column: 1;
 }
 
+.nodal-field > .nodal-unit {
+  grid-column: 2;
+}
+
 /* A placeholder is prose, not a value: Inter, so "click the plot" fits the field. */
 .nodal-field[data-numeric="true"] > input::placeholder {
   font-family: var(--font-ui);
@@ -156,9 +160,8 @@
   grid-column: 2;
 }
 
-/* !important: Field sets the unit's column inline (column 2 of the stacked layout). */
 .nodal-rows .nodal-field > .nodal-unit {
-  grid-column: 3 !important;
+  grid-column: 3;
 }
 
 .nodal-rows .nodal-field > .nodal-hint,
