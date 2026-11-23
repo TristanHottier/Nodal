@@ -121,10 +121,10 @@ export function useRunIndex(): number {
   return useStore(store, (s) => s.analysisIndex);
 }
 
-/** True while a result is shown, so the results panel is open. False outside a provider. */
-export function useHasResult(): boolean {
+/** The latest result object, or null. Its identity changes with every run. Null outside a provider. */
+export function useResultObject(): SimResult | null {
   const store = useContext(SimulationContext) ?? NO_RESULT;
-  return useStore(store, (s) => s.result !== null);
+  return useStore(store, (s) => s.result);
 }
 
 /** Resets the simulation whenever a project is loaded (Open, New): nothing from the old one may linger. */

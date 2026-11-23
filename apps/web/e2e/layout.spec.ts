@@ -37,6 +37,56 @@ test("opening the waveform panel at 1024x768 refits the whole circuit into the c
   await expect.poll(() => outside(page)).toEqual([]);
 });
 
+test("running an operating point first, then AC, still refits the circuit at 1024x768", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("ce-amplifier");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  // The operating point table opens a short panel.
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.locator(".nodal-runbar").getByRole("status")).toHaveText("Done");
+  await expect(page.getByRole("table", { name: "Operating point" })).toBeVisible();
+  // The AC plot then replaces it with a much taller panel.
+  await page.getByLabel("Analysis to run").selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("waveform-panel")).toBeVisible();
+  await expect.poll(() => outside(page)).toEqual([]);
+});
+
+for (const [width, height] of [
+  [1024, 768],
+  [1280, 800],
+] as const) {
+  test(`the analysis type selects show their option text in full at ${String(width)} px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("./");
+    await page.getByLabel("Open example").selectOption("ce-amplifier");
+    await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    const selects = page.getByRole("combobox", { name: "Analysis type" });
+    expect(await selects.count()).toBeGreaterThan(1);
+    const bad = await selects.evaluateAll((els) =>
+      els.flatMap((el) => {
+        const sel = el as HTMLSelectElement;
+        const css = getComputedStyle(sel);
+        const ctx = document.createElement("canvas").getContext("2d");
+        if (!ctx) return [];
+        ctx.font = `${css.fontWeight} ${css.fontSize} ${css.fontFamily}`;
+        const text = sel.selectedOptions[0]?.text ?? "";
+        const pad = parseFloat(css.paddingLeft) + parseFloat(css.paddingRight);
+        // About 20 px of the right side belong to the drop-down arrow.
+        const room = sel.clientWidth - pad - 20;
+        return ctx.measureText(text).width > room ? [text] : [];
+      }),
+    );
+    expect(bad, "selects whose text is cut").toEqual([]);
+  });
+}
+
 test("the refit happens once: the user's zoom afterwards is kept", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await page.goto("./");
@@ -105,7 +155,8 @@ test("a DC plot with voltage and current probes fits its y title in the plot hei
   await expect(plot).toHaveAttribute("data-y-label", "Voltage (V), current (A)");
   const box = await plot.boundingBox();
   if (!box) throw new Error("no plot");
-  // The y title is drawn rotated, so its text width must fit the height left above the x axis.
+  // The y title is drawn rotated, so its text width must fit the plot height minus the titled x
+  // axis (44 px, the axis size in Plot.tsx).
   const width = await page.evaluate(() => {
     const ctx = document.createElement("canvas").getContext("2d");
     if (!ctx) return Infinity;

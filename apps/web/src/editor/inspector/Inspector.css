@@ -194,6 +194,11 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* Tight select padding so "Operating point" reads in full in the narrow inspector. */
+.nodal-analysis-head select {
+  padding-inline: var(--space-1);
+}
+
 .nodal-analysis-head .nodal-field-label {
   display: none;
 }
@@ -213,7 +218,6 @@
 
 .nodal-analysis-index {
   flex: none;
-  min-width: var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
@@ -223,4 +227,28 @@
   margin-top: var(--space-1);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+}
+
+/* Disclosure marker for the collapsible sections (Options, Models): a chevron that turns when open. */
+.nodal-models > summary {
+  list-style: none;
+}
+
+.nodal-models > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nodal-models > summary::before {
+  content: "";
+  flex: none;
+  width: var(--space-1);
+  height: var(--space-1);
+  margin-right: var(--space-1);
+  border-right: var(--stroke-chevron) solid currentColor;
+  border-bottom: var(--stroke-chevron) solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.nodal-models[open] > summary::before {
+  transform: rotate(45deg);
 }

@@ -136,6 +136,7 @@
   --stroke-selected: 3;
   --stroke-halo: 7;
   --stroke-outline: 1.5;
+  --stroke-chevron: 1.5px;
   --dash-outline: 4 3;
 }
 

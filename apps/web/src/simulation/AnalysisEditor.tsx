@@ -34,54 +34,56 @@ export function AnalysisEditor() {
   return (
     <section>
       <h2>Analyses</h2>
-      {analyses.map((a, i) => (
+      {analyses.map((a, i) => {
+        // The card the run bar will run; only marked when there is a choice.
+        const runs = analyses.length > 1 && i === Math.min(runIndex, analyses.length - 1);
         // Analyses have no ids; the index is their identity.
-        <fieldset
-          key={i}
-          className="nodal-model nodal-rows nodal-analysis"
-          aria-label={`Analysis ${String(i + 1)}`}
-          data-active={analyses.length > 1 && i === Math.min(runIndex, analyses.length - 1)}
-        >
-          <div className="nodal-analysis-head">
-            <span className="nodal-analysis-index nodal-num" aria-hidden="true">
-              {i + 1}
-            </span>
-            <SelectField
-              label="Analysis type"
-              value={a.type}
-              options={ANALYSIS_TYPES}
-              onChange={(v) => {
-                const type = ANALYSIS_TYPES.find((t) => t.value === v)?.value;
-                if (type && type !== a.type)
-                  replace(i, defaultAnalysis(type, store.getState().doc));
+        return (
+          <fieldset
+            key={i}
+            className="nodal-model nodal-rows nodal-analysis"
+            aria-label={`Analysis ${String(i + 1)}`}
+            data-active={runs}
+          >
+            <div className="nodal-analysis-head">
+              <span className="nodal-analysis-index nodal-num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <SelectField
+                label="Analysis type"
+                value={a.type}
+                options={ANALYSIS_TYPES}
+                onChange={(v) => {
+                  const type = ANALYSIS_TYPES.find((t) => t.value === v)?.value;
+                  if (type && type !== a.type)
+                    replace(i, defaultAnalysis(type, store.getState().doc));
+                }}
+              />
+              <button
+                type="button"
+                className="nodal-analysis-remove"
+                title="Remove analysis"
+                aria-label={`Remove analysis ${String(i + 1)} (${analysisLabel(a)})`}
+                disabled={analyses.length <= 1}
+                onClick={() => {
+                  update({ analyses: analyses.filter((_, j) => j !== i) });
+                }}
+              >
+                <Trash2 aria-hidden="true" className="nodal-icon" />
+              </button>
+            </div>
+            <AnalysisFields
+              key={`${String(i)}:${a.type}`}
+              analysis={a}
+              sources={sources}
+              onChange={(next) => {
+                replace(i, next);
               }}
             />
-            <button
-              type="button"
-              className="nodal-analysis-remove"
-              title="Remove analysis"
-              aria-label={`Remove analysis ${String(i + 1)} (${analysisLabel(a)})`}
-              disabled={analyses.length <= 1}
-              onClick={() => {
-                update({ analyses: analyses.filter((_, j) => j !== i) });
-              }}
-            >
-              <Trash2 aria-hidden="true" className="nodal-icon" />
-            </button>
-          </div>
-          <AnalysisFields
-            key={`${String(i)}:${a.type}`}
-            analysis={a}
-            sources={sources}
-            onChange={(next) => {
-              replace(i, next);
-            }}
-          />
-          {analyses.length > 1 && i === Math.min(runIndex, analyses.length - 1) ? (
-            <small className="nodal-analysis-runs">Runs when you press Run</small>
-          ) : null}
-        </fieldset>
-      ))}
+            {runs ? <small className="nodal-analysis-runs">Runs when you press Run</small> : null}
+          </fieldset>
+        );
+      })}
       <button
         type="button"
         onClick={() => {
