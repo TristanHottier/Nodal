@@ -1,26 +1,79 @@
+<p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/brand/logo-dark.svg">
   <img src="docs/brand/logo-light.svg" alt="Nodal" height="64">
 </picture>
+</p>
 
-# Nodal
+<p align="center"><strong>Schematic editor and analog circuit simulator in the browser.</strong></p>
 
-Browser-based schematic editor and analog circuit simulator. The simulation engine is written in Rust and runs in the browser as WebAssembly.
+<p align="center">
+  <a href="https://github.com/TristanHottier/Nodal/actions/workflows/ci.yml"><img src="https://github.com/TristanHottier/Nodal/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/TristanHottier/Nodal/actions/workflows/codeql.yml"><img src="https://github.com/TristanHottier/Nodal/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
+  <a href="https://github.com/TristanHottier/Nodal/releases"><img src="https://img.shields.io/github/v/release/TristanHottier/Nodal" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+  <a href="https://tristanhottier.github.io/Nodal/"><img src="https://img.shields.io/badge/live%20demo-GitHub%20Pages-brightgreen" alt="Live demo"></a>
+</p>
 
-> **Status: v1.1.0. The web app is a schematic editor with the four analyses, eight example projects and a user guide. Version 1.1 adds a second plot cursor (click order, drag and keys) and a modern redesign: a top bar, icon tool rail, grouped parts panel, mono numbers, light and dark themes, a read-only schematic view below 1024 px wide, and probed nets drawn in their trace colour.**
-> Live editor: https://tristanhottier.github.io/Nodal/
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.png">
+  <img src="docs/assets/hero-light.png" alt="The common-emitter amplifier example after an AC sweep, with two probes and both cursors placed" width="900">
+</picture>
+</p>
 
-What works today:
+<p align="center"><a href="https://tristanhottier.github.io/Nodal/"><strong>Try it: tristanhottier.github.io/Nodal</strong></a> (no install, no account)</p>
 
-- Draw a schematic (place parts, wires, net labels), edit values, check problems, save and load `.nodal.json` files. Work is autosaved in the browser.
-- Run DC operating point, DC sweep, AC small-signal (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis) in the browser. The engine is Rust compiled to WebAssembly and runs in a worker. Runs can be cancelled.
-- See operating-point values on the schematic. Plot results with probes, cursors and a Bode view. Engine errors are marked on the schematic.
-- Open one of eight examples from the "Examples…" menu in the top bar or from the first-run prompt: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
-- Switch between light and dark with the Theme select in the top bar (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only. The design rules are in [`apps/web/DESIGN.md`](apps/web/DESIGN.md).
-- Devices: R, L, C, V, I, E, G, H and F elements plus diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient.
+Nodal draws a schematic and simulates it in the browser. The engine is written in Rust and runs as WebAssembly in a Web Worker. Version 1.1.0 is released.
+
+## Features
+
+- Draw a schematic: place parts, rotate and mirror them, draw orthogonal wires, label nets, edit values, and check the problems list. Save and load `.nodal.json` files. Work is autosaved in the browser.
+- Run DC operating point, DC sweep, AC small-signal (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis). Runs can be cancelled.
+- See operating-point values on the schematic. Plot results with probes, two cursors and a Bode view. Engine errors are marked on the schematic.
+- Open one of eight examples: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
+- Switch between light and dark themes (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only.
+- Devices: R, L, C, V, I, E, G, H and F elements, an ideal op-amp, diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient. Sources can be DC, AC, pulse, sine or PWL.
 - `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`.
 
-Nothing else described below exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
+Not in v1: digital logic, microcontroller emulation, accounts and sharing, PCB layout. Nothing else described in these docs exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
+
+![RC low-pass transient response with cursors A and B](docs/assets/transient.png)
+
+![The editor with a wire in progress, the tool rail and the parts panel](docs/assets/editor.png)
+
+## Quick start
+
+### Use it online
+
+Open https://tristanhottier.github.io/Nodal/ and pick an example from the first-run prompt or the "Examples..." menu.
+
+### Run it locally
+
+Prerequisites: Node 24, pnpm 12.18, a Rust toolchain (pinned in `rust-toolchain.toml`) and wasm-pack 0.15.1.
+
+```sh
+pnpm install
+pnpm build:wasm
+pnpm --filter @nodal/web dev
+```
+
+## Development
+
+Run these from the repository root.
+
+| Task | Command |
+|---|---|
+| Rust tests | `cargo test --workspace` |
+| Validation suite | `cargo run -p nodal-cli -- validate validation` |
+| WASM build | `pnpm build:wasm` |
+| Web dev server | `pnpm --filter @nodal/web dev` |
+| Web tests | `pnpm test` and `pnpm --filter @nodal/web e2e` |
+| Lint and format | `cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm lint && pnpm format:check` |
+
+## How correctness is checked
+
+Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on a fixed suite of reference circuits, and simple circuits are also checked against closed-form solutions. CI blocks any change that breaks the suite. Accuracy claims in these docs are limited to what a passing test shows; see [`docs/VALIDATION.md`](docs/VALIDATION.md).
 
 ### Validation results
 
@@ -61,25 +114,6 @@ Lighthouse varies between runners. In CI run [45284350475](https://github.com/Tr
 
 In the same run, `e2e:perf` measured editor pan and zoom with 500 parts at 59.5 fps with 2 slow frames of 240 (limit 12). The CI job also runs axe-core (WCAG 2.2 AA) on the editor, inspector, analysis panel and waveform viewer in both themes; it finds no violations.
 
-## What v1 does
-
-- Draw a schematic on a grid: place parts, rotate and mirror them, draw orthogonal wires, label nets.
-- Simulate it entirely in the browser, with no server:
-  - DC operating point
-  - DC sweep
-  - AC small-signal (Bode plots)
-  - Transient
-- Plot node voltages and branch currents in a waveform viewer.
-- Save projects in the browser and import/export them as `.nodal.json` files.
-
-**v1 devices:** R, L, C · independent voltage and current sources (DC, AC, pulse, sine, PWL) · VCVS, VCCS, CCVS, CCCS · ideal op-amp · diode · BJT (NPN/PNP) · MOSFET Level 1 (N/P) · voltage-controlled switch.
-
-**Not in v1:** digital logic, microcontroller emulation, accounts and sharing, PCB layout. See the roadmap for what comes later.
-
-## How correctness is checked
-
-Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on a fixed suite of reference circuits, and simple circuits are also checked against closed-form solutions. CI blocks any change that breaks the suite. Accuracy claims in these docs are limited to what a passing test shows; see [`docs/VALIDATION.md`](docs/VALIDATION.md).
-
 ## Stack
 
 | Part | Choice |
@@ -101,6 +135,27 @@ Every analysis is compared against [ngspice](https://ngspice.sourceforge.io/) on
 | [`docs/adr/`](docs/adr/) | Architecture decision records |
 | [`docs/reference/`](docs/reference/) | MNA stamps, device equations, numerical methods |
 | [`AGENTS.md`](AGENTS.md) | Rules for anyone (human or AI) writing code here |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to report bugs, propose features and send changes |
+
+## Roadmap
+
+Milestones M0 to M9 are done. [`docs/ROADMAP.md`](docs/ROADMAP.md) lists each exit criterion with its evidence, and the ideas for after v1 (none is a commitment).
+
+## Contributing
+
+Bug reports, feature ideas and small pull requests are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first, and follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+Report vulnerabilities privately, as described in [`SECURITY.md`](SECURITY.md).
+
+## Changelog
+
+Release notes are in [`CHANGELOG.md`](CHANGELOG.md).
+
+## Citation
+
+If you use Nodal in academic work, cite it with the metadata in [`CITATION.cff`](CITATION.cff). GitHub shows a "Cite this repository" button from that file.
 
 ## Credits
 
