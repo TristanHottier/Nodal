@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Match pnpm's release-age rule: no version younger than 7 days.
+    cooldown:
+      default-days: 7
+    # @types/node follows the Node runtime (24, see .nvmrc); bump it with Node, not alone.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
     groups:
       npm-minor-patch:
@@ -12,6 +19,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     groups:
       cargo-minor-patch:
