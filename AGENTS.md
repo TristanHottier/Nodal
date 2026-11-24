@@ -57,4 +57,5 @@ Run these from the repository root.
 
 - Work on `main` (single developer). Small commits, each leaving CI green.
 - Conventional Commits: `feat(engine): …`, `fix(web): …`, `docs: …`, `test(validation): …`.
+- Dependabot PRs are never merged on GitHub. Once a PR's checks pass, apply its changes as a commit authored by TristanHottier (same message, without the `Signed-off-by: dependabot` trailer), push to `main`, and close the PR. That keeps bots out of the contributors list.
 - No generated files in git except `validation/golden/`, the user-guide screenshots in `docs/user-guide/` (regenerate them with `pnpm --filter @nodal/web guide:screenshots`), and the README screenshots and social preview in `docs/assets/` (retake them after a visible UI change). Take every documentation and README screenshot in dark mode. Lockfiles (`Cargo.lock`, `pnpm-lock.yaml`) are committed as source inputs.
