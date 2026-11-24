@@ -16,10 +16,7 @@
 </p>
 
 <p align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.png">
-  <img src="docs/assets/hero-light.png" alt="The common-emitter amplifier example after an AC sweep, with two probes and both cursors placed" width="900">
-</picture>
+<img src="docs/assets/hero-dark.png" alt="The common-emitter amplifier example after an AC sweep, with two probes and both cursors placed" width="900">
 </p>
 
 <p align="center"><a href="https://tristanhottier.github.io/Nodal/"><strong>Try it: tristanhottier.github.io/Nodal</strong></a> (no install, no account)</p>

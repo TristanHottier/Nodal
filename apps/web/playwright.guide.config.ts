@@ -11,6 +11,7 @@ export default defineConfig({
     baseURL: "http://localhost:4173/Nodal/",
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 1,
+    colorScheme: "dark",
   },
   projects: [
     {
@@ -19,6 +20,7 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
         deviceScaleFactor: 1,
+        colorScheme: "dark",
       },
     },
   ],
