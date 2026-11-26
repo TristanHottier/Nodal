@@ -1,18 +1,17 @@
 // One codex entry: header, symbol, prose, parameter tables, "Try it" and related links.
 // Shared by the codex page and the editor drawer. The KaTeX stylesheet is imported by each
 // `?codex` module, so nothing here pulls it into the editor's first load.
-import type { PartType } from "@nodal/schema";
 import { useEffect, useState } from "react";
 import type { StoreApi } from "zustand/vanilla";
 import { loadExample } from "../editor/projectActions";
 import type { EditorState } from "../editor/store";
 import { EXAMPLES } from "../examples";
-import { LABEL_SYMBOL, SYMBOLS } from "../symbols/catalog";
 import { CODEX, type CodexEntryMeta } from "./catalog";
 import { fieldRows, modelRows } from "./paramTable";
 import { ParamTable } from "./ParamTable";
 import { loadEntry } from "./entries";
 import { codexHref } from "./route";
+import { SymbolFigure } from "./SymbolFigure";
 import "./Codex.css";
 
 const SLOT = '<div data-codex-slot="parameters"></div>';
@@ -20,33 +19,6 @@ const KIND_LABEL = { part: "Part", analysis: "Analysis", concept: "Concept" } as
 
 type Loaded =
   { state: "loading" } | { state: "ready"; html: string } | { state: "failed"; message: string };
-
-function PartSymbol({ item }: { item: PartType | "label" }) {
-  const def = item === "label" ? LABEL_SYMBOL : SYMBOLS[item];
-  const { x0, y0, x1, y1 } = def.bounds;
-  const Body = def.Body;
-  const pins = def.pins.map((p) => p.name).join(", ");
-  return (
-    <figure className="nodal-codex-symbol">
-      <svg
-        role="img"
-        aria-label={`${def.label} symbol. Pins: ${pins}.`}
-        viewBox={`${String(x0 - 0.5)} ${String(y0 - 0.5)} ${String(x1 - x0 + 1)} ${String(y1 - y0 + 1)}`}
-      >
-        <Body />
-      </svg>
-      <figcaption>
-        Pins:{" "}
-        {def.pins.map((p, i) => (
-          <span key={p.name}>
-            {i > 0 ? ", " : ""}
-            <span className="nodal-num">{p.name}</span>
-          </span>
-        ))}
-      </figcaption>
-    </figure>
-  );
-}
 
 function Parameters({ meta }: { meta: CodexEntryMeta }) {
   const item = meta.item;
@@ -131,7 +103,7 @@ export function CodexEntry({
           <p className="nodal-codex-aliases">Also known as {meta.aliases.join(", ")}</p>
         ) : null}
       </header>
-      {meta.item !== undefined ? <PartSymbol item={meta.item} /> : null}
+      {meta.item !== undefined ? <SymbolFigure item={meta.item} /> : null}
       {body.state === "loading" ? <p role="status">Loading entry…</p> : null}
       {body.state === "failed" ? <p role="alert">This entry could not be loaded.</p> : null}
       {/* Build-time output of the codex Markdown pipeline (build/codexMarkdown.ts): trusted, never user input. */}
