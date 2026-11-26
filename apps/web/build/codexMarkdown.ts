@@ -36,10 +36,10 @@ const DISPLAY_BLOCK_RULE = /^\$\$[ \t]*\n([\s\S]+?)\n\$\$[ \t]*(?:\n|$)/;
 /** `$$ … $$` inside a paragraph. */
 const DISPLAY_INLINE_RULE = /^\$\$((?:\\[\s\S]|[^\\])+?)\$\$/;
 /** `$ … $`: no space inside the delimiters, and not followed by a digit (so prices stay prices). */
-const INLINE_RULE = /^\$(?![\s$])((?:\\.|[^$\\\n])+?)(?<![\s\\])\$(?!\d)/;
+const INLINE_RULE = /^\$(?![\s$])((?:\\[\s\S]|[^$\\])+?)(?<![\s\\])\$(?!\d)/;
 
 interface MathToken extends Tokens.Generic {
-  type: "codexMath";
+  type: "codexMath" | "codexDisplayMath";
   tex: string;
   display: boolean;
 }
@@ -71,12 +71,13 @@ function lineOf(source: string, snippet: string): number {
 }
 
 function makeMarked(source: string, id: string): Marked {
-  const math = (tex: string, display: boolean, raw: string): MathToken => ({
-    type: "codexMath",
+  const math = (tex: string, display: boolean, raw: string, block = false): MathToken => ({
+    type: block ? "codexDisplayMath" : "codexMath",
     raw,
     tex,
     display,
   });
+  const seen = new Map<string, number>();
   return new Marked({
     gfm: true,
     extensions: [
@@ -90,11 +91,11 @@ function makeMarked(source: string, id: string): Marked {
         renderer: () => `${SLOT_HTML}\n`,
       },
       {
-        name: "codexMath",
+        name: "codexDisplayMath",
         level: "block",
         tokenizer(src) {
           const m = DISPLAY_BLOCK_RULE.exec(src);
-          return m ? math((m[1] ?? "").trim(), true, m[0]) : undefined;
+          return m ? math((m[1] ?? "").trim(), true, m[0], true) : undefined;
         },
         renderer: (t) => renderMath(t as MathToken, source, id) + "\n",
       },
@@ -121,7 +122,11 @@ function makeMarked(source: string, id: string): Marked {
       heading({ tokens, depth }) {
         const inner = this.parser.parseInline(tokens);
         const plain = tokens.map((t) => ("text" in t ? String(t.text) : t.raw)).join("");
-        return `<h${String(depth)} id="${slugify(plain)}">${inner}</h${String(depth)}>\n`;
+        const slug = slugify(plain);
+        const count = (seen.get(slug) ?? 0) + 1;
+        seen.set(slug, count);
+        const hid = count === 1 ? slug : `${slug}-${String(count)}`;
+        return `<h${String(depth)} id="${hid}">${inner}</h${String(depth)}>\n`;
       },
     },
   });
@@ -144,6 +149,32 @@ function renderMath(token: MathToken, source: string, id: string): string {
   }
 }
 
+/** Only http(s), fragment and relative targets; no scheme such as `javascript:` or `data:`. */
+function safeHref(href: string): boolean {
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(href.trim());
+  return scheme === null || ["http", "https"].includes((scheme[1] ?? "").toLowerCase());
+}
+
+/** Throws on a stray `$` left in text (it is maths that did not parse) and on unsafe link targets. */
+function checkTokens(md: Marked, tokens: Token[], source: string, id: string): void {
+  void md.walkTokens(tokens, (t) => {
+    if (t.type === "text" && !("tokens" in t && Array.isArray(t.tokens)) && t.raw.includes("$")) {
+      throw new EntryError(
+        id,
+        lineOf(source, t.raw.trim()),
+        "a `$` is not valid maths; write \\$ for a literal dollar or put it in a code span",
+      );
+    }
+    if ((t.type === "link" || t.type === "image") && !safeHref((t as Tokens.Link).href)) {
+      throw new EntryError(
+        id,
+        lineOf(source, t.raw.trim()),
+        `unsafe link target "${(t as Tokens.Link).href}"`,
+      );
+    }
+  });
+}
+
 function headingText(t: Token): string {
   return t.type === "heading" ? (t as Tokens.Heading).text : "";
 }
@@ -163,6 +194,8 @@ export function inferKind(source: string, id: string): EntryKind {
 export function renderEntry(source: string, kind: EntryKind, id: string): RenderedEntry {
   const md = makeMarked(source, id);
   const tokens = md.lexer(source).filter((t) => t.type !== "space");
+
+  checkTokens(md, tokens, source, id);
 
   const first = tokens[0];
   if (

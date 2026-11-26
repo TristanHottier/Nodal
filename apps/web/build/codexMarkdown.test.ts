@@ -60,6 +60,41 @@ describe("renderEntry maths", () => {
   });
 });
 
+describe("renderEntry strictness", () => {
+  it("throws on a literal dollar that is not maths", () => {
+    expect(() => renderEntry(concept("value $ x$ and $y $ done"), "concept", "dollar")).toThrow(
+      /dollar/,
+    );
+  });
+
+  it("lets inline maths span a soft line break", () => {
+    const { html } = renderEntry(concept("so $a +\nb$ done"), "concept", "t");
+    expect(html).toContain('class="katex"');
+  });
+
+  it("uses the display renderer for block maths", () => {
+    const { html } = renderEntry(concept("$$\nx\n$$"), "concept", "t");
+    expect(html).toContain("katex-display");
+    expect(html).toMatch(/<\/span>\n/);
+  });
+
+  it("numbers repeated heading ids", () => {
+    const { html } = renderEntry(concept("### Ex\n\nx\n\n### Ex\n\ny"), "concept", "t");
+    expect(html).toContain('<h3 id="ex">');
+    expect(html).toContain('<h3 id="ex-2">');
+    expect(html).not.toContain('id="ex-3"');
+  });
+
+  it("only allows http, https, fragment and relative links", () => {
+    const ok = "[a](https://x.org) [b](#what-it-is) [c](../x) [d](http://y.org)";
+    expect(() => renderEntry(concept(ok), "concept", "t")).not.toThrow();
+    expect(() => renderEntry(concept("[x](javascript:alert(1))"), "concept", "js-link")).toThrow(
+      /js-link/,
+    );
+    expect(() => renderEntry(concept("![x](data:text/html,a)"), "concept", "img")).toThrow(/img/);
+  });
+});
+
 describe("renderEntry Markdown", () => {
   it("escapes raw HTML", () => {
     const { html } = renderEntry(
