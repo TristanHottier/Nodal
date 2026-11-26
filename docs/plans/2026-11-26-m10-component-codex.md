@@ -19,6 +19,7 @@
    - 4 analyses: operating point, DC sweep, AC, transient;
    - 4 concepts: modified nodal analysis, Newton iteration and convergence aids (limiting, gmin and source stepping), small-signal linearisation, numerical integration and time-step control.
 4. **Figures: the symbol only,** drawn from `SYMBOLS[type].Body` with its pin names. No plots.
+5. **Pin names on the drawing** (Tristan, later the same day): each pin's name is shown next to its end on the codex symbol, not only listed in text (Task 5b).
 
 ## Rulings made in planning (Tristan can override)
 
@@ -224,6 +225,15 @@
 - [ ] **Step 4: Run** the unit tests and the full e2e suite (`a11y`, `responsive`, `shell`, `layout`, `editor`, `codex`) on both browsers. Run `colorShare.spec.ts` too. Expected: PASS.
 - [ ] **Step 5: Look at it:** screenshots of the palette with info buttons and of the open drawer, at 1024 and 1280 px in both themes. Check that the palette still fits at 1024 px.
 - [ ] **Step 6: Commit** `feat(web): open codex entries from the parts panel, inspector and top bar`. Push. The `visual` baselines will change because of the palette; take the new ones from this CI run's artifact and commit them as `test(web): visual baselines for the palette info buttons`.
+
+### Task 5b: Pin names on the codex symbol
+
+**Files:** Modify `apps/web/src/codex/CodexEntry.tsx` (or a new `codex/SymbolFigure.tsx`), `Codex.css`, `tokens.css`, their tests.
+
+- [ ] **Step 1: Test first:** the codex symbol SVG has one text label per `SYMBOLS[type].pins` entry, placed at the pin end and pushed outward from the body, plus a dot at each pin end. Net label and ground included.
+- [ ] **Step 2: Implement.** Labels in the mono font, sized from tokens, `currentColor`-based so both themes work. The SVG keeps a text alternative naming the pins.
+- [ ] **Step 3: Look at it:** screenshots of every part entry's symbol (both themes) in one contact sheet; no label overlaps the body or another label.
+- [ ] **Step 4: Commit** `feat(web): pin names on codex symbols`. Push.
 
 ### Task 6: Four examples so every part has a "Try it"
 
