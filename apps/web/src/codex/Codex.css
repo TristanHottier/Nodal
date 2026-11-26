@@ -1,0 +1,202 @@
+/* The codex page and entry. Values come from tokens.css only. */
+.nodal-codex {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-canvas);
+  color: var(--color-text);
+}
+
+.nodal-codex-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: var(--topbar-height);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-panel);
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+}
+
+.nodal-codex a {
+  color: var(--color-accent);
+}
+
+.nodal-codex-home {
+  font-weight: var(--weight-semibold);
+}
+
+.nodal-codex-search {
+  flex: 1 1 var(--codex-search-width);
+  max-width: var(--codex-search-max);
+  margin-left: auto;
+}
+
+.nodal-codex-search input {
+  width: 100%;
+  min-height: var(--control-height);
+}
+
+.nodal-codex-main {
+  width: 100%;
+  max-width: var(--codex-content-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-6);
+}
+
+.nodal-codex-main h1 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--codex-title-size);
+  font-weight: var(--weight-semibold);
+}
+
+.nodal-codex-index {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--codex-column-width), 1fr));
+  gap: var(--space-4);
+}
+
+.nodal-codex-list {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nodal-codex-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+}
+
+.nodal-codex-kind,
+.nodal-codex-aliases {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-codex-aliases {
+  margin: 0;
+}
+
+.nodal-codex-symbol {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+  padding: var(--space-2);
+  background: var(--color-panel);
+  border: var(--border-width) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.nodal-codex-symbol svg {
+  flex: none;
+  width: var(--codex-symbol-size);
+  height: var(--codex-symbol-size);
+  color: var(--color-ink);
+}
+
+.nodal-codex-symbol figcaption {
+  margin: 0;
+}
+
+.nodal-codex-entry h2 {
+  margin: var(--space-4) 0 var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.nodal-codex-prose {
+  overflow-wrap: anywhere;
+}
+
+.nodal-codex-prose details {
+  margin: var(--space-2) 0;
+}
+
+.nodal-codex-prose summary {
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+}
+
+.nodal-codex-prose pre,
+.nodal-codex-prose .katex-display {
+  overflow-x: auto;
+}
+
+.nodal-codex-table-wrap {
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+}
+
+.nodal-codex-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.nodal-codex-table caption {
+  padding-bottom: var(--space-1);
+  text-align: left;
+  font-weight: var(--weight-semibold);
+}
+
+.nodal-codex-table th,
+.nodal-codex-table td {
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: var(--border-width) solid var(--color-border-subtle);
+}
+
+.nodal-codex-table thead th {
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.nodal-codex-field-name {
+  display: block;
+  font-family: var(--font-ui);
+  color: var(--color-text-muted);
+}
+
+.nodal-codex-when {
+  color: var(--color-text-muted);
+}
+
+.nodal-codex-related ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1023px) {
+  .nodal-codex-bar {
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .nodal-codex-main {
+    padding: var(--space-3) var(--space-2) var(--space-5);
+  }
+
+  .nodal-codex-search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .nodal-codex-symbol {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

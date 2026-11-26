@@ -55,6 +55,7 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter @nodal/web build
       - run: node scripts/check-base-path.mjs apps/web/dist
+      - run: node scripts/check-first-load.mjs apps/web/dist
       - run: pnpm --filter @nodal/web exec playwright install --with-deps chromium firefox
       - run: pnpm --filter @nodal/web e2e
       - run: pnpm --filter @nodal/web e2e:perf

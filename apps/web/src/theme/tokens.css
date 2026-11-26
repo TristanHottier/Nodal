@@ -135,6 +135,13 @@
   --stroke-chevron: 2px;
   --chevron-size: 7px;
   --dash-outline: 4 3;
+  /* Codex page (same in both themes) */
+  --codex-content-width: 760px;
+  --codex-column-width: 220px;
+  --codex-search-width: 240px;
+  --codex-search-max: 360px;
+  --codex-symbol-size: 96px;
+  --codex-title-size: 24px;
 }
 
 [data-theme="dark"] {
