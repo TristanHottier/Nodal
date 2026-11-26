@@ -70,4 +70,21 @@ describe("CodexPage", () => {
     page(null);
     expect(document.title).toBe("Codex · Nodal");
   });
+
+  it("sets the title for an unknown id", () => {
+    page("no-such-thing");
+    expect(document.title).toBe("No entry called no-such-thing · Codex · Nodal");
+  });
+
+  it("clears the query when a result for the entry already shown is clicked", async () => {
+    page("diode");
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "diode" } });
+    const link = within(screen.getByRole("list", { name: "Search results" })).getByRole("link", {
+      name: "Diode",
+    });
+    fireEvent.click(link);
+    expect(screen.getByRole<HTMLInputElement>("searchbox").value).toBe("");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Diode");
+    expect(await screen.findByText("Body text.")).toBeTruthy();
+  });
 });

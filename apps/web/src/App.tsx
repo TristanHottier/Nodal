@@ -14,6 +14,13 @@ const CodexPage = lazy(() => import("./codex/CodexPage"));
 type Status =
   { kind: "loading" } | { kind: "ready"; version: string } | { kind: "failed"; message: string };
 
+function CodexFallback() {
+  useEffect(() => {
+    document.title = "Codex · Nodal";
+  }, []);
+  return <p role="status">Loading the codex…</p>;
+}
+
 export function App() {
   const [status, setStatus] = useState<Status>({ kind: "loading" });
   const route = useRoute();
@@ -70,8 +77,9 @@ export function App() {
     };
   }, [engine]);
 
+  // The codex page owns every codex title; the editor owns "Nodal".
   useEffect(() => {
-    document.title = route.view === "editor" ? "Nodal" : "Codex · Nodal";
+    if (route.view === "editor") document.title = "Nodal";
   }, [route.view]);
 
   const text =
@@ -83,7 +91,7 @@ export function App() {
 
   if (route.view === "codex") {
     return (
-      <Suspense fallback={<p role="status">Loading the codex…</p>}>
+      <Suspense fallback={<CodexFallback />}>
         <CodexPage id={route.id} store={store} />
       </Suspense>
     );

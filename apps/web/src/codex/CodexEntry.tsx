@@ -59,7 +59,7 @@ function Parameters({ meta }: { meta: CodexEntryMeta }) {
         <ParamTable
           caption="Inspector fields"
           firstColumn="Field"
-          rows={fields.map((r) => ({ ...r, key: r.key, name: r.label }))}
+          rows={fields.map((r) => ({ ...r, name: r.label }))}
         />
       ) : null}
       {model.length > 0 ? (
@@ -118,20 +118,6 @@ export function CodexEntry({
         ) : null}
       </header>
       {meta.item !== undefined ? <PartSymbol item={meta.item} /> : null}
-      {example !== undefined ? (
-        <p>
-          <button
-            type="button"
-            className="nodal-button-primary"
-            onClick={() => {
-              loadExample(store, example);
-              window.location.hash = "#/";
-            }}
-          >
-            Try it: open the {example.title} example
-          </button>
-        </p>
-      ) : null}
       {body.state === "loading" ? <p role="status">Loading entry…</p> : null}
       {body.state === "failed" ? <p role="alert">This entry could not be loaded.</p> : null}
       {/* Build-time output of the codex Markdown pipeline (build/codexMarkdown.ts): trusted, never user input. */}
@@ -142,6 +128,19 @@ export function CodexEntry({
           {/* Same trusted build-time output as above. */}
           <div className="nodal-codex-prose" dangerouslySetInnerHTML={{ __html: after }} />
         </>
+      ) : null}
+      {example !== undefined ? (
+        <p>
+          <button
+            type="button"
+            className="nodal-button-primary"
+            onClick={() => {
+              if (loadExample(store, example)) window.location.hash = "#/";
+            }}
+          >
+            Try it: open the {example.title} example
+          </button>
+        </p>
       ) : null}
       {related.length > 0 ? (
         <nav className="nodal-codex-related" aria-label="Related entries">

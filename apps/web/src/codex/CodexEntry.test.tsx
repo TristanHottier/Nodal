@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createEditorStore } from "../editor/store";
+import { EXAMPLES } from "../examples";
 import { CODEX, entryForItem } from "./catalog";
 import { CodexEntry } from "./CodexEntry";
 import { modelRows } from "./paramTable";
@@ -74,6 +75,38 @@ describe("CodexEntry", () => {
     fireEvent.click(screen.getByRole("button", { name: /Try it/ }));
     expect(store.getState().doc.parts.length).toBeGreaterThan(0);
     expect(window.location.hash).toBe("#/");
+  });
+
+  it("Try it does nothing when the user cancels the replace confirm", () => {
+    loadEntry.mockResolvedValue({ html: HTML, title: "x" });
+    const store = createEditorStore();
+    store.getState().setStatusMessage("keep");
+    const before = store.getState().doc;
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    // A non-empty project makes the replace check ask.
+    const first = EXAMPLES[0];
+    if (first === undefined) throw new Error("no examples");
+    store.getState().loadProject(first.load());
+    const loaded = store.getState().doc;
+    window.location.hash = "#/codex/resistor";
+    const meta = entryForItem("resistor");
+    render(<CodexEntry meta={meta} store={store} />);
+    fireEvent.click(screen.getByRole("button", { name: /Try it/ }));
+    expect(confirm).toHaveBeenCalled();
+    expect(window.location.hash).toBe("#/codex/resistor");
+    expect(store.getState().doc).toBe(loaded);
+    expect(before).not.toBe(loaded);
+    confirm.mockRestore();
+  });
+
+  it("puts Try it after the prose and before the related links", async () => {
+    loadEntry.mockResolvedValue({ html: HTML, title: "x" });
+    render(<CodexEntry meta={entryForItem("npn")} store={createEditorStore()} />);
+    const after = await screen.findByText("After the tables.");
+    const button = screen.getByRole("button", { name: /Try it/ });
+    const related = screen.getByRole("navigation", { name: "Related entries" });
+    expect(after.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(button.compareDocumentPosition(related) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("has no Try it button and no symbol for a concept without an example", async () => {

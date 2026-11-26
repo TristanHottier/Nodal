@@ -75,4 +75,21 @@ describe("App", () => {
     render(<App />);
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Codex");
   });
+
+  it("keeps the title right across repeated route changes", async () => {
+    mocked.mockResolvedValue("1.1.0");
+    render(<App />);
+    for (let i = 0; i < 2; i++) {
+      act(() => {
+        window.location.hash = "#/codex/diode";
+      });
+      await screen.findByRole("heading", { level: 1, name: "Diode" });
+      expect(document.title).toBe("Diode · Codex · Nodal");
+      act(() => {
+        window.location.hash = "#/";
+      });
+      await screen.findByTestId("engine-status");
+      expect(document.title).toBe("Nodal");
+    }
+  });
 });

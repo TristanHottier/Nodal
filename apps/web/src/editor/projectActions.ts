@@ -19,10 +19,11 @@ export function mayReplaceProject(store: StoreApi<EditorState>): boolean {
   return empty || window.confirm(REPLACE_CONFIRM);
 }
 
-/** Load a bundled example after the replace check. */
-export function loadExample(store: StoreApi<EditorState>, example: Example): void {
-  if (!mayReplaceProject(store)) return;
+/** Load a bundled example after the replace check. Returns false when the user cancelled. */
+export function loadExample(store: StoreApi<EditorState>, example: Example): boolean {
+  if (!mayReplaceProject(store)) return false;
   const s = store.getState();
   s.loadProject(example.load());
   s.setStatusMessage(null);
+  return true;
 }

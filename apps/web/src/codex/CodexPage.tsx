@@ -16,14 +16,16 @@ const GROUPS: readonly { kind: EntryKind; title: string }[] = [
   { kind: "concept", title: "Concepts" },
 ];
 
-function Results({ query }: { query: string }) {
+function Results({ query, onPick }: { query: string; onPick: () => void }) {
   const found = searchCodex(query, CODEX);
   if (found.length === 0) return <p role="status">No entry matches “{query}”.</p>;
   return (
     <ul className="nodal-codex-list" aria-label="Search results">
       {found.map((e) => (
         <li key={e.id}>
-          <a href={codexHref(e.id)}>{e.title}</a>
+          <a href={codexHref(e.id)} onClick={onPick}>
+            {e.title}
+          </a>
           <span className="nodal-codex-kind">{e.kind}</span>
         </li>
       ))}
@@ -65,8 +67,10 @@ export default function CodexPage({
   const searching = query.trim() !== "";
 
   useEffect(() => {
-    document.title = meta !== undefined ? `${meta.title} · Codex · Nodal` : "Codex · Nodal";
-  }, [meta]);
+    if (id === null) document.title = "Codex · Nodal";
+    else if (meta === undefined) document.title = `No entry called ${id} · Codex · Nodal`;
+    else document.title = `${meta.title} · Codex · Nodal`;
+  }, [id, meta]);
 
   // A new entry or the index starts a fresh search.
   useEffect(() => {
@@ -74,7 +78,15 @@ export default function CodexPage({
   }, [id]);
 
   let main;
-  if (searching) main = <Results query={query} />;
+  if (searching)
+    main = (
+      <Results
+        query={query}
+        onPick={() => {
+          setQuery("");
+        }}
+      />
+    );
   else if (id === null) main = <Index />;
   else if (meta === undefined)
     main = (
