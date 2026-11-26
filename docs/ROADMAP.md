@@ -146,6 +146,32 @@ Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable w
 
 **Evidence:** CI run [45284350475](https://github.com/TristanHottier/Nodal/actions/runs/45284350475) at `2e82370`: Rust, web (unit, e2e on Chromium and Firefox including `cursors.spec.ts` for the mouse and keyboard paths, axe in both themes and the stale state, keyboard reach, responsive, layout, visual regression on CI baselines, colour shares, perf), deploy and Lighthouse all green. Lighthouse medians on the job re-run: mobile LCP 772 ms, CLS 0.000, TBT 61 ms; desktop LCP 230 ms, CLS 0.000, TBT 0 ms (the first attempt measured mobile TBT 235 ms). Perf in CI run [45278492943](https://github.com/TristanHottier/Nodal/actions/runs/45278492943) at `951bdb6`: editor pan/zoom with 500 parts 59.5 fps, 2 of 240 slow frames; transient 732.0 ms; AC 78.9 ms; WASM 246,485 bytes gzipped. Design: ADR 0013, `docs/design/m9-critique.md`, `docs/design/m9-audit.md` (re-audit: no must-fix), regenerated `apps/web/DESIGN.md` and user-guide screenshots. The `v1.1.0` tag is created by Tristan (the sandbox can't push tags).
 
+## v1.2 milestones
+
+### M10 — Component codex (v1.2.0) · not started
+
+Tristan's request (2026-11-26): a dictionary of Nodal's components inside the app. Each entry explains what the component does, how it works and the equations Nodal uses for it. The draft plan is [`docs/plans/2026-11-26-m10-codex-draft.md`](plans/2026-11-26-m10-codex-draft.md). A planning session turns it into a task-by-task plan, and Tristan approves that plan before any code.
+
+- **One entry per part type:** the 17 in the palette, from resistor to ground, plus net labels. Each entry has:
+  - a plain-language description and typical uses;
+  - the symbol and pin names;
+  - every parameter, with its unit, default and meaning;
+  - the model equations (DC, small-signal and charge where they apply), with the same symbols and sign conventions as `docs/reference/`;
+  - how Nodal stamps it into the MNA system;
+  - known deviations from ngspice;
+  - a link to an example circuit that uses it.
+- **Reachable from where the user works:** from the parts panel and the inspector for a selected part, and as a browsable, searchable view of its own. It works offline, like the rest of the app.
+- **Equations render as maths,** not as raw LaTeX, in both themes and at the 1024 px minimum width.
+- **Single source of truth:** entries must not drift from the engine. Parameter names, units and defaults come from (or are tested against) `packages/schema/fixtures/param-specs.json` and the editor's field list. Equations match `docs/reference/devices.md` and `docs/reference/mna.md`.
+
+**Exit:**
+- Every part type has an entry, and a test fails if a part type, parameter or default is missing or differs from the specs.
+- Each entry is reachable by mouse and keyboard from the parts panel, from the inspector and from the codex view; an e2e test covers all three.
+- The codex passes axe WCAG 2.2 AA in both themes. Maths has accessible text (MathML or equivalent).
+- No regression: the M8/M9 exit checks still pass, including Lighthouse limits on the Pages URL (the codex must not slow the editor's first load) and the M7 performance budget.
+- An engineer reviews the equation content against `docs/reference/` and the engine source, and the review is recorded in the plan.
+- User guide and README mention the codex, with dark-mode screenshots. Version `1.2.0` in every pinned place, and the `v1.2.0` tag.
+
 ## After v1 (not designed yet)
 
 Listed to bound v1 scope. None of these is a commitment. Order is not fixed.
