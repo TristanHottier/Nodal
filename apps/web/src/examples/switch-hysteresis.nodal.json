@@ -1,0 +1,285 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Voltage-controlled switch with hysteresis: triangular control into an RC load, transient over 4 ms",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V2",
+        "type": "vsource",
+        "name": "V2",
+        "x": 8,
+        "y": 10,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "5"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-VCTL",
+        "type": "vsource",
+        "name": "VCTL",
+        "x": 8,
+        "y": 29,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "wave": "pwl",
+          "pwl": "0 0; 0.001 5; 0.002 0; 0.003 5; 0.004 0"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 8,
+        "y": 32,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 20,
+        "y": 7,
+        "rotation": 270,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-C1",
+        "type": "capacitor",
+        "name": "C1",
+        "x": 48,
+        "y": 10,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1u"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 48,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-S1",
+        "type": "switch",
+        "name": "S1",
+        "x": 38,
+        "y": 28,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "SM"
+        }
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 38,
+        "y": 31,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-GND5",
+        "type": "ground",
+        "name": "GND5",
+        "x": 31,
+        "y": 30,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 7
+          },
+          {
+            "x": 17,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 12,
+            "y": 7
+          },
+          {
+            "x": 12,
+            "y": 4
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 23,
+            "y": 7
+          },
+          {
+            "x": 38,
+            "y": 7
+          },
+          {
+            "x": 48,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 38,
+            "y": 7
+          },
+          {
+            "x": 38,
+            "y": 25
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 28,
+            "y": 7
+          },
+          {
+            "x": 28,
+            "y": 4
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 8,
+            "y": 26
+          },
+          {
+            "x": 34,
+            "y": 26
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 18,
+            "y": 26
+          },
+          {
+            "x": 18,
+            "y": 23
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 34,
+            "y": 30
+          },
+          {
+            "x": 31,
+            "y": 30
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-vs",
+        "text": "vs",
+        "x": 12,
+        "y": 4,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 28,
+        "y": 4,
+        "rotation": 0
+      },
+      {
+        "id": "l-ctl",
+        "text": "ctl",
+        "x": 18,
+        "y": 23,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "SM",
+      "type": "SW",
+      "params": {
+        "VT": "2.5",
+        "VH": "0.5",
+        "RON": "100",
+        "ROFF": "1000000"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "tran",
+        "tstep": 1e-5,
+        "tstop": 0.004,
+        "tmax": 2e-7
+      }
+    ],
+    "options": {
+      "temp": 27,
+      "reltol": 1e-6,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18,
+      "method": "trap"
+    }
+  }
+}

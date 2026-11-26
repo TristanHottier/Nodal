@@ -1,0 +1,334 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Push-pull emitter follower: complementary NPN and PNP on ±5 V rails, 1 V 1 kHz sine into 1 kΩ, crossover dead zone",
+  "createdAt": "2026-11-26T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-VCC",
+        "type": "vsource",
+        "name": "VCC",
+        "x": 8,
+        "y": 10,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "5"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 13,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-VIN",
+        "type": "vsource",
+        "name": "VIN",
+        "x": 8,
+        "y": 24,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "0",
+          "acMag": "1",
+          "acPhase": "0",
+          "wave": "sin",
+          "vo": "0",
+          "va": "1",
+          "freq": "1k"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 8,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-VEE",
+        "type": "vsource",
+        "name": "VEE",
+        "x": 8,
+        "y": 40,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "-5"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 8,
+        "y": 43,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-Q1",
+        "type": "npn",
+        "name": "Q1",
+        "x": 30,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "model": "QN"
+        }
+      },
+      {
+        "id": "p-Q2",
+        "type": "pnp",
+        "name": "Q2",
+        "x": 30,
+        "y": 26,
+        "rotation": 180,
+        "mirror": true,
+        "params": {
+          "model": "QP"
+        }
+      },
+      {
+        "id": "p-RL",
+        "type": "resistor",
+        "name": "RL",
+        "x": 40,
+        "y": 24,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 40,
+        "y": 27,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 7
+          },
+          {
+            "x": 32,
+            "y": 7
+          },
+          {
+            "x": 32,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 20,
+            "y": 7
+          },
+          {
+            "x": 20,
+            "y": 4
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 8,
+            "y": 21
+          },
+          {
+            "x": 27,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 12,
+            "y": 21
+          },
+          {
+            "x": 12,
+            "y": 18
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 27,
+            "y": 16
+          },
+          {
+            "x": 27,
+            "y": 26
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 32,
+            "y": 19
+          },
+          {
+            "x": 32,
+            "y": 23
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 32,
+            "y": 21
+          },
+          {
+            "x": 40,
+            "y": 21
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 36,
+            "y": 21
+          },
+          {
+            "x": 36,
+            "y": 18
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 8,
+            "y": 37
+          },
+          {
+            "x": 32,
+            "y": 37
+          },
+          {
+            "x": 32,
+            "y": 29
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 20,
+            "y": 37
+          },
+          {
+            "x": 20,
+            "y": 40
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-vcc",
+        "text": "vcc",
+        "x": 20,
+        "y": 4,
+        "rotation": 0
+      },
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 12,
+        "y": 18,
+        "rotation": 0
+      },
+      {
+        "id": "l-out",
+        "text": "out",
+        "x": 36,
+        "y": 18,
+        "rotation": 0
+      },
+      {
+        "id": "l-vee",
+        "text": "vee",
+        "x": 20,
+        "y": 40,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [
+    {
+      "name": "QN",
+      "type": "NPN",
+      "params": {
+        "IS": "1e-14",
+        "BF": "100"
+      }
+    },
+    {
+      "name": "QP",
+      "type": "PNP",
+      "params": {
+        "IS": "1e-14",
+        "BF": "100"
+      }
+    }
+  ],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      },
+      {
+        "type": "tran",
+        "tstep": 1e-6,
+        "tstop": 0.002
+      }
+    ],
+    "options": {
+      "reltol": 1e-6,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}

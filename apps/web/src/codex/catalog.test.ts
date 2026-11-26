@@ -8,8 +8,6 @@ import { FIELD_DOCS, MODEL_PARAM_DOCS } from "./paramDocs";
 
 const parts = CODEX.filter((e) => e.kind === "part");
 const ids = new Set(CODEX.map((e) => e.id));
-/** Parts with no example yet; Task 6 adds the examples and their tryIt. */
-const NO_EXAMPLE_YET = ["isource", "vcvs", "vccs", "ccvs", "cccs", "pnp", "switch"];
 
 describe("codex catalog", () => {
   it("has one part entry per palette item", () => {
@@ -76,15 +74,13 @@ describe("codex catalog", () => {
   });
 
   describe("tryIt", () => {
-    const withExample = parts.filter((e) => !NO_EXAMPLE_YET.includes(e.id));
-    it.each(withExample.map((e) => [e.id, e] as const))("%s names an example with it", (_id, e) => {
+    it.each(parts.map((e) => [e.id, e] as const))("%s names an example with it", (_id, e) => {
       const ex = EXAMPLES.find((x) => x.id === e.tryIt);
       expect(ex, `example ${String(e.tryIt)}`).toBeDefined();
       const schematic = ex?.load().schematic;
       if (e.item === "label") expect(schematic?.labels.length).toBeGreaterThan(0);
       else expect(schematic?.parts.some((p) => p.type === e.item)).toBe(true);
     });
-    for (const id of NO_EXAMPLE_YET) it.todo(`${id} names an example with it (Task 6)`);
 
     it("uses real example ids on analyses", () => {
       for (const e of CODEX.filter((x) => x.kind !== "part" && x.tryIt !== undefined))

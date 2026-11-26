@@ -51,26 +51,31 @@ export const CODEX: readonly CodexEntryMeta[] = [
   part("isource", {
     aliases: ["current source", "I"],
     keywords: ["dc", "pulse", "sine", "pwl", "waveform"],
+    tryIt: "current-source-lc",
     related: ["vsource", "vccs", "operating-point"],
   }),
   part("vcvs", {
     aliases: ["VCVS", "E source", "voltage amplifier", "dependent source"],
     keywords: ["controlled source", "gain"],
+    tryIt: "controlled-sources",
     related: ["opamp", "vccs", "mna"],
   }),
   part("vccs", {
     aliases: ["VCCS", "G source", "transconductance", "dependent source"],
     keywords: ["controlled source", "gain", "transconductance"],
+    tryIt: "controlled-sources",
     related: ["vcvs", "small-signal", "mna"],
   }),
   part("ccvs", {
     aliases: ["CCVS", "H source", "transresistance", "dependent source"],
     keywords: ["controlled source", "gain", "sensing current"],
+    tryIt: "controlled-sources",
     related: ["cccs", "vsource", "mna"],
   }),
   part("cccs", {
     aliases: ["CCCS", "F source", "current amplifier", "dependent source"],
     keywords: ["controlled source", "gain", "sensing current"],
+    tryIt: "controlled-sources",
     related: ["ccvs", "vsource", "mna"],
   }),
   // Passives
@@ -111,6 +116,7 @@ export const CODEX: readonly CodexEntryMeta[] = [
     aliases: ["BJT", "bipolar transistor", "transistor", "Q", "Gummel-Poon"],
     keywords: ["bipolar", "beta", "early voltage", "model card"],
     model: "PNP",
+    tryIt: "push-pull",
     related: ["npn", "convergence", "small-signal"],
   }),
   part("nmos", {
@@ -132,6 +138,7 @@ export const CODEX: readonly CodexEntryMeta[] = [
     aliases: ["S", "voltage-controlled switch", "relay"],
     keywords: ["threshold", "hysteresis", "on resistance", "model card"],
     model: "SW",
+    tryIt: "switch-hysteresis",
     related: ["convergence", "transient", "vsource"],
   }),
   part("opamp", {

@@ -1,0 +1,555 @@
+{
+  "format": "nodal-project",
+  "formatVersion": 1,
+  "name": "Controlled sources: VCVS, VCCS, CCVS and CCCS with 1 kΩ loads, operating point",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "schematic": {
+    "parts": [
+      {
+        "id": "p-V1",
+        "type": "vsource",
+        "name": "V1",
+        "x": 8,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "dc": "1"
+        }
+      },
+      {
+        "id": "p-GND1",
+        "type": "ground",
+        "name": "GND1",
+        "x": 8,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R1",
+        "type": "resistor",
+        "name": "R1",
+        "x": 16,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND2",
+        "type": "ground",
+        "name": "GND2",
+        "x": 16,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-E1",
+        "type": "vcvs",
+        "name": "E1",
+        "x": 30,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "2"
+        }
+      },
+      {
+        "id": "p-GND3",
+        "type": "ground",
+        "name": "GND3",
+        "x": 26,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R2",
+        "type": "resistor",
+        "name": "R2",
+        "x": 40,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND4",
+        "type": "ground",
+        "name": "GND4",
+        "x": 40,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-G1",
+        "type": "vccs",
+        "name": "G1",
+        "x": 58,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "0.001"
+        }
+      },
+      {
+        "id": "p-GND5",
+        "type": "ground",
+        "name": "GND5",
+        "x": 54,
+        "y": 22,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R3",
+        "type": "resistor",
+        "name": "R3",
+        "x": 68,
+        "y": 16,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND6",
+        "type": "ground",
+        "name": "GND6",
+        "x": 68,
+        "y": 19,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-H1",
+        "type": "ccvs",
+        "name": "H1",
+        "x": 10,
+        "y": 42,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "1k",
+          "controlSource": "V1"
+        }
+      },
+      {
+        "id": "p-GND7",
+        "type": "ground",
+        "name": "GND7",
+        "x": 10,
+        "y": 45,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R4",
+        "type": "resistor",
+        "name": "R4",
+        "x": 22,
+        "y": 42,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND8",
+        "type": "ground",
+        "name": "GND8",
+        "x": 22,
+        "y": 45,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-F1",
+        "type": "cccs",
+        "name": "F1",
+        "x": 38,
+        "y": 42,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "gain": "2",
+          "controlSource": "V1"
+        }
+      },
+      {
+        "id": "p-GND9",
+        "type": "ground",
+        "name": "GND9",
+        "x": 38,
+        "y": 45,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      },
+      {
+        "id": "p-R5",
+        "type": "resistor",
+        "name": "R5",
+        "x": 50,
+        "y": 42,
+        "rotation": 0,
+        "mirror": false,
+        "params": {
+          "value": "1k"
+        }
+      },
+      {
+        "id": "p-GND10",
+        "type": "ground",
+        "name": "GND10",
+        "x": 50,
+        "y": 45,
+        "rotation": 0,
+        "mirror": false,
+        "params": {}
+      }
+    ],
+    "wires": [
+      {
+        "id": "w1",
+        "points": [
+          {
+            "x": 8,
+            "y": 13
+          },
+          {
+            "x": 16,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w2",
+        "points": [
+          {
+            "x": 12,
+            "y": 13
+          },
+          {
+            "x": 12,
+            "y": 10
+          }
+        ]
+      },
+      {
+        "id": "w3",
+        "points": [
+          {
+            "x": 26,
+            "y": 14
+          },
+          {
+            "x": 22,
+            "y": 14
+          },
+          {
+            "x": 22,
+            "y": 11
+          }
+        ]
+      },
+      {
+        "id": "w4",
+        "points": [
+          {
+            "x": 26,
+            "y": 18
+          },
+          {
+            "x": 26,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w5",
+        "points": [
+          {
+            "x": 30,
+            "y": 19
+          },
+          {
+            "x": 30,
+            "y": 22
+          },
+          {
+            "x": 26,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w6",
+        "points": [
+          {
+            "x": 30,
+            "y": 13
+          },
+          {
+            "x": 30,
+            "y": 10
+          },
+          {
+            "x": 40,
+            "y": 10
+          },
+          {
+            "x": 40,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w7",
+        "points": [
+          {
+            "x": 35,
+            "y": 10
+          },
+          {
+            "x": 35,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w8",
+        "points": [
+          {
+            "x": 54,
+            "y": 14
+          },
+          {
+            "x": 51,
+            "y": 14
+          },
+          {
+            "x": 51,
+            "y": 11
+          }
+        ]
+      },
+      {
+        "id": "w9",
+        "points": [
+          {
+            "x": 54,
+            "y": 18
+          },
+          {
+            "x": 54,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w10",
+        "points": [
+          {
+            "x": 58,
+            "y": 19
+          },
+          {
+            "x": 58,
+            "y": 22
+          },
+          {
+            "x": 54,
+            "y": 22
+          }
+        ]
+      },
+      {
+        "id": "w11",
+        "points": [
+          {
+            "x": 58,
+            "y": 13
+          },
+          {
+            "x": 58,
+            "y": 10
+          },
+          {
+            "x": 68,
+            "y": 10
+          },
+          {
+            "x": 68,
+            "y": 13
+          }
+        ]
+      },
+      {
+        "id": "w12",
+        "points": [
+          {
+            "x": 63,
+            "y": 10
+          },
+          {
+            "x": 63,
+            "y": 7
+          }
+        ]
+      },
+      {
+        "id": "w13",
+        "points": [
+          {
+            "x": 10,
+            "y": 39
+          },
+          {
+            "x": 10,
+            "y": 36
+          },
+          {
+            "x": 22,
+            "y": 36
+          },
+          {
+            "x": 22,
+            "y": 39
+          }
+        ]
+      },
+      {
+        "id": "w14",
+        "points": [
+          {
+            "x": 16,
+            "y": 36
+          },
+          {
+            "x": 16,
+            "y": 33
+          }
+        ]
+      },
+      {
+        "id": "w15",
+        "points": [
+          {
+            "x": 38,
+            "y": 39
+          },
+          {
+            "x": 38,
+            "y": 36
+          },
+          {
+            "x": 50,
+            "y": 36
+          },
+          {
+            "x": 50,
+            "y": 39
+          }
+        ]
+      },
+      {
+        "id": "w16",
+        "points": [
+          {
+            "x": 44,
+            "y": 36
+          },
+          {
+            "x": 44,
+            "y": 33
+          }
+        ]
+      }
+    ],
+    "labels": [
+      {
+        "id": "l-in",
+        "text": "in",
+        "x": 12,
+        "y": 10,
+        "rotation": 0
+      },
+      {
+        "id": "l-in-1",
+        "text": "in",
+        "x": 22,
+        "y": 11,
+        "rotation": 0
+      },
+      {
+        "id": "l-e",
+        "text": "e",
+        "x": 35,
+        "y": 7,
+        "rotation": 0
+      },
+      {
+        "id": "l-e-2",
+        "text": "e",
+        "x": 51,
+        "y": 11,
+        "rotation": 0
+      },
+      {
+        "id": "l-g",
+        "text": "g",
+        "x": 63,
+        "y": 7,
+        "rotation": 0
+      },
+      {
+        "id": "l-h",
+        "text": "h",
+        "x": 16,
+        "y": 33,
+        "rotation": 0
+      },
+      {
+        "id": "l-f",
+        "text": "f",
+        "x": 44,
+        "y": 33,
+        "rotation": 0
+      }
+    ]
+  },
+  "models": [],
+  "simulation": {
+    "analyses": [
+      {
+        "type": "op"
+      }
+    ],
+    "options": {
+      "reltol": 1e-6,
+      "vntol": 1e-9,
+      "abstol": 1e-15,
+      "chgtol": 1e-18
+    }
+  }
+}
