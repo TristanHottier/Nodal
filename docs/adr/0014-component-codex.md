@@ -53,7 +53,7 @@ A test checks that each entry has the sections for its kind.
 - `katex` 0.19.1 is MIT. Its `package.json` declares `"license": "MIT"` and the package ships a single `LICENSE` file, the MIT text, with no separate font licence or notice. The README says "KaTeX is licensed under the MIT License". The fonts in `dist/fonts` are part of the same package, so the MIT licence covers them as distributed.
 - `marked` 18.2.1 is MIT. It is a devDependency used only at build time and is not in the shipped bundle.
 - The KaTeX copyright notice is kept with the shipped fonts and CSS.
-
+- Both licences are credited in the README credits table (M10 Task 12).
 ## Consequences
 
 Positive:
