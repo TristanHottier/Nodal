@@ -5,6 +5,7 @@ import { EngineClient } from "./engine/client";
 import { createSimulationStore } from "./simulation/store";
 import { startAutosave } from "./storage/autosave";
 import { openStore } from "./storage/idb";
+import { LoadBoundary } from "./editor/LoadBoundary";
 import { useRoute } from "./codex/route";
 
 // The codex is only ever reached through this lazy import, so its content and KaTeX stay out of
@@ -91,9 +92,17 @@ export function App() {
 
   if (route.view === "codex") {
     return (
-      <Suspense fallback={<CodexFallback />}>
-        <CodexPage id={route.id} store={store} />
-      </Suspense>
+      <LoadBoundary
+        fallback={
+          <p role="alert">
+            Codex failed to load. <a href="#/">Back to the editor</a>
+          </p>
+        }
+      >
+        <Suspense fallback={<CodexFallback />}>
+          <CodexPage id={route.id} store={store} />
+        </Suspense>
+      </LoadBoundary>
     );
   }
 

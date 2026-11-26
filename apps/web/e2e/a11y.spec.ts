@@ -103,6 +103,22 @@ test("the page has one main landmark, one h1 and ordered headings", async ({ pag
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nodal");
 });
 
+test("with the codex drawer open there is still one main landmark and ordered headings", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "About Diode" }).click();
+  const drawer = page.getByRole("complementary", { name: "Codex" });
+  await expect(drawer.getByRole("heading", { name: "Diode", level: 2 })).toBeVisible();
+  await expect(drawer.locator("h3").first()).toBeVisible();
+  const { violations } = await new AxeBuilder({ page })
+    .withRules(["landmark-one-main", "page-has-heading-one", "region", "heading-order"])
+    .analyze();
+  expect(violations.map((v) => v.id)).toEqual([]);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Nodal");
+});
+
 test("the uic checkbox with its label is at least 24x24 px", async ({ page }) => {
   await page.goto("./");
   await page.getByLabel("Open example").selectOption("ce-amplifier");

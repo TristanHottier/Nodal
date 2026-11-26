@@ -13,12 +13,9 @@ export function rememberOpener(key: string): void {
   current = key;
 }
 
-/** Focuses the remembered opener if it is on the page; returns whether it was. */
-export function focusOpener(): boolean {
-  if (current === null) return false;
-  const el = Array.from(document.querySelectorAll<HTMLElement>(`[${ATTR}]`)).find(
-    (e) => e.getAttribute(ATTR) === current,
-  );
-  el?.focus();
-  return el !== undefined;
+/** Focuses the remembered opener; if it is gone, the top-bar Codex link, so focus never drops to the page body. */
+export function focusOpener(): void {
+  const all = Array.from(document.querySelectorAll<HTMLElement>(`[${ATTR}]`));
+  const el = current === null ? undefined : all.find((e) => e.getAttribute(ATTR) === current);
+  (el ?? document.querySelector<HTMLElement>(".nodal-topbar-codex"))?.focus();
 }

@@ -116,8 +116,7 @@
   --palette-width: 180px;
   --inspector-width: 260px;
   --unit-width: 36px;
-  /* 1024 to 1280 px windows: 18 and 22 grid units. The palette keeps its width so the info buttons fit beside the labels. */
-  --palette-width-narrow: 180px;
+  /* 1024 to 1280 px windows: the inspector gives up four grid units */
   --inspector-width-narrow: 220px;
   --waveform-side-width: 320px;
   --progress-width: 120px;

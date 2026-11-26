@@ -73,13 +73,27 @@ function Parameters({ meta }: { meta: CodexEntryMeta }) {
   );
 }
 
+/** Moves every heading in the rendered prose down by `by` levels (h2 becomes h3), capped at h6. */
+export function shiftHeadings(html: string, by: number): string {
+  if (by === 0) return html;
+  return html.replace(/<(\/?)h([1-6])\b/g, (_m, slash: string, n: string) => {
+    return `<${slash}h${String(Math.min(6, Number(n) + by))}`;
+  });
+}
+
+/** `headingLevel` is the level of the entry title: 1 on the codex page, 2 in the editor drawer. */
 export function CodexEntry({
   meta,
   store,
+  headingLevel = 1,
 }: {
   meta: CodexEntryMeta;
   store: StoreApi<EditorState>;
+  headingLevel?: 1 | 2;
 }) {
+  const Title = headingLevel === 1 ? "h1" : "h2";
+  const Section = headingLevel === 1 ? "h2" : "h3";
+  const shift = headingLevel - 1;
   const [loaded, setLoaded] = useState<{ id: string; value: Loaded } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -102,17 +116,17 @@ export function CodexEntry({
 
   const body: Loaded = loaded?.id === meta.id ? loaded.value : { state: "loading" };
   const example = meta.tryIt === undefined ? undefined : EXAMPLES.find((e) => e.id === meta.tryIt);
-  const [before, after] =
-    body.state === "ready" && body.html.includes(SLOT)
-      ? (body.html.split(SLOT) as [string, string])
-      : [body.state === "ready" ? body.html : "", null];
+  const html = body.state === "ready" ? shiftHeadings(body.html, shift) : "";
+  const [before, after] = html.includes(SLOT)
+    ? (html.split(SLOT) as [string, string])
+    : [html, null];
   const related = meta.related.flatMap((id) => CODEX.find((e) => e.id === id) ?? []);
 
   return (
     <article className="nodal-codex-entry" aria-labelledby="nodal-codex-title">
       <header>
         <p className="nodal-panel-title">{KIND_LABEL[meta.kind]}</p>
-        <h1 id="nodal-codex-title">{meta.title}</h1>
+        <Title id="nodal-codex-title">{meta.title}</Title>
         {meta.aliases.length > 0 ? (
           <p className="nodal-codex-aliases">Also known as {meta.aliases.join(", ")}</p>
         ) : null}
@@ -144,7 +158,7 @@ export function CodexEntry({
       ) : null}
       {related.length > 0 ? (
         <nav className="nodal-codex-related" aria-label="Related entries">
-          <h2 className="nodal-panel-title">Related</h2>
+          <Section className="nodal-panel-title">Related</Section>
           <ul>
             {related.map((r) => (
               <li key={r.id}>

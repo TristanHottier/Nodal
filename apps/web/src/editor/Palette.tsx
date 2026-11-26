@@ -90,12 +90,11 @@ export function Palette() {
                 </span>
               </button>
               <Tooltip label={aboutButtonName(item)}>
-                {(describedBy) => (
+                {() => (
                   <button
                     type="button"
                     className="nodal-palette-info"
                     aria-label={aboutButtonName(item)}
-                    aria-describedby={describedBy}
                     {...openerProps(`palette:${item}`)}
                     onClick={() => {
                       rememberOpener(`palette:${item}`);

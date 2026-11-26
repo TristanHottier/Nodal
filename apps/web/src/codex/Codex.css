@@ -108,7 +108,8 @@
   margin: 0;
 }
 
-.nodal-codex-entry h2 {
+.nodal-codex-entry h2,
+.nodal-codex-entry h3 {
   margin: var(--space-4) 0 var(--space-1);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);
@@ -204,7 +205,7 @@
 }
 
 /* In the editor drawer the entry fills a narrow column: smaller title, wrapping tables. */
-.nodal-codex-drawer h1 {
+.nodal-codex-drawer h2:first-of-type {
   margin: 0 0 var(--space-1);
   font-size: var(--text-lg);
   font-weight: var(--weight-semibold);

@@ -88,7 +88,7 @@
 
 .nodal-palette .nodal-tip-body {
   width: max-content;
-  max-width: var(--palette-width-narrow);
+  max-width: var(--palette-width);
   white-space: normal;
 }
 
@@ -189,12 +189,10 @@
   border-top: var(--border-width) solid var(--color-border-subtle);
 }
 
-/* Between 1024 and 1280 px the side panels give up two grid units each. */
+/* Between 1024 and 1280 px the inspector gives up four grid units; the parts panel keeps its width. */
 @media (max-width: 1279px) {
   .nodal-editor {
-    grid-template-columns: var(--rail-width) var(--palette-width-narrow) 1fr var(
-        --inspector-width-narrow
-      );
+    grid-template-columns: var(--rail-width) var(--palette-width) 1fr var(--inspector-width-narrow);
   }
 }
 

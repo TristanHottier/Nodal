@@ -3,7 +3,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { EditorProvider } from "../editor/EditorContext";
 import { createEditorStore } from "../editor/store";
+import { CODEX } from "../codex/catalog";
 import { AnalysisEditor } from "./AnalysisEditor";
+import { ANALYSIS_TYPES } from "./AnalysisFields";
 import { dividerProject } from "./testFixtures";
 
 afterEach(cleanup);
@@ -112,5 +114,11 @@ describe("AnalysisEditor", () => {
     expect(sim(store).options).toEqual({ method: "gear" });
     fireEvent.change(sel, { target: { value: "" } });
     expect(sim(store).options).toEqual({});
+  });
+});
+
+describe("AnalysisEditor codex links", () => {
+  it("every_analysis_type_has_a_codex_entry", () => {
+    for (const t of ANALYSIS_TYPES) expect(CODEX.some((e) => e.analysis === t.value)).toBe(true);
   });
 });

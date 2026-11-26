@@ -38,6 +38,7 @@ export function AnalysisEditor() {
       <h2>Analyses</h2>
       {analyses.map((a, i) => {
         // The card the run bar will run; only marked when there is a choice.
+        const entry = CODEX.find((e) => e.analysis === a.type);
         const runs = analyses.length > 1 && i === Math.min(runIndex, analyses.length - 1);
         // Analyses have no ids; the index is their identity.
         return (
@@ -82,22 +83,22 @@ export function AnalysisEditor() {
                 replace(i, next);
               }}
             />
-            <button
-              type="button"
-              className="nodal-link-button"
-              aria-label={
-                analyses.length > 1 ? `About this analysis, analysis ${String(i + 1)}` : undefined
-              }
-              {...openerProps(`analysis:${String(i)}`)}
-              onClick={() => {
-                const entry = CODEX.find((e) => e.analysis === a.type);
-                if (entry === undefined) return;
-                rememberOpener(`analysis:${String(i)}`);
-                store.getState().openCodex(entry.id);
-              }}
-            >
-              About this analysis
-            </button>
+            {entry === undefined ? null : (
+              <button
+                type="button"
+                className="nodal-link-button"
+                aria-label={
+                  analyses.length > 1 ? `About this analysis, analysis ${String(i + 1)}` : undefined
+                }
+                {...openerProps(`analysis:${String(i)}`)}
+                onClick={() => {
+                  rememberOpener(`analysis:${String(i)}`);
+                  store.getState().openCodex(entry.id);
+                }}
+              >
+                About this analysis
+              </button>
+            )}
             {runs ? <small className="nodal-analysis-runs">Runs when you press Run</small> : null}
           </fieldset>
         );

@@ -55,7 +55,7 @@ export default function CodexDrawer({ id }: { id: string }) {
       {meta === undefined ? (
         <p role="alert">No entry called {id}.</p>
       ) : (
-        <CodexEntry key={meta.id} meta={meta} store={store} />
+        <CodexEntry key={meta.id} meta={meta} store={store} headingLevel={2} />
       )}
     </aside>
   );

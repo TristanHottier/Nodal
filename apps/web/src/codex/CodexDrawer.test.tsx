@@ -5,7 +5,7 @@ import { makeStore } from "../editor/testUtils";
 import CodexDrawer from "./CodexDrawer";
 
 vi.mock("./entries", () => ({
-  loadEntry: () => Promise.resolve({ html: "<p>Body text.</p>", title: "x" }),
+  loadEntry: () => Promise.resolve({ html: "<h2>Section</h2><p>Body text.</p>", title: "x" }),
 }));
 
 afterEach(cleanup);
@@ -26,11 +26,32 @@ describe("CodexDrawer", () => {
   it("is_a_labelled_aside_with_the_entry_title_and_a_full_page_link", async () => {
     setup("diode");
     const drawer = screen.getByRole("complementary", { name: "Codex" });
-    expect(drawer.querySelector("h1")?.textContent).toBe("Diode");
+    expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(0);
+    expect(drawer.querySelector("h2")?.textContent).toBe("Diode");
     expect(screen.getByRole("link", { name: "Open full page" }).getAttribute("href")).toBe(
       "#/codex/diode",
     );
     expect(await screen.findByText("Body text.")).toBeTruthy();
+  });
+
+  it("shifts_entry_sections_down_to_h3", async () => {
+    setup("diode");
+    await screen.findByText("Body text.");
+    const headings = screen.getAllByRole("heading").map((h) => h.tagName);
+    expect(headings[0]).toBe("H2");
+    expect(headings.slice(1).every((t) => t === "H3")).toBe(true);
+  });
+
+  it("with_no_opener_on_the_page_focus_goes_to_the_top_bar_link_not_the_body", () => {
+    const link = document.createElement("a");
+    link.className = "nodal-topbar-codex";
+    link.href = "#/codex";
+    document.body.append(link);
+    const store = setup("diode");
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(store.getState().codexEntry).toBeNull();
+    expect(document.activeElement).toBe(link);
+    link.remove();
   });
 
   it("moves_focus_to_the_close_button_on_open", () => {

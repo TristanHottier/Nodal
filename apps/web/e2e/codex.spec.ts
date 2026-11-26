@@ -40,7 +40,7 @@ test.describe("the codex drawer", () => {
     await page.keyboard.press("Enter");
 
     const drawer = drawerOf(page);
-    await expect(drawer.getByRole("heading", { name: "Diode", level: 1 })).toBeVisible();
+    await expect(drawer.getByRole("heading", { name: "Diode", level: 2 })).toBeVisible();
     await expect(drawer.locator(":focus")).toHaveCount(1);
     await expect(drawer.locator("math").first()).toBeAttached();
     await expect(part).toHaveAttribute("data-selected", "true");
@@ -61,7 +61,7 @@ test.describe("the codex drawer", () => {
     const about = page.getByRole("button", { name: "About Diode" });
     await about.click();
     const drawer = drawerOf(page);
-    await expect(drawer.getByRole("heading", { name: "Diode", level: 1 })).toBeVisible();
+    await expect(drawer.getByRole("heading", { name: "Diode", level: 2 })).toBeVisible();
     await expect(drawer.locator(":focus")).toHaveCount(1);
     await page.keyboard.press("Escape");
     await expect(drawer).toHaveCount(0);
@@ -83,7 +83,7 @@ test.describe("the codex drawer", () => {
     await placeAndSelect(page, "NPN transistor");
     await page.getByRole("button", { name: "About this part" }).click();
     const drawer = drawerOf(page);
-    await expect(drawer.getByRole("heading", { name: "NPN transistor", level: 1 })).toBeVisible();
+    await expect(drawer.getByRole("heading", { name: "NPN transistor", level: 2 })).toBeVisible();
     await expect(drawer.getByRole("link", { name: "Open full page" })).toHaveAttribute(
       "href",
       "#/codex/npn",
@@ -93,11 +93,32 @@ test.describe("the codex drawer", () => {
     await expect(page.getByRole("button", { name: "About this part" })).toBeFocused();
   });
 
+  test("the inspector button opens it by keyboard and Esc returns focus to it", async ({
+    page,
+  }) => {
+    await page.goto("./");
+    await placeAndSelect(page, "NPN transistor");
+    const about = page.getByRole("button", { name: "About this part" });
+    await about.focus();
+    await page.keyboard.press("Enter");
+    const drawer = drawerOf(page);
+    await expect(drawer.getByRole("heading", { name: "NPN transistor", level: 2 })).toBeVisible();
+    await expect(drawer.locator(":focus")).toHaveCount(1);
+    await expect(drawer.getByRole("heading", { level: 1 })).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(drawer).toHaveCount(0);
+    await expect(about).toBeFocused();
+    await expect(page.locator('[data-testid^="part-"]').first()).toHaveAttribute(
+      "data-selected",
+      "true",
+    );
+  });
+
   test("opens the analysis entry from the analysis editor", async ({ page }) => {
     await page.goto("./");
     await page.getByRole("button", { name: "About this analysis" }).first().click();
     await expect(
-      drawerOf(page).getByRole("heading", { name: "Operating point", level: 1 }),
+      drawerOf(page).getByRole("heading", { name: "Operating point", level: 2 }),
     ).toBeVisible();
   });
 });
@@ -121,6 +142,14 @@ test("the top-bar link opens the codex; search, reload and Back work", async ({ 
   await page.goBack();
   await expect(page.getByTestId("schematic-canvas")).toBeVisible();
   await expect(page.locator('[data-testid^="part-"]')).toHaveCount(1);
+});
+
+test("the top-bar Codex link opens the codex index from the keyboard", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("banner").getByRole("link", { name: "Codex" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#\/codex$/);
+  await expect(page.getByRole("heading", { name: "Codex", level: 1 })).toBeVisible();
 });
 
 test("Try it opens the example in the editor", async ({ page }) => {

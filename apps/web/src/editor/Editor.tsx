@@ -14,6 +14,7 @@ import { createSimulationStore, type SimulationState } from "../simulation/store
 import { Canvas } from "./canvas/Canvas";
 import { EmptyState } from "./canvas/EmptyState";
 import { EditorProvider, useEditor, useEditorStore } from "./EditorContext";
+import { LoadBoundary } from "./LoadBoundary";
 import { Inspector } from "./inspector/Inspector";
 import { NarrowNotice } from "./NarrowNotice";
 import { Palette } from "./Palette";
@@ -96,6 +97,7 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
 function EditorBody({ status }: { status?: ReactNode }) {
   const kind = useEditor((s) => s.tool.kind);
   const codexEntry = useEditor((s) => s.codexEntry);
+  const store = useEditorStore();
   const place = usePlaceTool();
   const wire = useWireTool();
   const probe = useProbeTool();
@@ -122,15 +124,23 @@ function EditorBody({ status }: { status?: ReactNode }) {
       {codexEntry === null ? (
         <Inspector />
       ) : (
-        <Suspense
-          fallback={
-            <aside className="nodal-codex-drawer" aria-label="Codex">
-              <p role="status">Loading…</p>
-            </aside>
-          }
+        <LoadBoundary
+          onError={() => {
+            const s = store.getState();
+            s.closeCodex();
+            s.setStatusMessage("Codex failed to load");
+          }}
         >
-          <CodexDrawer id={codexEntry} />
-        </Suspense>
+          <Suspense
+            fallback={
+              <aside className="nodal-codex-drawer" aria-label="Codex">
+                <p role="status">Loading…</p>
+              </aside>
+            }
+          >
+            <CodexDrawer id={codexEntry} />
+          </Suspense>
+        </LoadBoundary>
       )}
       <section className="nodal-results" aria-label="Results">
         <RunBar />
