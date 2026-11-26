@@ -151,6 +151,10 @@ function renderMath(token: MathToken, source: string, id: string): string {
 
 /** Only http(s), fragment and relative targets; no scheme such as `javascript:` or `data:`. */
 function safeHref(href: string): boolean {
+  const hasControl = Array.from({ length: href.length }, (_, i) => href.charCodeAt(i)).some(
+    (c) => c <= 0x1f || c === 0x7f,
+  );
+  if (hasControl || /[&\\\s]/.test(href) || href.startsWith("//")) return false;
   const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(href.trim());
   return scheme === null || ["http", "https"].includes((scheme[1] ?? "").toLowerCase());
 }

@@ -95,6 +95,25 @@ describe("renderEntry strictness", () => {
   });
 });
 
+describe("renderEntry link and dollar edge cases", () => {
+  it("rejects entity-encoded schemes, backslashes, control chars and protocol-relative links", () => {
+    for (const href of [
+      "&#106;avascript:alert(1)",
+      "a\\b",
+      "//evil.example/x",
+      "/\\evil",
+      "a%20b&amp;c",
+    ]) {
+      expect(() => renderEntry(concept(`[x](<${href}>)`), "concept", "enc")).toThrow(/enc/);
+    }
+    expect(() => renderEntry(concept("[x](<a\tb>)"), "concept", "enc")).toThrow(/enc/);
+  });
+
+  it("does not throw for an escaped dollar or a dollar in a code span", () => {
+    expect(() => renderEntry(concept("cost \\$5 and `$`"), "concept", "t")).not.toThrow();
+  });
+});
+
 describe("renderEntry Markdown", () => {
   it("escapes raw HTML", () => {
     const { html } = renderEntry(
