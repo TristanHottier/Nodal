@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
+import { codexMarkdown } from "./build/codexMarkdown.ts";
 
 /** Preloads the hashed Inter Latin file in the built index.html (Vite does not rewrite a bare href). */
 function preloadInter(): Plugin {
@@ -39,7 +40,7 @@ function preloadInter(): Plugin {
 
 export default defineConfig({
   base: "/Nodal/",
-  plugins: [react(), preloadInter()],
+  plugins: [codexMarkdown(), react(), preloadInter()],
   resolve: {
     alias: {
       "@nodal/wasm": fileURLToPath(

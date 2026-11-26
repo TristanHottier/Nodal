@@ -37,6 +37,7 @@ export default tseslint.config(
       "apps/web/playwright.config.ts",
       "apps/web/playwright.guide.config.ts",
       "apps/web/e2e/**/*.ts",
+      "apps/web/build/**/*.ts",
     ],
     languageOptions: {
       parserOptions: {

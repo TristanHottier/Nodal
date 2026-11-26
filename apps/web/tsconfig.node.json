@@ -3,9 +3,16 @@
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
+    "allowImportingTsExtensions": true,
     "paths": {
       "@nodal/wasm": ["../../crates/nodal-wasm/pkg/nodal_wasm.d.ts"]
     }
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "playwright.guide.config.ts", "e2e"]
+  "include": [
+    "vite.config.ts",
+    "playwright.config.ts",
+    "playwright.guide.config.ts",
+    "e2e",
+    "build"
+  ]
 }
