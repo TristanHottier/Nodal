@@ -49,3 +49,33 @@ describe("SymbolFigure", () => {
     }
   });
 });
+
+describe("one scale for every symbol", () => {
+  it("gives different symbols the same label size and width = span x scale", () => {
+    const sizes = new Set<string | null>();
+    const ratios = new Set<string>();
+    for (const item of ["ground", "opamp", "resistor"] as const) {
+      const { container, unmount } = render(<SymbolFigure item={item} />);
+      const svg = container.querySelector("svg");
+      const [, , w] = (svg?.getAttribute("viewBox") ?? "").split(" ").map(Number);
+      expect(svg?.style.width).toBe(`calc(var(--codex-grid-scale) * ${String(w)})`);
+      for (const t of container.querySelectorAll(".nodal-codex-pins text"))
+        sizes.add(t.getAttribute("font-size"));
+      for (const c of container.querySelectorAll("circle[data-pin-dot]"))
+        ratios.add(c.getAttribute("r") ?? "");
+      unmount();
+    }
+    expect(sizes.size).toBe(1);
+    expect(ratios.size).toBe(1);
+  });
+
+  it("uses different widths for symbols with different bounds", () => {
+    const w = (item: "ground" | "opamp") => {
+      const { container, unmount } = render(<SymbolFigure item={item} />);
+      const v = container.querySelector("svg")?.style.width;
+      unmount();
+      return v;
+    };
+    expect(w("ground")).not.toBe(w("opamp"));
+  });
+});

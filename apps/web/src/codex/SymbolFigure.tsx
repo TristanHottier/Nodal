@@ -48,7 +48,7 @@ export function pinLabelLayout(bounds: SymbolBounds, pins: readonly SymbolPin[])
   });
 }
 
-function viewBoxFor(bounds: SymbolBounds, labels: readonly PinLabel[]): string {
+function viewBoxFor(bounds: SymbolBounds, labels: readonly PinLabel[]) {
   let { x0, y0, x1, y1 } = bounds;
   x0 -= 0.5;
   y0 -= 0.5;
@@ -67,20 +67,30 @@ function viewBoxFor(bounds: SymbolBounds, labels: readonly PinLabel[]): string {
     y0 = Math.min(y0, l.y - LABEL_SIZE - MARGIN);
     y1 = Math.max(y1, l.y + MARGIN);
   }
-  return `${String(x0)} ${String(y0)} ${String(x1 - x0)} ${String(y1 - y0)}`;
+  return {
+    box: `${String(x0)} ${String(y0)} ${String(x1 - x0)} ${String(y1 - y0)}`,
+    w: x1 - x0,
+    h: y1 - y0,
+  };
 }
 
 export function SymbolFigure({ item }: { item: PartType | "label" }) {
   const def = item === "label" ? LABEL_SYMBOL : SYMBOLS[item];
   const Body = def.Body;
   const labels = pinLabelLayout(def.bounds, def.pins);
+  const vb = viewBoxFor(def.bounds, labels);
   const pins = def.pins.map((p) => p.name).join(", ");
   return (
     <figure className="nodal-codex-symbol">
       <svg
         role="img"
         aria-label={`${def.label} symbol. Pins: ${pins}.`}
-        viewBox={viewBoxFor(def.bounds, labels)}
+        viewBox={vb.box}
+        // One scale for every symbol: size = span in grid units x the token (px, in tokens.css).
+        style={{
+          width: `calc(var(--codex-grid-scale) * ${String(vb.w)})`,
+          aspectRatio: `${String(vb.w)} / ${String(vb.h)}`,
+        }}
       >
         <Body />
         <g className="nodal-codex-pins" aria-hidden="true">

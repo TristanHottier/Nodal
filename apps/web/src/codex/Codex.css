@@ -99,8 +99,8 @@
 
 .nodal-codex-symbol svg {
   flex: none;
-  width: var(--codex-symbol-size);
-  height: var(--codex-symbol-size);
+  max-width: 100%;
+  height: auto;
   color: var(--color-ink);
 }
 
