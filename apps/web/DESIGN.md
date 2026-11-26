@@ -194,7 +194,7 @@ Plot axes carry titles with units, such as "V(b) (V)", in Inter medium, with tic
 
 ## Layout
 
-The window is a column: top bar, a main row, and the status bar. The main row is the tool rail (44 px), the parts panel (180 px, 160 px between 1024 and 1280 px), the canvas, and the inspector (260 px, 220 px narrow). The results panel sits under the canvas with the run bar on top, and the parts panel spans the rows beside the results so it keeps its height. Panel widths are whole grid units.
+The window is a column: top bar, a main row, and the status bar. The main row is the tool rail (44 px), the parts panel (180 px at every width, each row ending in a small "About" button that opens the codex), the canvas, and the inspector (260 px, 220 px narrow). The results panel sits under the canvas with the run bar on top, and the parts panel spans the rows beside the results so it keeps its height. Panel widths are whole grid units.
 
 The top bar (40 px) has a left group (brand mark, short project title) and a right group (file actions, theme). The title is the part of the name before the first ": ", and the full name is the tooltip. The rail icons carry their shortcut underneath. The parts panel is grouped into Sources, Passives, Semiconductors and Other. With nothing selected, the inspector shows Analyses first, with Options and Models collapsed under chevrons.
 

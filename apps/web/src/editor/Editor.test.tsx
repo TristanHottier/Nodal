@@ -40,8 +40,15 @@ describe("Editor", () => {
     expect(screen.getByRole("button", { name: "Select" }).getAttribute("aria-pressed")).toBe(
       "true",
     );
-    const partButtons = screen.getAllByRole("button").filter((b) => b.closest(".nodal-palette"));
+    const paletteButtons = screen.getAllByRole("button").filter((b) => b.closest(".nodal-palette"));
+    const partButtons = paletteButtons.filter((b) => b.getAttribute("aria-pressed") !== null);
     expect(partButtons).toHaveLength(PALETTE.length);
+    // Each place button is followed by its own "About" button, a separate tab stop.
+    expect(paletteButtons).toHaveLength(2 * PALETTE.length);
+    for (const [i, b] of paletteButtons.entries())
+      expect(b.getAttribute("aria-label")?.startsWith(i % 2 === 0 ? "Place " : "About ")).toBe(
+        true,
+      );
     expect(screen.getAllByRole("button").filter((b) => b.closest("[role=toolbar]"))).toHaveLength(
       3,
     );

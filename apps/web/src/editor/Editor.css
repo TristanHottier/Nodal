@@ -32,6 +32,21 @@
   margin: var(--space-1) var(--space-1) 0;
 }
 
+/* One row per item: the place button, then the small "About" button after it. */
+.nodal-palette-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nodal-palette .nodal-palette-item > button:first-child {
+  flex: 1 1 0;
+}
+
+.nodal-palette-item .nodal-tip {
+  flex: none;
+}
+
 .nodal-palette button {
   flex: none;
   min-height: var(--palette-row-height);
@@ -52,6 +67,29 @@
 .nodal-palette button[aria-pressed="true"] {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
+}
+
+/* The info button is a quiet icon at the end of the row; its tooltip opens leftwards and wraps, so the
+   palette's own scroll box does not clip it. */
+.nodal-palette .nodal-palette-info {
+  justify-content: center;
+  width: var(--palette-row-height);
+  padding: 0;
+  color: var(--color-text-muted);
+}
+
+.nodal-palette .nodal-tip-pos {
+  top: 100%;
+  right: 0;
+  left: auto;
+  padding: var(--space-1) 0 0;
+  transform: none;
+}
+
+.nodal-palette .nodal-tip-body {
+  width: max-content;
+  max-width: var(--palette-width-narrow);
+  white-space: normal;
 }
 
 .nodal-palette-icon {
@@ -87,6 +125,49 @@
 
 .nodal-projectbar select {
   max-width: 100%;
+}
+
+/* The codex drawer takes the inspector's column, so the canvas keeps its size. */
+.nodal-codex-drawer {
+  grid-row: 2;
+  grid-column: 4;
+  min-width: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+  font-size: var(--text-md);
+  background: var(--color-panel);
+  box-shadow: var(--elevation-1);
+}
+
+.nodal-codex-drawer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+/* Ink with an underline: the accent colour is below 4.5:1 on the panel in both themes. */
+.nodal-codex-drawer-bar a,
+.nodal-link-button {
+  color: var(--color-text);
+}
+
+.nodal-codex-drawer-bar button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* A text-style button: "About this part" under a name, "About this analysis" in a card. */
+.nodal-link-button {
+  min-height: 0;
+  padding: 0;
+  margin: 0 0 var(--space-2);
+  font-weight: var(--weight-regular);
+  text-decoration: underline;
+  background: none;
+  border-color: transparent;
 }
 
 .nodal-canvas-pane {

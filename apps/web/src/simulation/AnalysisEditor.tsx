@@ -1,6 +1,8 @@
 // Analysis setup: one card per analysis plus the solver options.
 import type { Analysis } from "@nodal/schema";
 import { Trash2 } from "lucide-react";
+import { CODEX } from "../codex/catalog";
+import { openerProps, rememberOpener } from "../editor/codexOpener";
 import { SelectField } from "../editor/inspector/Field";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
 import {
@@ -80,6 +82,22 @@ export function AnalysisEditor() {
                 replace(i, next);
               }}
             />
+            <button
+              type="button"
+              className="nodal-link-button"
+              aria-label={
+                analyses.length > 1 ? `About this analysis, analysis ${String(i + 1)}` : undefined
+              }
+              {...openerProps(`analysis:${String(i)}`)}
+              onClick={() => {
+                const entry = CODEX.find((e) => e.analysis === a.type);
+                if (entry === undefined) return;
+                rememberOpener(`analysis:${String(i)}`);
+                store.getState().openCodex(entry.id);
+              }}
+            >
+              About this analysis
+            </button>
             {runs ? <small className="nodal-analysis-runs">Runs when you press Run</small> : null}
           </fieldset>
         );

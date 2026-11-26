@@ -1,8 +1,10 @@
 // Right-hand panel: the selected part or label, else the project name and model library.
+import { entryForItem } from "../../codex/catalog";
 import { SYMBOLS } from "../../symbols/catalog";
 import { AnalysisEditor } from "../../simulation/AnalysisEditor";
 import { Diagnostics } from "../Diagnostics";
-import { useEditor } from "../EditorContext";
+import { openerProps, rememberOpener } from "../codexOpener";
+import { useEditor, useEditorStore } from "../EditorContext";
 import { LabelFields } from "./LabelFields";
 import { ModelEditor } from "./ModelEditor";
 import { OpValues } from "./OpValues";
@@ -11,6 +13,7 @@ import { ProjectFields } from "./ProjectFields";
 import "./Inspector.css";
 
 export function Inspector() {
+  const store = useEditorStore();
   const selection = useEditor((s) => s.selection);
   const doc = useEditor((s) => s.doc);
   const id = selection.length === 1 ? selection[0] : undefined;
@@ -21,6 +24,17 @@ export function Inspector() {
       {part ? (
         <>
           <h2>{SYMBOLS[part.type].label}</h2>
+          <button
+            type="button"
+            className="nodal-link-button"
+            {...openerProps("inspector:part")}
+            onClick={() => {
+              rememberOpener("inspector:part");
+              store.getState().openCodex(entryForItem(part.type).id);
+            }}
+          >
+            About this part
+          </button>
           <PartFields part={part} />
           <OpValues part={part} />
         </>

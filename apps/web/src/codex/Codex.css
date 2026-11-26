@@ -20,8 +20,10 @@
   border-bottom: var(--border-width) solid var(--color-border-subtle);
 }
 
+/* Ink with an underline: the accent colour is below 4.5:1 on these backgrounds in both themes. */
 .nodal-codex a {
-  color: var(--color-accent);
+  color: var(--color-text);
+  text-decoration: underline;
 }
 
 .nodal-codex-home {
@@ -199,4 +201,20 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* In the editor drawer the entry fills a narrow column: smaller title, wrapping tables. */
+.nodal-codex-drawer h1 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.nodal-codex-drawer a {
+  color: var(--color-text);
+}
+
+.nodal-codex-drawer .nodal-codex-symbol {
+  flex-direction: column;
+  align-items: flex-start;
 }

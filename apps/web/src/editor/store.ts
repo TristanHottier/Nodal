@@ -47,6 +47,10 @@ export interface EditorState {
   /** Message shown in the status bar (open errors, autosave). Not part of history. */
   statusMessage: string | null;
   setStatusMessage(m: string | null): void;
+  /** The codex entry open in the editor drawer, or null. Not part of history; never touches selection or tool. */
+  codexEntry: string | null;
+  openCodex(id: string): void;
+  closeCodex(): void;
   commit(next: Schematic, select?: readonly string[]): void;
   undo(): void;
   redo(): void;
@@ -110,6 +114,7 @@ export function createEditorStore(opts?: {
     view: { x: 0, y: 0, zoom: 1 },
     gestureActive: false,
     statusMessage: null,
+    codexEntry: null,
     projectGeneration: 0,
     fittedGeneration: null,
     newId,
@@ -197,6 +202,12 @@ export function createEditorStore(opts?: {
     },
     setStatusMessage: (statusMessage) => {
       if (get().statusMessage !== statusMessage) set({ statusMessage });
+    },
+    openCodex: (id) => {
+      if (get().codexEntry !== id) set({ codexEntry: id });
+    },
+    closeCodex: () => {
+      if (get().codexEntry !== null) set({ codexEntry: null });
     },
     setGestureActive: (gestureActive) => {
       if (get().gestureActive !== gestureActive) set({ gestureActive });

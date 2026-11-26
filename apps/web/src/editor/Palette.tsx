@@ -1,7 +1,11 @@
 // The parts panel: one button per placeable item, an icon and a one-line label each.
+import { Info } from "lucide-react";
+import { entryForItem } from "../codex/catalog";
 import { LABEL_SYMBOL, type PALETTE, SYMBOLS } from "../symbols/catalog";
+import { openerProps, rememberOpener } from "./codexOpener";
 import { useEditor, useEditorStore } from "./EditorContext";
 import { keepFocus } from "./keepFocus";
+import { Tooltip } from "./Tooltip";
 
 type Item = (typeof PALETTE)[number];
 
@@ -24,6 +28,10 @@ export const GROUPS: readonly { title: string; items: readonly Item[] }[] = [
 ];
 
 const fullName = (item: Item) => (item === "label" ? LABEL_SYMBOL.label : SYMBOLS[item].label);
+
+/** The accessible name of the info button: "About " + the full name ("net label" for the label). */
+export const aboutButtonName = (item: Item) =>
+  `About ${item === "label" ? "net label" : SYMBOLS[item].label}`;
 
 /** The visible label. It is always part of the accessible name (WCAG 2.5.3). */
 export const partLabel = (item: Item) => SHORT[item] ?? fullName(item);
@@ -66,21 +74,39 @@ export function Palette() {
             {title}
           </p>
           {items.map((item) => (
-            <button
-              type="button"
-              onMouseDown={keepFocus}
-              key={item}
-              aria-label={partButtonName(item)}
-              aria-pressed={tool.kind === "place" && tool.item === item}
-              onClick={() => {
-                store.getState().setTool({ kind: "place", item, rotation: 0, mirror: false });
-              }}
-            >
-              <Preview item={item} />
-              <span aria-hidden="true" className="nodal-palette-label">
-                {partLabel(item)}
-              </span>
-            </button>
+            <div key={item} className="nodal-palette-item">
+              <button
+                type="button"
+                onMouseDown={keepFocus}
+                aria-label={partButtonName(item)}
+                aria-pressed={tool.kind === "place" && tool.item === item}
+                onClick={() => {
+                  store.getState().setTool({ kind: "place", item, rotation: 0, mirror: false });
+                }}
+              >
+                <Preview item={item} />
+                <span aria-hidden="true" className="nodal-palette-label">
+                  {partLabel(item)}
+                </span>
+              </button>
+              <Tooltip label={aboutButtonName(item)}>
+                {(describedBy) => (
+                  <button
+                    type="button"
+                    className="nodal-palette-info"
+                    aria-label={aboutButtonName(item)}
+                    aria-describedby={describedBy}
+                    {...openerProps(`palette:${item}`)}
+                    onClick={() => {
+                      rememberOpener(`palette:${item}`);
+                      store.getState().openCodex(entryForItem(item).id);
+                    }}
+                  >
+                    <Info aria-hidden="true" className="nodal-icon" />
+                  </button>
+                )}
+              </Tooltip>
+            </div>
           ))}
         </div>
       ))}

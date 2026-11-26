@@ -205,4 +205,22 @@ describe("editor store", () => {
     store.getState().undo();
     expect(store.getState().doc.parts[0]?.name).toBe("R1");
   });
+
+  it("codex_drawer_state_is_outside_history_selection_and_tool", () => {
+    const store = createEditorStore();
+    store.getState().select(["x"]);
+    store.getState().setTool({ kind: "wire" });
+    const before = store.getState();
+    store.getState().openCodex("diode");
+    expect(store.getState().codexEntry).toBe("diode");
+    store.getState().openCodex("npn");
+    expect(store.getState().codexEntry).toBe("npn");
+    expect(store.getState().selection).toEqual(["x"]);
+    expect(store.getState().tool).toEqual({ kind: "wire" });
+    expect(store.getState().doc).toBe(before.doc);
+    expect(store.getState().past).toHaveLength(0);
+    store.getState().closeCodex();
+    expect(store.getState().codexEntry).toBeNull();
+    expect(store.getState().future).toHaveLength(0);
+  });
 });

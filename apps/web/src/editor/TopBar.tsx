@@ -1,4 +1,5 @@
 // The top bar: brand mark, project name, project actions, theme. Read-only has no project actions.
+import { BookOpen } from "lucide-react";
 import { Logo } from "../brand/Logo";
 import { ThemeSelect } from "../theme/ThemeSelect";
 import { useEditor } from "./EditorContext";
@@ -26,6 +27,10 @@ export function TopBar({ readOnly = false }: { readOnly?: boolean }) {
       </span>
       <div className="nodal-topbar-actions">
         {readOnly ? null : <ProjectBar />}
+        <a className="nodal-topbar-codex" href="#/codex">
+          <BookOpen aria-hidden="true" className="nodal-icon" />
+          Codex
+        </a>
         <ThemeSelect />
       </div>
     </header>

@@ -53,3 +53,16 @@
   align-items: center;
   gap: var(--space-1);
 }
+
+.nodal-topbar-codex {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.nodal-topbar-codex:hover {
+  text-decoration: underline;
+}

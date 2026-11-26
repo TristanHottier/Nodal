@@ -65,3 +65,17 @@ describe("TopBar", () => {
     expect(screen.queryByRole("combobox", { name: "Open example" })).toBeNull();
   });
 });
+
+describe("TopBar codex link", () => {
+  it("links_to_the_codex_index_with_a_visible_label", () => {
+    setup();
+    const link = screen.getByRole("link", { name: "Codex" });
+    expect(link.getAttribute("href")).toBe("#/codex");
+    expect(link.textContent).toBe("Codex");
+  });
+
+  it("is_there_in_the_read_only_view_too", () => {
+    setup(true);
+    expect(screen.getByRole("link", { name: "Codex" })).toBeTruthy();
+  });
+});

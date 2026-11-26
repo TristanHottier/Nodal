@@ -14,6 +14,8 @@ TODO
 
 ## Equations
 
+$$I_D = I_S\left(e^{V_D/(N V_t)} - 1\right)$$
+
 TODO
 
 {{parameters}}

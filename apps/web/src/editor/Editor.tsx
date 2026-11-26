@@ -1,5 +1,5 @@
 // Editor layout: top bar, tool rail, parts panel, canvas, inspector, results and status bar.
-import { type ReactNode, useEffect, useState } from "react";
+import { lazy, type ReactNode, Suspense, useEffect, useState } from "react";
 import type { StoreApi } from "zustand";
 import { EngineClient } from "../engine/client";
 import { RunBar } from "../simulation/RunBar";
@@ -27,6 +27,10 @@ import { EDITOR_MIN_WIDTH, useMinWidth } from "./useMinWidth";
 import { useShortcuts } from "./useShortcuts";
 import { RunReadout } from "../simulation/RunReadout";
 import "./Editor.css";
+
+// The drawer pulls in the entry content and KaTeX, so it loads on first use only
+// (scripts/check-first-load.mjs).
+const CodexDrawer = lazy(() => import("../codex/CodexDrawer"));
 
 function StatusBar({ status }: { status?: ReactNode }) {
   const message = useEditor((s) => s.statusMessage);
@@ -91,6 +95,7 @@ function ReadOnlyBody({ status }: { status?: ReactNode }) {
 
 function EditorBody({ status }: { status?: ReactNode }) {
   const kind = useEditor((s) => s.tool.kind);
+  const codexEntry = useEditor((s) => s.codexEntry);
   const place = usePlaceTool();
   const wire = useWireTool();
   const probe = useProbeTool();
@@ -114,7 +119,19 @@ function EditorBody({ status }: { status?: ReactNode }) {
         <Canvas {...(tool ? { tool: tool.handlers, overlay: tool.overlay } : {})} />
         <EmptyState />
       </main>
-      <Inspector />
+      {codexEntry === null ? (
+        <Inspector />
+      ) : (
+        <Suspense
+          fallback={
+            <aside className="nodal-codex-drawer" aria-label="Codex">
+              <p role="status">Loading…</p>
+            </aside>
+          }
+        >
+          <CodexDrawer id={codexEntry} />
+        </Suspense>
+      )}
       <section className="nodal-results" aria-label="Results">
         <RunBar />
         <WaveformPanel />
