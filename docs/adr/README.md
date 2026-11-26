@@ -18,3 +18,4 @@ Architecture Decision Records for Nodal, one file per decision, numbered in the 
 | [0011](0011-transient-absolute-floor.md) | Absolute floor on the transient tolerance | Accepted |
 | [0012](0012-solderless-visual-design.md) | Visual design: Solderless | Accepted (visual sections superseded by 0013) |
 | [0013](0013-modern-visual-design.md) | Visual design: modern engineering tool | Accepted |
+| [0014](0014-component-codex.md) | Component codex | Accepted |
