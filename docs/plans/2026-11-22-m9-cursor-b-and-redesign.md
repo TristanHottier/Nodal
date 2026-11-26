@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite 8, React 19, TypeScript 6, Zustand, uPlot 1.6.32, Vitest, Playwright, `@axe-core/playwright`, `lighthouse` (CI only). New: `lucide-react` 1.73.0 (ISC), `@fontsource-variable/inter` 5.3.0 and `@fontsource-variable/jetbrains-mono` 5.3.0 (OFL 1.1). All three are older than 7 days on 2026-11-22.
 
-**Spec:** `docs/ROADMAP.md` §M9. Draft: `docs/plans/2026-11-22-m9-v1.1-draft.md`.
+**Spec:** `docs/ROADMAP.md` §M9.
 
 ## Decisions (Tristan, 2026-11-22)
 

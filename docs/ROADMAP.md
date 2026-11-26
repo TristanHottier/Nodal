@@ -148,9 +148,9 @@ Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable w
 
 ## v1.2 milestones
 
-### M10 — Component codex (v1.2.0) · not started
+### M10 — Component codex (v1.2.0) · in progress
 
-Tristan's request (2026-11-26): a dictionary of Nodal's components inside the app. Each entry explains what the component does, how it works and the equations Nodal uses for it. The draft plan is [`docs/plans/2026-11-26-m10-codex-draft.md`](plans/2026-11-26-m10-codex-draft.md). A planning session turns it into a task-by-task plan, and Tristan approves that plan before any code.
+Tristan's request (2026-11-26): a dictionary of Nodal's components inside the app. Each entry explains what the component does, how it works and the equations Nodal uses for it. The plan is [`docs/plans/2026-11-26-m10-component-codex.md`](plans/2026-11-26-m10-component-codex.md). Besides the parts, the codex covers the four analyses and four core concepts (Tristan, 2026-11-26).
 
 - **One entry per part type:** the 17 in the palette, from resistor to ground, plus net labels. Each entry has:
   - a plain-language description and typical uses;
