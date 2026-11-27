@@ -9,7 +9,7 @@ A current-controlled voltage source (CCVS, SPICE element `H`) forces the voltage
 - A current-to-voltage converter (a transimpedance stage) in a block model.
 - A current sensor: put a 0 V source in a branch and read its current as a voltage.
 - Modelling the output of a Hall-effect or shunt-style sensor at block level.
-- Coupling two parts of a circuit that share no node.
+- Coupling two parts of a circuit that share no node other than ground.
 
 ## How it works
 
@@ -48,4 +48,4 @@ This encodes $v_{n^+} - v_{n^-} - r\,i_c = 0$. Entries that name ground are skip
 
 ## Differences from ngspice
 
-None known. Nodal follows the standard SPICE `H` definition, with a constant gain and a controlling voltage source. The engine rejects a controlling name that is not a voltage source.
+Nodal follows the standard SPICE `H` definition, with a constant gain. ngspice also accepts a VCVS or a CCVS as the controlling element. Nodal accepts only an independent voltage source and rejects any other name.

@@ -24,7 +24,7 @@ The model is an ideal, linear inductor. It has no winding resistance, no core sa
 
 ## Equations
 
-With $v = v_{n^+} - v_{n^-}$ and $i_k$ the branch current from $n^+$ through the coil to $n^-$:
+With $v = v_{n^+} - v_{n^-}$ and $i_k$ the branch current from $n^+$ through the coil to $n^-$ (pin `1` is $n^+$ and pin `2` is $n^-$):
 
 $$
 v = L\,\dfrac{di_k}{dt}
@@ -54,7 +54,7 @@ $$
 
 Nodal integrates the flux $L\,i_k$. See [integration](#/codex/integration) for the formulas, the Gear option and the step control.
 
-The initial condition `ic` is the coil current from $n^+$ to $n^-$ at the start of a transient run, and it is used only with `uic`. Without `uic` the run starts from the operating point, where the inductor current is whatever the circuit gives it. With `uic` all unknowns start at zero and the stored flux starts at $L$ times `ic`, or zero if `ic` is empty.
+The initial condition `ic` is the coil current flowing from pin `1` through the coil to pin `2` at the start of a transient run, and it is used only with `uic`. Without `uic` the run starts from the operating point, where the inductor current is whatever the circuit gives it. With `uic` all unknowns start at zero and the stored flux starts at $L$ times `ic`, or zero if `ic` is empty.
 
 {{parameters}}
 
@@ -73,4 +73,4 @@ In AC the reactive matrix holds $-L$ on the diagonal entry of row $k$, so that $
 
 ## Differences from ngspice
 
-Nodal follows ngspice-42 `indload.c` for the transient row and `indacld.c` for AC. The element takes only an inductance and an initial current. Mutual inductance, temperature coefficients and the instance multiplier are not supported. As in ngspice, `ic` matters only with `uic`. With `uic`, Nodal also reports a $t = 0$ point, which ngspice does not.
+Nodal follows ngspice-42 `indload.c` for the transient row and `indacld.c` for AC. The element takes only an inductance and an initial current. Mutual inductance, temperature coefficients and the instance multiplier are not supported. As in ngspice, `ic` matters only with `uic`. An inductance of zero or less is rejected; ngspice accepts a negative value. With `uic`, Nodal also reports a $t = 0$ point, which ngspice does not.

@@ -49,4 +49,4 @@ The right-hand side is unchanged. Entries that name ground are skipped.
 
 ## Differences from ngspice
 
-None known. Nodal follows the standard SPICE `F` definition, with a constant gain and a controlling voltage source. The engine rejects a controlling name that is not a voltage source.
+Nodal follows the standard SPICE `F` definition, with a constant gain. ngspice also accepts a VCVS or a CCVS as the controlling element. Nodal accepts only an independent voltage source and rejects any other name.

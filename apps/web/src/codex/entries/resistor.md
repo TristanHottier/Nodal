@@ -2,7 +2,7 @@
 
 ## What it is
 
-A resistor opposes current in proportion to the voltage across it. It is the simplest element in the simulator: a fixed, linear conductance between two nodes. It has no memory, so it behaves the same in every analysis.
+A resistor carries a current proportional to the voltage across it. It is the simplest element in the simulator: a fixed, linear conductance between two nodes. It has no memory, so it behaves the same in every analysis.
 
 ## Typical uses
 
@@ -62,4 +62,4 @@ The same pattern is the template for every conductance in the system: the capaci
 
 ## Differences from ngspice
 
-None known for the part as Nodal supports it. The resistor takes only a value: there is no model card, no temperature coefficient and no instance multiplier, so a netlist that uses those ngspice options has no equivalent here.
+Nodal rejects a resistance of zero or less. ngspice accepts a negative resistance and replaces a resistance of exactly zero with 1 mΩ (`resparam.c`), so such a netlist runs there but not here. The resistor takes only a value: there is no model card, no temperature coefficient and no instance multiplier.

@@ -16,7 +16,7 @@ With `uic`, no operating point is solved. All unknowns start at zero, and the in
 
 ### Integration
 
-The integration method is `method`: trapezoidal by default, or Gear (BDF2). Trapezoidal is more accurate but can ring after a sudden change. Gear damps that ringing. For both, the first step and the first step after every breakpoint is backward Euler.
+The integration method is `method`: trapezoidal by default, or Gear (BDF2). Trapezoidal is more accurate but can ring after a sudden change. Gear damps that ringing. For both, the first step, the first step after every breakpoint or switch state change, and the retry after a Newton failure are backward Euler.
 
 ### Step control
 
@@ -62,7 +62,7 @@ where $p$ is the method order, $\text{DD}_{p+1}$ is the divided difference of th
 
 ## Settings
 
-- `tstep`: a nominal step. It sets the default `tmax` and the size of the first step. With `uic` it is also a breakpoint. It is not the spacing of the output.
+- `tstep`: a nominal step. It sets the default `tmax`, and the first step is $\min(t_{stop}/100,\ t_{step})/100$ or smaller. With `uic` it is also a breakpoint. It is not the spacing of the output.
 - `tstop`: the end time, in s.
 - `tstart`: the time from which results are reported, in s. The simulation still runs from 0.
 - `tmax`: the largest allowed step, in s. Optional.
@@ -84,7 +84,9 @@ Newton failed even at the smallest step. The named unknown was still changing. C
 
 The matrix was singular during the run, which stops it. Check for a node that loses its DC path when a switch opens, and add a resistor to ground.
 
-`tran analysis: need tstep > 0 and 0 <= tstart < tstop`
+`analysis tran: tstep must be finite and > 0, got ...`
+
+`analysis tran: tstop ... must be above tstart ...`
 
 Fix the time fields so that `tstop` is larger than `tstart`.
 

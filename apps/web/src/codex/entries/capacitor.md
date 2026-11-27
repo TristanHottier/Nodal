@@ -22,7 +22,7 @@ The model is an ideal, linear capacitor. It has no leakage, no series resistance
 
 ## Equations
 
-With $v = v_{n^+} - v_{n^-}$ and $q = C\,v$:
+With $v = v_{n^+} - v_{n^-}$ and $q = C\,v$ (pin `1` is $n^+$ and pin `2` is $n^-$):
 
 $$
 i = \dfrac{dq}{dt} = C\,\dfrac{dv}{dt}
@@ -54,7 +54,7 @@ $$
 
 Either way the capacitor becomes a resistor of conductance $G_{eq}$ in parallel with a constant current. Nodal integrates the charge $q$, not $C\,dv/dt$, which is the form [integration](#/codex/integration) describes. That entry also covers the Gear formula and the choice of step.
 
-The initial condition `ic` is the voltage $v_{n^+} - v_{n^-}$ at the start of a transient run. It is used only when the run uses `uic`. Without `uic` the run starts from the operating point, and a capacitor there carries the voltage the circuit gives it, so `ic` is ignored. With `uic` all unknowns start at zero and the stored charge starts at $C$ times `ic`, or zero if `ic` is empty.
+The initial condition `ic` is the voltage of pin `1` minus pin `2`, $v_{n^+} - v_{n^-}$, at the start of a transient run. It is used only when the run uses `uic`. Without `uic` the run starts from the operating point, and a capacitor there carries the voltage the circuit gives it, so `ic` is ignored. With `uic` all unknowns start at zero and the stored charge starts at $C$ times `ic`, or zero if `ic` is empty.
 
 {{parameters}}
 
@@ -76,6 +76,6 @@ There is no branch current. In a DC analysis nothing is stamped. In AC analysis 
 
 ## Differences from ngspice
 
-Nodal follows ngspice-42 `capload.c` for the transient companion and its charge history. The element takes only a capacitance and an initial voltage. Capacitor model cards, temperature coefficients and the instance multiplier are not supported. As in ngspice, `ic` matters only with `uic`.
+Nodal follows ngspice-42 `capload.c` for the transient companion and its charge history. The element takes only a capacitance and an initial voltage. Capacitor model cards, temperature coefficients and the instance multiplier are not supported. As in ngspice, `ic` matters only with `uic`. A capacitance of zero or less is rejected; ngspice accepts a negative value.
 
 One difference in output: with `uic`, Nodal solves a backward Euler step at $t = 0$ so that the first reported point shows the initial voltages, and ngspice does not report $t = 0$ in that case.

@@ -10,7 +10,7 @@ Nodal reports node voltages for every named node and branch currents for voltage
 
 For a circuit with only linear parts, one linear solve gives the answer. With diodes, transistors or other nonlinear parts, Nodal uses Newton iteration (see [Newton and convergence aids](#/codex/convergence)). Each pass replaces every nonlinear part by its tangent line at the current guess, solves the resulting linear system, and repeats until the guess stops changing.
 
-Before any iteration, Nodal checks the topology. A node with no DC path to ground, or a loop made only of voltage sources and inductors, is reported as an error without running the solver.
+Before any iteration, Nodal checks the topology. A node with no DC path to ground, or a loop made only of voltage sources, VCVS or CCVS outputs and inductors, is reported as an error without running the solver.
 
 Nodal tries three stages in this order. The second and third run only if the stage before fails.
 

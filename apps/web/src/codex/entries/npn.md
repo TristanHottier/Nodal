@@ -10,13 +10,13 @@ An NPN bipolar junction transistor has three terminals: collector, base and emit
 - Differential pairs and current mirrors.
 - Low-side switches that drive relays, LEDs or other loads from a logic signal.
 - Simple logic gates and level shifters.
-- Bias circuits that rely on the exponential base-emitter law, such as bandgap-style references.
+- Bias circuits that rely on the exponential base-emitter law, such as $\Delta V_{be}$ current references (temperature is fixed, so temperature drift is not simulated).
 
 ## How it works
 
 The base-emitter junction behaves like a diode. When it is forward biased by about 0.6 V to 0.7 V, electrons flow from the emitter into the base. The base is thin, so most of them are swept across the reverse-biased base-collector junction and become collector current. Only a small fraction recombines in the base and appears as base current. The ratio of the two is the current gain, set by `BF`.
 
-Nodal describes this with two junction currents, a forward one controlled by $V_{be}$ and a reverse one controlled by $V_{bc}$. Their difference is the transport current from collector to emitter, and each junction also leaks a base current scaled by `BF` or `BR`. The model has four regions:
+Nodal describes this with two junction currents, a forward one controlled by $V_{be}$ and a reverse one controlled by $V_{bc}$. Their difference is the transport current from collector to emitter, and each junction also contributes a base current, $I_F/B_F$ or $I_R/B_R$. The model has four regions:
 
 - Forward active: base-emitter forward biased, base-collector reverse biased. The collector current is about $\beta_F$ times the base current. This is the amplifier region.
 - Saturation: both junctions forward biased. The collector current no longer follows the base current. This is the closed-switch state.
@@ -60,7 +60,7 @@ r_\pi \approx \dfrac{B_F}{g_m},\qquad
 r_o \approx \dfrac{V_{AF} - V_{bc}}{I_C}
 $$
 
-These are the textbook hybrid-pi values. Nodal uses the exact derivatives, namely $\partial I_C/\partial V_{be}$ and $\partial I_B/\partial V_{be}$ for $g_m$ and $1/r_\pi$, and the $V_{bc}$ derivative of $I_C$ for $1/r_o$.
+These are the textbook hybrid-pi values. Nodal uses the exact derivatives, namely $\partial I_C/\partial V_{be}$ and $\partial I_B/\partial V_{be}$ for $g_m$ and $1/r_\pi$, and minus the $V_{bc}$ derivative of $I_C$, $-\partial I_C/\partial V_{bc}$, for $1/r_o$.
 
 Charge storage has a depletion part and a diffusion part at each junction. With $C_J$, $V_J$ and $M_J$ the zero-bias capacitance, junction potential and grading coefficient of the junction, the depletion charge $Q_j$ follows the [diode](#/codex/diode) formula. Below $F_C V_J$ the capacitance is
 
@@ -115,6 +115,6 @@ In AC analysis the matrix $G$ holds the same conductances at the stored operatin
 Nodal follows `bjtload.c` and `bjtacld.c` for the equations above, with these differences.
 
 - Parasitic series resistances, high injection, recombination currents, the reverse Early voltage, breakdown and quasi-saturation are not modelled. A model card that sets them is rejected.
-- The limiting uses $N_F V_t$ and $N_R V_t$ in pnjlim and in the critical voltage of each junction. ngspice-42 (`bjtload.c`, `bjttemp.c`) uses one critical voltage, $V_t \ln(V_t/(\sqrt{2} I_S))$, for both junctions and passes the plain thermal voltage to pnjlim. The two agree when `NF` and `NR` are 1.
+- The limiting uses $N_F V_t$ and $N_R V_t$ in pnjlim and in the critical voltage of each junction. ngspice-42 (`bjtload.c`, `bjttemp.c`) uses one critical voltage, $V_t \ln(V_t/(\sqrt{2} I_S))$, for both junctions and passes the plain thermal voltage to pnjlim. The two agree when `NF` and `NR` are 1. The first DC iteration also starts $V_{be}$ at this per-junction critical voltage.
 - In every analysis the convergence test compares the linear prediction of the currents with the currents recomputed at the new junction voltages, where `bjtconv.c` compares it with the stored currents. In a transient step the recomputed currents also include the charge currents. The diode follows the same rule.
 - Temperature is fixed at 27 °C.

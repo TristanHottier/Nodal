@@ -61,4 +61,4 @@ Use a larger `step`.
 
 `dc sweep of ... failed at ...: <cause>`
 
-One point failed, and the cause follows the colon, for example a non-convergence message. Run an [operating point](#/codex/operating-point) with the source set to that value to see the same failure alone. A point that fails in a circuit with a sharp feature, such as a breakdown, often passes with a smaller `step`.
+One point failed, and the cause follows the colon, for example a non-convergence message. Run an [operating point](#/codex/operating-point) with the source set to that value to see the same failure alone. A point that fails in a circuit with a sharp feature, such as a switch threshold or a latch that flips, often passes with a smaller `step`.

@@ -50,7 +50,7 @@ const MOS = {
   PHI: d("V", "Surface potential used by the body effect."),
   LAMBDA: d(
     "1/V",
-    "Channel-length modulation, the slope of the saturation current with drain voltage.",
+    "Channel-length modulation: the saturation current grows by the fraction LAMBDA per volt of drain-source voltage.",
   ),
   CGSO: d("F/m", "Gate-source overlap capacitance per metre of channel width."),
   CGDO: d("F/m", "Gate-drain overlap capacitance per metre of channel width."),
@@ -75,13 +75,13 @@ export const MODEL_PARAM_DOCS: Record<ModelKind, Record<string, ModelParamDoc>> 
 };
 
 const sourceDocs = (unit: string): Record<string, string> => ({
-  dc: `The constant ${unit} value, used by the operating point, the DC sweep and as the level before a waveform starts.`,
+  dc: `The constant ${unit} value, used by the operating point, the DC sweep and as the bias for AC analysis. With a waveform set, a transient run, including its starting operating point, uses the waveform instead.`,
   acMag:
     "Magnitude of the source in the AC analysis; leave it empty for a source that is not an AC input.",
   acPhase: "Phase of the source in the AC analysis, in degrees.",
   wave: "The time-domain waveform used by the transient analysis: none, pulse, sin or pwl.",
-  v1: "Pulse low level, the value before and after each pulse.",
-  v2: "Pulse high level.",
+  v1: "Pulse initial value, held before the first edge and between pulses.",
+  v2: "Pulse value held for the pulse width.",
   td: "Delay before the waveform starts, in seconds.",
   tr: "Pulse rise time.",
   tf: "Pulse fall time.",
@@ -90,8 +90,9 @@ const sourceDocs = (unit: string): Record<string, string> => ({
   vo: "Offset added to the sine.",
   va: "Peak amplitude of the sine.",
   freq: "Frequency of the sine.",
-  theta: "Damping factor of the sine; the amplitude decays as e^(-theta t) after the delay.",
-  phase: "Phase of the sine at the end of the delay, in degrees.",
+  theta: "Damping factor of the sine; after the delay the amplitude decays as e^(-theta (t - td)).",
+  phase:
+    "Phase of the sine in degrees at the end of the delay. Before the delay the source holds Offset + Amplitude × sin(Phase).",
   pwl: "Time and value pairs, joined by straight lines.",
 });
 
@@ -103,19 +104,19 @@ const controlled = (what: string): Record<string, string> => ({
 const modelDoc = (what: string): Record<string, string> => ({ model: what });
 const mosDocs = (): Record<string, string> => ({
   ...modelDoc("The NMOS or PMOS model card that gives the device its parameters."),
-  w: "Channel width; empty uses the model default of 100 µm.",
-  l: "Channel length; empty uses the model default of 100 µm.",
+  w: "Channel width; empty uses the default of 100 µm, as in ngspice.",
+  l: "Channel length; empty uses the default of 100 µm, as in ngspice.",
 });
 
 export const FIELD_DOCS: Record<PartType, Record<string, string>> = {
   resistor: { value: "Resistance in ohms." },
   capacitor: {
     value: "Capacitance in farads.",
-    ic: "Voltage across the capacitor at the start of a transient run that uses initial conditions.",
+    ic: "Voltage of pin 1 minus pin 2 at the start of a transient run with uic checked; ignored without uic. Empty means 0 V.",
   },
   inductor: {
     value: "Inductance in henries.",
-    ic: "Current through the inductor at the start of a transient run that uses initial conditions.",
+    ic: "Current from pin 1 through the inductor to pin 2 at the start of a transient run with uic checked; ignored without uic. Empty means 0 A.",
   },
   vsource: sourceDocs("voltage"),
   isource: sourceDocs("current"),

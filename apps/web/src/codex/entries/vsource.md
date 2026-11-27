@@ -62,7 +62,7 @@ Before the delay the source sits at $V_O + V_A \sin\varphi$, not at $V_O$, as in
 
 ### PWL
 
-The points are pairs $(t_j, v_j)$ with strictly increasing times. Before the first time the value is $v_0$, after the last time it is the last value, and in between it is linear:
+The points are pairs $(t_j, v_j)$ with strictly increasing times. Before the first point's time the value is the first point's value $v_0$ (points numbered from $j = 0$), after the last time it is the last value, and in between it is linear:
 
 $$
 v(t) = v_j + \dfrac{t - t_j}{t_{j+1} - t_j}\,(v_{j+1} - v_j), \qquad t_j < t \le t_{j+1}
@@ -94,6 +94,6 @@ With this sign convention a source that delivers power has a negative $i_k$. ngs
 
 ## Differences from ngspice
 
-The pulse, sine and PWL values port the corresponding cases of ngspice-42 `vsrcload.c`, and the breakpoints follow `vsrcacct.c`. The supported waveforms are narrower: Nodal has no pulse phase or pulse count, and no PWL repeat or delay options. An exponential or AM source does not exist here.
+The pulse, sine and PWL values port the corresponding cases of ngspice-42 `vsrcload.c`, and the breakpoints follow `vsrcacct.c`. The supported waveforms are narrower: Nodal has no pulse phase or pulse count, and no PWL repeat or delay options. An exponential or AM source does not exist here. ngspice replaces a zero rise or fall time with tstep, a zero width or period with tstop and a zero sine frequency with 1/tstop. Nodal requires rise time, fall time, period and frequency to be greater than zero.
 
 With `uic`, Nodal reports a point at $t = 0$, which ngspice does not.

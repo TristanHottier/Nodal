@@ -24,7 +24,7 @@ Charge storage. The depletion region behaves like a capacitor whose value rises 
 
 A small conductance gmin (see the circuit options) sits in parallel with the junction, as in SPICE. It keeps the matrix well conditioned when the diode is off.
 
-Newton's method on an exponential can overshoot badly: one step may ask for a junction voltage of several volts, and the exponential then overflows. Nodal limits the junction voltage step with SPICE's pnjlim. If the new voltage is above a critical value and has jumped by more than $2 N V_t$, the step is replaced by a logarithmic compression of the jump, so the voltage creeps up instead of leaping. On the reverse side a very negative step is clamped to a floor: about twice the old voltage (minus one volt) when the old voltage is negative, and $-V_{old} - 1$ otherwise. An iteration in which the voltage was limited cannot count as converged.
+Newton's method on an exponential can overshoot badly: one step may ask for a junction voltage of several volts, and the exponential then overflows. Nodal limits the junction voltage step with SPICE's pnjlim. If the new voltage is above a critical value and has jumped by more than $2 N V_t$, the step is replaced by a logarithmic compression of the jump, so the voltage creeps up instead of leaping. On the reverse side a very negative step is clamped to a floor: $2V_{old} - 1$ when the old voltage is zero or negative, and $-V_{old} - 1$ when it is positive. An iteration in which the voltage was limited cannot count as converged.
 
 The model leaves out reverse breakdown (a model card that sets it is rejected), high-level injection, recombination current and temperature scaling.
 
@@ -44,7 +44,7 @@ Here $g_d = dI_d/dV_d$ is the small-signal conductance of the junction. Below $-
 
 $$a = \left(\dfrac{3\,nV_t}{e\,V_d}\right)^3,\qquad I_d = -I_S\,(1 + a) + g_{min} V_d,\qquad g_d = \dfrac{3\,I_S\,a}{V_d} + g_{min}$$
 
-Both pieces join continuously at $-3\,nV_t$, and the conductance stays positive.
+Here $e = 2.71828\ldots$ is Euler's number. Both pieces join continuously at $-3\,nV_t$, and the conductance stays positive.
 
 The operating regions follow from this: forward (exponential growth), reverse (current close to $-I_S$) and the transition near zero bias.
 

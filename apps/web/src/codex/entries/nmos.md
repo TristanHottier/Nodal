@@ -108,7 +108,7 @@ The channel itself has no $g_{min}$ across it. The area-based JS and the junctio
 
 ### Limiting
 
-Newton steps can overshoot, so Nodal limits how far each voltage moves per iteration, as ngspice does. In plain words, `fetlim` limits the gate-source step around the threshold: a rising or falling step is capped at $2\,|V_{gs,old} - V_{TO}| + 2$ V, a limit that grows with the distance from the threshold, and near the threshold the new voltage is kept within about half a volt below and four volts above the threshold. `limvds` caps the drain-source step: a rise is held to $4$ V, or to three times the old value plus $2$ V once $V_{ds}$ is already above $3.5$ V, and a fall is not allowed below a small negative value. The bulk junction voltages use the same junction limiter as the [diode](#/codex/diode). Limiting only shapes the iterations. The converged solution is the unlimited equations above.
+Newton steps can overshoot, so Nodal limits how far each voltage moves per iteration, as ngspice does. In plain words, `fetlim` limits the gate-source step around $V_{th}$, the threshold (with body effect) from the previous iteration. Far above threshold a rise is capped at $2\,|V_{gs,old} - V_{th}| + 2$ V and a fall at $|V_{gs,old} - V_{th}| + 1$ V; near threshold the new voltage is kept between $V_{th} - 0.5$ V and $V_{th} + 4$ V; below threshold a fall is capped at $2\,|V_{gs,old} - V_{th}| + 2$ V and a rise stops at $V_{th} + 0.5$ V. `limvds` keeps a rising $V_{ds}$ at or below 4 V, or at or below $3V_{ds,old} + 2$ V once $V_{ds,old} \ge 3.5$ V; a falling $V_{ds}$ is held at or above $-0.5$ V, or at or above 2 V when it starts from 3.5 V or more. The bulk junction voltages use the same junction limiter as the [diode](#/codex/diode). Limiting only shapes the iterations. The converged solution is the unlimited equations above.
 
 {{parameters}}
 
@@ -134,7 +134,7 @@ Nodal follows ngspice-42 `mos1load.c`, `mos1acld.c` and `mos1conv.c` for the Lev
 
 - `gmbs` is the exact derivative of the clamped $s(V_{bs})$ for $V_{bs} > 0$. ngspice uses $g_m\gamma/(2s)$ in every branch. This changes the Newton matrix only, not the converged solution.
 - Nodal reports a device as "limited" whenever `fetlim` or `limvds` changes a voltage, as well as for the junction limiter. ngspice-42 `mos1load.c` sets its limiting flag, and so non-convergence, only for the junction limiter.
-- The convergence test compares the linear prediction of the drain current, and of the sum of the two bulk junction currents, with the value recomputed at the new voltages. `mos1conv.c` compares the prediction with the stored currents instead (see the Newton convergence entry, [convergence](#/codex/convergence)).
+- The convergence test compares the linear prediction of the channel current, and of the sum of the two bulk junction currents, with the values recomputed at the new voltages. `mos1conv.c` compares the predictions with the stored currents instead, and its drain current also includes the bulk-drain junction (see the Newton convergence entry, [convergence](#/codex/convergence)).
 - Level 1 only. TOX (and with it the Meyer gate capacitances), CBD, CBS, CJ, CJSW and JS are rejected. Only `IS` sets the bulk junctions.
 - Temperature is fixed at 27 °C.
 - ngspice's first transient iteration extrapolates the overlap charges. Nodal seeds the history from the operating point and integrates from the first iteration.

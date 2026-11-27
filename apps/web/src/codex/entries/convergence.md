@@ -28,7 +28,7 @@ $$
 
 The absolute part $\text{tol}_j$ is `vntol` for a node voltage and `abstol` for a branch current. The relative part makes the test scale with the size of the signal.
 
-Second, every nonlinear device's current as predicted by its linear model must match the current recomputed from the new voltages, within $\text{reltol}\cdot\max(|I_{pred}|, |I_{new}|) + \text{abstol}$. This catches a case where the voltages barely move but the device is still far from its true operating point. In addition, no device may have applied limiting during the iteration.
+Second, every nonlinear device's current as predicted by its linear model must match the current recomputed from the new voltages, within $\text{reltol}\cdot\max(|I_{pred}|, |I_{new}|) + \text{abstol}$. This catches a case where the voltages barely move but the device is still far from its true operating point. In addition, no device may have applied limiting during the iteration. In a transient step the diode and BJT widen this tolerance by $32\,\epsilon\,a_0(|q| + |q_n|)$, the rounding floor of their charge current.
 
 ### Junction limiting
 

@@ -68,4 +68,4 @@ Here $I$ is the DC value (times the source-stepping factor in a DC analysis) or 
 
 ## Differences from ngspice
 
-The value follows ngspice-42 `isrcload.c` and the AC load follows `isrcacld.c`. Waveforms are the same subset as for the [voltage source](#/codex/vsource): no pulse phase or count, and no PWL repeat or delay options. With `uic`, Nodal reports a point at $t = 0$, which ngspice does not.
+The value follows ngspice-42 `isrcload.c` and the AC load follows `isrcacld.c`. Waveforms are the same subset as for the [voltage source](#/codex/vsource): no pulse phase or count, and no PWL repeat or delay options. ngspice replaces a zero rise or fall time with tstep, a zero width or period with tstop and a zero sine frequency with 1/tstop. Nodal requires rise time, fall time, period and frequency to be greater than zero. With `uic`, Nodal reports a point at $t = 0$, which ngspice does not.

@@ -62,4 +62,4 @@ which equals $I_d - g_m V_{gs} - g_{ds} V_{ds} - g_{mbs} V_{bs}$ in physical vol
 
 ## Differences from ngspice
 
-The deviations are those of the [NMOS](#/codex/nmos): the exact `gmbs` derivative for $V'_{bs} > 0$, "limited" reported for `fetlim` and `limvds`, a convergence test that compares predictions with recomputed values rather than stored ones, and no TOX, Meyer capacitances, CBD, CBS, CJ, CJSW or JS. Otherwise Nodal follows ngspice-42 `mos1load.c` for the PMOS.
+The deviations are those of the [NMOS](#/codex/nmos), all of which apply: the exact `gmbs` derivative for $V'_{bs} > 0$, "limited" reported for `fetlim` and `limvds`, a convergence test against recomputed values, no TOX, Meyer capacitances, CBD, CBS, CJ, CJSW or JS, a fixed temperature of 27 °C, and history seeded from the operating point instead of the `MODEINITTRAN` extrapolation.

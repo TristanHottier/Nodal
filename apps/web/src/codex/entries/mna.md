@@ -16,7 +16,7 @@ $$
 x = \begin{bmatrix} v \\ i \end{bmatrix}
 $$
 
-The vector $v$ holds the voltage of every node except ground. Ground is node `0`, it is the reference, and it is not an unknown. Some parts add internal nodes of their own (a transistor with series resistances has nodes inside the device), and these appear in $v$ as well. The vector $i$ holds one branch current for each independent voltage source, each VCVS, each CCVS and each inductor.
+The vector $v$ holds the voltage of every node except ground. Ground is node `0`, it is the reference, and it is not an unknown. Some parts add internal nodes of their own (a diode with a series resistance `RS` has a node inside the device), and these appear in $v$ as well. The vector $i$ holds one branch current for each independent voltage source, each VCVS, each CCVS and each inductor.
 
 ### Rows
 
@@ -28,7 +28,7 @@ Currents follow the SPICE convention: a branch current is positive when it flows
 
 ### Why voltage sources add rows
 
-A voltage source fixes the voltage across it and lets the current be whatever the rest of the circuit demands. There is no formula for that current in terms of node voltages, so it cannot be put in a KCL row as a conductance. MNA makes the current an unknown, adds it to the two KCL rows with signs $+1$ and $-1$, and adds one equation that states the voltage. An inductor works the same way: its branch current is an unknown, and keeping it in $x$ lets other elements and probes refer to it directly.
+A voltage source fixes the voltage across it and lets the current be whatever the rest of the circuit demands. There is no formula for that current in terms of node voltages, so it cannot be put in a KCL row as a conductance. MNA makes the current an unknown, adds it to the two KCL rows with signs $+1$ and $-1$, and adds one equation that states the voltage. An inductor works the same way: its branch current is an unknown, and keeping it in $x$ makes the inductor current directly probeable.
 
 ### A worked example
 
@@ -49,7 +49,7 @@ The first two rows are KCL at nodes 1 and 2. The third is the branch row $v_1 = 
 
 ### Stamps
 
-Each element adds its terms into $A$ and $b$ independently of the others. A resistor adds $+g$ on the two diagonal entries of its nodes and $-g$ on the two off-diagonal entries. Entries that name ground are dropped. The complete list of stamps is in `docs/reference/mna.md`.
+Each element adds its terms into $A$ and $b$ independently of the others. A resistor adds $+g$ on the two diagonal entries of its nodes and $-g$ on the two off-diagonal entries. Entries that name ground are dropped. The complete list of stamps is in the part entries (resistor, sources, controlled sources, capacitor, inductor, semiconductors) and in the repository's `docs/reference/mna.md`.
 
 ### Linearised and reactive elements
 

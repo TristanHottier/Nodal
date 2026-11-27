@@ -10,7 +10,7 @@ Time steps are not fixed. Nodal makes them small where the signals change quickl
 
 ### Integration methods
 
-For a charge or flux state $q$ with current $i = \dfrac{dq}{dt}$ and step $h = t_{n+1} - t_n$, you pick `method` = trap or gear. Nodal itself uses backward Euler for the first step and after breakpoints. The three formulas are below.
+For a charge or flux state $q$ with current $i = \dfrac{dq}{dt}$ and step $h = t_{n+1} - t_n$, you pick `method` = trap or gear. Nodal itself uses backward Euler for the first step, after breakpoints and switch state changes, and on a retry after a Newton failure. The three formulas are below.
 
 Backward Euler:
 

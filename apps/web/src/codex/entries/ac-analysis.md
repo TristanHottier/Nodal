@@ -16,19 +16,17 @@ Only sources that have an AC value excite the circuit. A source with no AC value
 
 ### Frequency grid
 
-Nodal builds the grid as ngspice does.
-
-- `dec`: `points` frequencies per decade, starting at `fstart`. Each frequency is the previous one times a ratio $\delta$. For a whole number of decades $\delta = 10^{1/\text{points}}$. In general
+- `dec`: `points` frequencies per decade, starting at `fstart`. Each frequency is the previous one times a ratio $\delta$. If `fstop` is less than ten times `fstart`, $\delta = 10^{1/\text{points}}$, and the grid in general stops short of `fstop` ($\delta = 1$, a single point, when `fstart` equals `fstop`). Otherwise
 
 $$
 \delta = \exp\!\left(\dfrac{\ln(f_{stop}/f_{start})}{\left\lfloor \text{points}\cdot\log_{10}(f_{stop}/f_{start}) \right\rfloor}\right)
 $$
 
-  so the grid lands on `fstop` when the range is not a whole number of decades.
+  so the grid lands on `fstop` even when the range is not a whole number of decades, and $\delta = 10^{1/\text{points}}$ exactly for a whole number of decades. This is the rule of ngspice 43 and later; ngspice-42 uses the second formula for every range.
 - `oct`: `points` frequencies per octave. The ratio is $2^{1/\text{points}}$.
 - `lin`: `points` frequencies evenly spaced from `fstart` to `fstop`, endpoints included.
 
-The log grids stop at the first frequency above `fstop`, with a tolerance of `reltol` on the last point. A sweep is limited to 1000000 frequencies.
+The log grids include `fstop` and stop at the first frequency above $f_{stop}(1 + \delta\cdot\mathrm{reltol})$. A sweep is limited to 1000000 frequencies.
 
 For `lin` with 2 points, ngspice produces a single point at `fstart`. Nodal returns both `fstart` and `fstop`.
 
