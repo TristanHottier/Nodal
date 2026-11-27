@@ -168,6 +168,8 @@ The grid follows `ACan` in ngspice `acan.c`. With `points` $= n$:
 
 Deviation from ngspice: for `lin` with two points, ngspice sets the step to 0 and produces a single point. Nodal returns $f_{start}$ and $f_{stop}$.
 
+Deviation from ngspice-42: the `dec` rule for ranges under one decade ($\delta = 10^{1/n}$, and one point when $f_{start} = f_{stop}$) comes from ngspice-43 (`acan.c` lines 89-95). ngspice-42 applies the floor formula to every range, so below one decade it gives $m = 0$ and no usable grid. No golden covers a sub-decade `dec` sweep.
+
 The grid uses the circuit's `reltol` option (default $10^{-3}$) and is limited to $10^6$ frequencies. A failed solve reports the frequency at which it failed.
 
 ## References
