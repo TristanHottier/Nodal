@@ -87,4 +87,14 @@ describe("CodexPage", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Diode");
     expect(await screen.findByText("Body text.")).toBeTruthy();
   });
+
+  it("moves focus to the new heading when the entry changes, not on first render", async () => {
+    const store = createEditorStore();
+    const { rerender } = render(<CodexPage id="diode" store={store} />);
+    expect(document.activeElement).toBe(document.body);
+    rerender(<CodexPage id="resistor" store={store} />);
+    const h1 = screen.getByRole("heading", { level: 1, name: "Resistor" });
+    expect(document.activeElement).toBe(h1);
+    expect(await screen.findByText("Body text.")).toBeTruthy();
+  });
 });

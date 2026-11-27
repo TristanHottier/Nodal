@@ -1,7 +1,8 @@
 // Fails if the editor's first load reaches the codex content. It walks the static import graph
 // from index.html (module scripts and modulepreload links, then `import ... from "./x.js"` and
 // bare `import "./x.js"` inside each chunk, never `import(`) and rejects any reached file that
-// contains `katex` or `data-codex-slot`, and any linked stylesheet that contains `.katex`.
+// contains `katex`, `data-codex-slot` or `nodal-codex-prose` (the class every entry body carries,
+// so an entry without maths is caught too), and any linked stylesheet that contains `.katex`.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import process from "node:process";
@@ -46,7 +47,7 @@ for (const tag of tags) {
 
 // `from"./x.js"` and bare `import"./x.js"`; a dynamic `import("./x.js")` has a "(" and never matches.
 const STATIC = /(?:\bfrom\s*|\bimport\s*)["'](\.{1,2}\/[^"']+)["']/g;
-const BAD = ["katex", "data-codex-slot"];
+const BAD = ["katex", "data-codex-slot", "nodal-codex-prose"];
 
 const seen = new Set();
 const offenders = [];

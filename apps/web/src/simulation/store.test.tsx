@@ -5,7 +5,12 @@ import { createEditorStore } from "../editor/store";
 import { EditorProvider } from "../editor/EditorContext";
 import { EngineRunError } from "../engine/client";
 import { project as projectOf, emptyDoc } from "../netlist/testDoc";
-import { SimulationProvider, useResetOnProjectLoad, useResultsStale } from "./SimulationContext";
+import {
+  resetOnProjectLoad,
+  SimulationProvider,
+  useResetOnProjectLoad,
+  useResultsStale,
+} from "./SimulationContext";
 import { createSimulationStore } from "./store";
 import { dividerProject, fakeRunner, opResult, tranResult } from "./testFixtures";
 
@@ -236,5 +241,22 @@ describe("simulation store", () => {
     expect(get().result).toBeNull();
     expect(get().map).toBeNull();
     expect(get().status).toEqual({ kind: "idle" });
+  });
+
+  it("project_load_resets_simulation_with_no_editor_mounted", async () => {
+    // The codex "Try it" loads a project while only App's stores exist (no React tree at all).
+    const { runner, store, get } = setup();
+    const editor = createEditorStore({ project: dividerProject() });
+    const stop = resetOnProjectLoad(editor, store);
+    const done = get().run(editor.getState().getProject(), 0);
+    runner.calls[0]?.resolve(opResult(["a"]));
+    await done;
+    expect(get().result).not.toBeNull();
+    editor.getState().loadProject(newProject("Other", "2026-01-01T00:00:00.000Z"));
+    expect(get().result).toBeNull();
+    expect(get().ranDoc).toBeNull();
+    stop();
+    editor.getState().loadProject(newProject("Third", "2026-01-01T00:00:00.000Z"));
+    expect(get().result).toBeNull();
   });
 });

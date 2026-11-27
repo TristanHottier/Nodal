@@ -41,6 +41,17 @@ export function Inspector() {
       ) : label ? (
         <>
           <h2>Net label</h2>
+          <button
+            type="button"
+            className="nodal-link-button"
+            {...openerProps("inspector:label")}
+            onClick={() => {
+              rememberOpener("inspector:label");
+              store.getState().openCodex(entryForItem("label").id);
+            }}
+          >
+            About this label
+          </button>
           <LabelFields id={label.id} text={label.text} />
         </>
       ) : (

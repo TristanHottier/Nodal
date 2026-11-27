@@ -1,7 +1,7 @@
 // The codex: an index of every entry (searchable, grouped by kind) and one entry at a time.
 // Reached only through `lazy(() => import("./codex/CodexPage"))` in App.tsx, so it and the
 // entry content stay out of the editor's first load (scripts/check-first-load.mjs).
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { StoreApi } from "zustand/vanilla";
 import type { EditorState } from "../editor/store";
 import { CODEX, type EntryKind } from "./catalog";
@@ -77,6 +77,19 @@ export default function CodexPage({
     setQuery("");
   }, [id]);
 
+  // After following a link the focused link is gone; put focus on the new page's heading.
+  const mainRef = useRef<HTMLElement>(null);
+  const firstId = useRef(true);
+  useEffect(() => {
+    if (firstId.current) {
+      firstId.current = false;
+      return;
+    }
+    const h1 = mainRef.current?.querySelector("h1");
+    h1?.setAttribute("tabindex", "-1");
+    h1?.focus();
+  }, [id]);
+
   let main;
   if (searching)
     main = (
@@ -123,7 +136,7 @@ export default function CodexPage({
           />
         </div>
       </header>
-      <main className="nodal-codex-main">
+      <main ref={mainRef} className="nodal-codex-main">
         {id === null || searching ? <h1>Codex</h1> : null}
         {main}
       </main>

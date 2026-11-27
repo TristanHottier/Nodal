@@ -92,4 +92,20 @@ describe("App", () => {
       expect(document.title).toBe("Nodal");
     }
   });
+
+  it("closes the codex drawer when the user goes to the codex page", async () => {
+    mocked.mockResolvedValue("1.2.0");
+    render(<App />);
+    const editor = vi.mocked(storeModule.createEditorStore).mock.results[0]?.value as
+      ReturnType<typeof storeModule.createEditorStore> | undefined;
+    if (!editor) throw new Error("no editor store");
+    act(() => {
+      editor.getState().openCodex("diode");
+    });
+    act(() => {
+      window.location.hash = "#/codex/resistor";
+    });
+    await screen.findByRole("heading", { level: 1, name: "Resistor" });
+    expect(editor.getState().codexEntry).toBeNull();
+  });
 });

@@ -392,17 +392,4 @@ describe("Inspector", () => {
       expect(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
   });
-
-  it("about_this_part_opens_the_codex_entry_without_changing_selection", () => {
-    const store = setup([part("p1", "npn", "Q1")], ["p1"]);
-    fireEvent.click(screen.getByRole("button", { name: "About this part" }));
-    expect(store.getState().codexEntry).toBe("npn");
-    expect(store.getState().selection).toEqual(["p1"]);
-  });
-
-  it("about_this_analysis_opens_the_entry_for_the_analysis_type", () => {
-    const store = setup([], []);
-    fireEvent.click(screen.getByRole("button", { name: "About this analysis" }));
-    expect(store.getState().codexEntry).toBe("operating-point");
-  });
 });

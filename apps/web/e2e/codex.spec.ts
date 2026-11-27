@@ -160,6 +160,25 @@ test("Try it opens the example in the editor", async ({ page }) => {
   await expect(page.getByTestId("project-name")).toContainText("RC low-pass");
 });
 
+test("Try it from a codex page clears the previous project's results", async ({ page }) => {
+  await page.goto("./");
+  await page.getByLabel("Open example").selectOption("divider");
+  await expect(page.locator('[data-testid^="part-"]').first()).toBeVisible();
+  const status = page.locator(".nodal-runbar").getByRole("status");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(status).toHaveText("Done");
+  await expect(page.locator('[data-testid^="op-tag-"]').first()).toBeVisible();
+
+  await page.goto("./#/codex/capacitor");
+  page.once("dialog", (d) => void d.accept());
+  await page.getByRole("button", { name: /^Try it/ }).click();
+  await expect(page.getByTestId("project-name")).toContainText("RC low-pass");
+  await expect(status).not.toHaveText("Out of date, run again");
+  await expect(status).not.toHaveText("Done");
+  await expect(page.locator('[data-testid^="op-tag-"]')).toHaveCount(0);
+  await expect(page.getByText("3.333 V")).toHaveCount(0);
+});
+
 test("a 600 px wide window reads and searches the codex", async ({ page }) => {
   await page.setViewportSize({ width: 600, height: 800 });
   await page.goto("./#/codex/diode");

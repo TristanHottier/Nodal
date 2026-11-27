@@ -5,6 +5,7 @@ import { createStore, useStore } from "zustand";
 import type { SimResult } from "../engine/results";
 import type { CircuitMap } from "../netlist/netlister";
 import { useEditor, useEditorStore } from "../editor/EditorContext";
+import type { EditorState } from "../editor/store";
 import { wireProbeSlots } from "../waveform/traceColors";
 import type { SimulationState } from "./store";
 
@@ -127,17 +128,29 @@ export function useResultObject(): SimResult | null {
   return useStore(store, (s) => s.result);
 }
 
-/** Resets the simulation whenever a project is loaded (Open, New): nothing from the old one may linger. */
+/**
+ * Resets the simulation store whenever a project is loaded (Open, New, a codex "Try it"): nothing
+ * from the old one may linger. Returns the unsubscribe function. App calls it so it also works
+ * while the editor is unmounted, as on a codex page.
+ */
+export function resetOnProjectLoad(
+  editor: StoreApi<EditorState>,
+  sim: StoreApi<SimulationState>,
+): () => void {
+  let generation = editor.getState().projectGeneration;
+  return editor.subscribe((s) => {
+    if (s.projectGeneration === generation) return;
+    generation = s.projectGeneration;
+    sim.getState().reset();
+  });
+}
+
+/** The same reset for a provider tree that has no App above it (the editor on its own, in tests). */
 export function useResetOnProjectLoad(): void {
   const sim = useContext(SimulationContext);
   const editor = useEditorStore();
   useEffect(() => {
     if (!sim) return;
-    let generation = editor.getState().projectGeneration;
-    return editor.subscribe((s) => {
-      if (s.projectGeneration === generation) return;
-      generation = s.projectGeneration;
-      sim.getState().reset();
-    });
+    return resetOnProjectLoad(editor, sim);
   }, [sim, editor]);
 }

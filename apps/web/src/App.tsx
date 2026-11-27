@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Editor } from "./editor/Editor";
 import { createEditorStore } from "./editor/store";
 import { EngineClient } from "./engine/client";
+import { resetOnProjectLoad } from "./simulation/SimulationContext";
 import { createSimulationStore } from "./simulation/store";
 import { startAutosave } from "./storage/autosave";
 import { openStore } from "./storage/idb";
@@ -28,6 +29,15 @@ export function App() {
   const [store] = useState(() => createEditorStore());
   const [engine] = useState(() => new EngineClient());
   const [simulation] = useState(() => createSimulationStore({ runner: engine }));
+
+  // Loading a project (Open, New, a codex "Try it") clears the simulation. Subscribed here, not in
+  // the editor, because the editor is unmounted while a codex page is showing.
+  useEffect(() => resetOnProjectLoad(store, simulation), [store, simulation]);
+
+  // The drawer must not reopen, and steal focus, when the user comes back from the codex.
+  useEffect(() => {
+    if (route.view === "codex") store.getState().closeCodex();
+  }, [route.view, store]);
 
   useEffect(() => {
     let cancelled = false;
