@@ -148,7 +148,7 @@ Two problems Tristan found using v1.0.0 (2026-11-22): there is no discoverable w
 
 ## v1.2 milestones
 
-### M10 — Component codex (v1.2.0) · in progress
+### M10 — Component codex (v1.2.0) · done
 
 Tristan's request (2026-11-26): a dictionary of Nodal's components inside the app. Each entry explains what the component does, how it works and the equations Nodal uses for it. The plan is [`docs/plans/2026-11-26-m10-component-codex.md`](plans/2026-11-26-m10-component-codex.md). Besides the parts, the codex covers the four analyses and four core concepts (Tristan, 2026-11-26).
 
@@ -171,6 +171,14 @@ Tristan's request (2026-11-26): a dictionary of Nodal's components inside the ap
 - No regression: the M8/M9 exit checks still pass, including Lighthouse limits on the Pages URL (the codex must not slow the editor's first load) and the M7 performance budget.
 - An engineer reviews the equation content against `docs/reference/` and the engine source, and the review is recorded in the plan.
 - User guide and README mention the codex, with dark-mode screenshots. Version `1.2.0` in every pinned place, and the `v1.2.0` tag.
+
+**Evidence:** CI run [45965548911](https://github.com/TristanHottier/Nodal/actions/runs/45965548911) at `c70d0c0`: rust, web, deploy and lighthouse green.
+- `catalog.test.ts`, `paramTable.test.ts` and `entries.test.ts` guard the 26 entries against the specs.
+- `codex.spec.ts` covers the parts panel, the inspector and the codex view by mouse and keyboard, on Chromium and Firefox. Its axe checks run in both themes on the index, an entry page and the open drawer.
+- Lighthouse on the Pages URL: mobile LCP 795 ms, CLS 0, TBT 126 ms; desktop 288 ms, 0, 0 ms.
+- Perf: tran50 633.9 ms, ac50 64.5 ms, editor 59.8 fps with 1 slow frame of 240. WASM 250.47 kB gzipped.
+- `check-first-load.mjs` shows the editor's first load reaches no codex content.
+- The equation review is in the plan's "Equation review" section. The `v1.2.0` tag is Tristan's to create.
 
 ## After v1 (not designed yet)
 

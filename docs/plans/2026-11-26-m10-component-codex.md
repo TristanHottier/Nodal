@@ -82,7 +82,7 @@
 - Create: `docs/adr/0014-component-codex.md`
 - Modify: `docs/adr/README.md`
 
-- [ ] **Step 1: Write ADR 0014**, status Accepted (Tristan's decisions, 2026-11-26). Record:
+- [x] **Step 1: Write ADR 0014**, status Accepted (Tristan's decisions, 2026-11-26). Record:
   - content as Markdown plus a typed catalog, with parameter tables generated from the specs;
   - build-time KaTeX (HTML + MathML) with marked through a Vite plugin, and why not runtime rendering (first load, TBT) or native MathML alone (typesetting, `\dfrac`);
   - hash routing, because GitHub Pages has no SPA fallback (ADR 0010);
@@ -92,7 +92,7 @@
   - the licences (KaTeX MIT, including its fonts; marked MIT).
 
   Check the KaTeX font licence in `node_modules/katex/LICENSE` before writing it. Run the humanizer.
-- [ ] **Step 2: Commit** `docs: ADR 0014 component codex`. Push.
+- [x] **Step 2: Commit** `docs: ADR 0014 component codex`. Push.
 
 ### Task 2: Codex catalog, parameter docs and drift tests (TDD)
 
@@ -113,7 +113,7 @@
 
   Both take their sources as optional arguments (defaulting to the real ones), so tests can pass mutated copies.
 
-- [ ] **Step 1: Write the tests.**
+- [x] **Step 1: Write the tests.**
   - `catalog.test.ts`:
     - every `PALETTE` item has exactly one part entry;
     - there are exactly 4 analysis entries (op, dc, ac, tran) and 4 concept entries;
@@ -132,10 +132,10 @@
     - a docs copy missing a key throws.
 
   `PARAM_SPECS` has no units, so units live in `MODEL_PARAM_DOCS`. Take them from `devices.md` and the ngspice manual, and the Task 11 review checks them.
-- [ ] **Step 2: Run** `pnpm --filter @nodal/web exec vitest run src/codex`. Expected: FAIL, modules not found.
-- [ ] **Step 3: Implement.** Write the 26 catalog entries without `tryIt` for the seven parts that Task 6 covers; mark those test cases `it.todo` until then. Write all parameter meanings in plain words, one sentence each.
-- [ ] **Step 4: Run** the tests again. Expected: PASS.
-- [ ] **Step 5: Commit** `feat(web): codex catalog and generated parameter tables`. Push.
+- [x] **Step 2: Run** `pnpm --filter @nodal/web exec vitest run src/codex`. Expected: FAIL, modules not found.
+- [x] **Step 3: Implement.** Write the 26 catalog entries without `tryIt` for the seven parts that Task 6 covers; mark those test cases `it.todo` until then. Write all parameter meanings in plain words, one sentence each.
+- [x] **Step 4: Run** the tests again. Expected: PASS.
+- [x] **Step 5: Commit** `feat(web): codex catalog and generated parameter tables`. Push.
 
 ### Task 3: Markdown and KaTeX build pipeline (TDD)
 
@@ -151,7 +151,7 @@
 - Required `## ` sections per kind, in the order of the rulings above. The part slot is a line `{{parameters}}`, which becomes `<div data-codex-slot="parameters"></div>`. The "In the MNA system" section is wrapped in `<details class="nodal-codex-advanced"><summary>Advanced: MNA stamp</summary>…</details>`.
 - Headings get stable ids (`what-it-is`, …) so the page can link to sections.
 
-- [ ] **Step 1: Write `codexMarkdown.test.ts`:**
+- [x] **Step 1: Write `codexMarkdown.test.ts`:**
   - inline and display maths produce `<math` (MathML) and `class="katex"`;
   - a `$` inside a code span is not maths;
   - `\frac{1}{2}` throws, `\dfrac{1}{2}` renders;
@@ -160,16 +160,16 @@
   - a missing or out-of-order section throws;
   - the slot and the `<details>` wrapper appear;
   - heading ids are stable.
-- [ ] **Step 2: Write `entries.test.ts`** (node environment):
+- [x] **Step 2: Write `entries.test.ts`** (node environment):
   - every catalog id has a file and every file has a catalog id;
   - each file renders with `renderEntry`;
   - the title matches the catalog;
   - every backticked token that looks like a model key (`/^[A-Z][A-Z0-9]{1,5}$/`) in a part entry with a `model` is a key of `PARAM_SPECS[model]` or on a short allowlist (`NPN`, `PNP`, `NMOS`, `PMOS`, `DC`, `AC`, `MNA`);
   - no entry body still contains `TODO` once Task 10 is done. Until then the test runs that check as `it.todo`, and Task 10 turns it on.
-- [ ] **Step 3: Run** both tests. Expected: FAIL.
-- [ ] **Step 4: Implement** the renderer with marked's extension API (tokenizer for inline and block maths, run before code spans), the plugin, and the stubs. Add both packages with exact versions.
-- [ ] **Step 5: Run** the tests, then `pnpm lint`, `pnpm typecheck` and `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web build`. Expected: PASS, and the build emits one chunk per entry plus a KaTeX CSS asset that nothing loads yet.
-- [ ] **Step 6: Commit** `feat(web): build-time Markdown and KaTeX for codex entries`. Push.
+- [x] **Step 3: Run** both tests. Expected: FAIL.
+- [x] **Step 4: Implement** the renderer with marked's extension API (tokenizer for inline and block maths, run before code spans), the plugin, and the stubs. Add both packages with exact versions.
+- [x] **Step 5: Run** the tests, then `pnpm lint`, `pnpm typecheck` and `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web build`. Expected: PASS, and the build emits one chunk per entry plus a KaTeX CSS asset that nothing loads yet.
+- [x] **Step 6: Commit** `feat(web): build-time Markdown and KaTeX for codex entries`. Push.
 
 ### Task 4: Codex routes, page, search and first-load guard
 
@@ -189,17 +189,17 @@
   - `apps/web/src/theme/tokens.css` (codex layout tokens, both dark blocks);
   - `.github/workflows/ci.yml` (`node scripts/check-first-load.mjs apps/web/dist` after `check-base-path`).
 
-- [ ] **Step 1: Tests first.**
+- [x] **Step 1: Tests first.**
   - `route.test.ts`: `""`, `#/`, `#/codex`, `#/codex/diode`, an unknown id (the page shows "No entry called …" with a link to the index), stray slashes.
   - `search.test.ts`: "transistor" finds npn, pnp, nmos and pmos; "BJT" finds npn and pnp; "Résistance" with accents finds resistor through an alias; ranking order; empty query.
   - `CodexEntry.test.tsx` (jsdom, mocked `loadEntry`): renders the title, pin names, the parameter table from `modelRows`, a "Try it" button and related links.
   - `App.test.tsx`: the hash route switches views and the store instance survives.
   - `check-first-load.test.mjs`: on a fixture dist, an entry that statically imports a chunk containing `katex` fails, and a dynamic `import()` passes.
-- [ ] **Step 2: Run them.** Expected: FAIL.
-- [ ] **Step 3: Implement.** `import "katex/dist/katex.min.css"` only in `CodexEntry.tsx`. "Try it" calls `loadExample(store, example)` and then sets `location.hash = "#/"`; it needs the editor store, which App passes down as a prop. Write `check-first-load.mjs`: read `dist/index.html`, collect `<script type="module" src>` and `modulepreload` hrefs, follow static `import … from "./x.js"` and bare `import "./x.js"` in each chunk (not `import(`), and fail if any reached file contains `katex` or `data-codex-slot`, or if any stylesheet linked from `index.html` contains `.katex`.
-- [ ] **Step 4: Run** unit tests, the build, `node scripts/check-base-path.mjs apps/web/dist`, `node scripts/check-first-load.mjs apps/web/dist` and `node --test "scripts/*.test.mjs"`. Expected: PASS.
-- [ ] **Step 5: Look at it.** Take Playwright screenshots of `vite preview` at `#/codex` and `#/codex/diode` (stub content), at 1280 and 600 px, in both themes. Reload the deep link and check it renders.
-- [ ] **Step 6: Commit** `feat(web): codex page, hash routes and search`. Push; CI green.
+- [x] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 3: Implement.** `import "katex/dist/katex.min.css"` only in `CodexEntry.tsx`. "Try it" calls `loadExample(store, example)` and then sets `location.hash = "#/"`; it needs the editor store, which App passes down as a prop. Write `check-first-load.mjs`: read `dist/index.html`, collect `<script type="module" src>` and `modulepreload` hrefs, follow static `import … from "./x.js"` and bare `import "./x.js"` in each chunk (not `import(`), and fail if any reached file contains `katex` or `data-codex-slot`, or if any stylesheet linked from `index.html` contains `.katex`.
+- [x] **Step 4: Run** unit tests, the build, `node scripts/check-base-path.mjs apps/web/dist`, `node scripts/check-first-load.mjs apps/web/dist` and `node --test "scripts/*.test.mjs"`. Expected: PASS.
+- [x] **Step 5: Look at it.** Take Playwright screenshots of `vite preview` at `#/codex` and `#/codex/diode` (stub content), at 1280 and 600 px, in both themes. Reload the deep link and check it renders.
+- [x] **Step 6: Commit** `feat(web): codex page, hash routes and search`. Push; CI green.
 
 ### Task 5: Entry points, drawer, keyboard paths and e2e
 
@@ -213,27 +213,27 @@
   - `apps/web/src/editor/Editor.tsx` and `Editor.css`: when `codexEntry` is set, the lazy drawer replaces the inspector column;
   - the matching tests, and `apps/web/e2e/a11y.spec.ts`.
 
-- [ ] **Step 1: Write `codex.spec.ts`** (Chromium and Firefox):
+- [x] **Step 1: Write `codex.spec.ts`** (Chromium and Firefox):
   - **Parts panel:** Tab to "About Diode" and press Enter. The drawer shows "Diode", focus is inside it, and the maths has a `math` element. Esc closes it, focus returns to the button, and the editor selection is unchanged. Then the same with a mouse click.
   - **Inspector:** place an NPN, select it, and activate "About this part". The drawer shows "NPN transistor"; "Open full page" goes to `#/codex/npn`.
   - **Codex view:** the top-bar "Codex" link, type "mosfet" in search, open NMOS by keyboard. Reload, and the entry is still shown. Browser back returns to the editor with the placed NPN still there.
   - **Try it:** on `#/codex/rc-lowpass`'s capacitor entry, "Try it" loads the example in the editor (accept the confirm dialog).
   - **Narrow:** at 600 px wide, `#/codex/diode` is readable and its search works.
   - **axe** WCAG 2.2 AA in light and dark on the index, an entry page and the open drawer.
-- [ ] **Step 2: Run** `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web e2e -- codex.spec.ts`. Expected: FAIL.
-- [ ] **Step 3: Implement.** Esc handling: the drawer's `keydown` calls `stopPropagation` so the editor shortcuts don't see it (check `useShortcuts.ts`). Opening the drawer must not change the selection or the tool.
-- [ ] **Step 4: Run** the unit tests and the full e2e suite (`a11y`, `responsive`, `shell`, `layout`, `editor`, `codex`) on both browsers. Run `colorShare.spec.ts` too. Expected: PASS.
-- [ ] **Step 5: Look at it:** screenshots of the palette with info buttons and of the open drawer, at 1024 and 1280 px in both themes. Check that the palette still fits at 1024 px.
-- [ ] **Step 6: Commit** `feat(web): open codex entries from the parts panel, inspector and top bar`. Push. The `visual` baselines will change because of the palette; take the new ones from this CI run's artifact and commit them as `test(web): visual baselines for the palette info buttons`.
+- [x] **Step 2: Run** `NODAL_WASM_NO_OPT=1 pnpm --filter @nodal/web e2e -- codex.spec.ts`. Expected: FAIL.
+- [x] **Step 3: Implement.** Esc handling: the drawer's `keydown` calls `stopPropagation` so the editor shortcuts don't see it (check `useShortcuts.ts`). Opening the drawer must not change the selection or the tool.
+- [x] **Step 4: Run** the unit tests and the full e2e suite (`a11y`, `responsive`, `shell`, `layout`, `editor`, `codex`) on both browsers. Run `colorShare.spec.ts` too. Expected: PASS.
+- [x] **Step 5: Look at it:** screenshots of the palette with info buttons and of the open drawer, at 1024 and 1280 px in both themes. Check that the palette still fits at 1024 px.
+- [x] **Step 6: Commit** `feat(web): open codex entries from the parts panel, inspector and top bar`. Push. The `visual` baselines will change because of the palette; take the new ones from this CI run's artifact and commit them as `test(web): visual baselines for the palette info buttons`.
 
 ### Task 5b: Pin names on the codex symbol
 
 **Files:** Modify `apps/web/src/codex/CodexEntry.tsx` (or a new `codex/SymbolFigure.tsx`), `Codex.css`, `tokens.css`, their tests.
 
-- [ ] **Step 1: Test first:** the codex symbol SVG has one text label per `SYMBOLS[type].pins` entry, placed at the pin end and pushed outward from the body, plus a dot at each pin end. Net label and ground included.
-- [ ] **Step 2: Implement.** Labels in the mono font, sized from tokens, `currentColor`-based so both themes work. The SVG keeps a text alternative naming the pins.
-- [ ] **Step 3: Look at it:** screenshots of every part entry's symbol (both themes) in one contact sheet; no label overlaps the body or another label.
-- [ ] **Step 4: Commit** `feat(web): pin names on codex symbols`. Push.
+- [x] **Step 1: Test first:** the codex symbol SVG has one text label per `SYMBOLS[type].pins` entry, placed at the pin end and pushed outward from the body, plus a dot at each pin end. Net label and ground included.
+- [x] **Step 2: Implement.** Labels in the mono font, sized from tokens, `currentColor`-based so both themes work. The SVG keeps a text alternative naming the pins.
+- [x] **Step 3: Look at it:** screenshots of every part entry's symbol (both themes) in one contact sheet; no label overlaps the body or another label.
+- [x] **Step 4: Commit** `feat(web): pin names on codex symbols`. Push.
 
 ### Task 6: Four examples so every part has a "Try it"
 
@@ -245,11 +245,11 @@
   - `push-pull.nodal.json` (new: an NPN/PNP complementary emitter follower with ±5 V rails, a 1 V 1 kHz sine and a 1 kΩ load; transient over 2 ms; models with only IS and BF).
 - Modify: `apps/web/src/examples/index.ts`, `examples.test.ts`, `apps/web/src/codex/catalog.ts` (`tryIt` for the seven parts; turn the `it.todo`s on)
 
-- [ ] **Step 1: Copy the three reference circuits.** Rename them for users, keep their analyses, and tidy the layout only if they look cramped on the canvas. Their `examples.test.ts` values come from the existing goldens: L3 one node voltage, L5 one node at op, T6-trap one point after the switch turns on.
-- [ ] **Step 2: Draw the push-pull follower and preview it against ngspice-42.** Install it with `apt-get update && apt-get install ngspice`. Run `nodal-cli export-spice`, add `.control / run / wrdata`, and compare one output point (the peak near 0.25 ms) with interpolation. Expect a small mismatch, and record both values in the commit body.
-- [ ] **Step 3: Run** `pnpm test` (the examples test needs the wasm pkg) and `examples.spec.ts`. Expected: PASS.
-- [ ] **Step 4: Look at** each new example in Chromium: open it, run it, take a screenshot.
-- [ ] **Step 5: Commit** `feat(web): examples for controlled sources, current source, switch and push-pull`. Push.
+- [x] **Step 1: Copy the three reference circuits.** Rename them for users, keep their analyses, and tidy the layout only if they look cramped on the canvas. Their `examples.test.ts` values come from the existing goldens: L3 one node voltage, L5 one node at op, T6-trap one point after the switch turns on.
+- [x] **Step 2: Draw the push-pull follower and preview it against ngspice-42.** Install it with `apt-get update && apt-get install ngspice`. Run `nodal-cli export-spice`, add `.control / run / wrdata`, and compare one output point (the peak near 0.25 ms) with interpolation. Expect a small mismatch, and record both values in the commit body.
+- [x] **Step 3: Run** `pnpm test` (the examples test needs the wasm pkg) and `examples.spec.ts`. Expected: PASS.
+- [x] **Step 4: Look at** each new example in Chromium: open it, run it, take a screenshot.
+- [x] **Step 5: Commit** `feat(web): examples for controlled sources, current source, switch and push-pull`. Push.
 
 ### Tasks 7 to 10: Entry content
 
@@ -263,20 +263,20 @@ Each content task follows the same steps:
 6. A Sonnet reviewer checks the entries against the reference sections. The Opus pass comes in Task 11.
 7. Commit `docs(web): codex entries for <group>`, then push.
 
-- [ ] **Task 7: Passives, independent sources, ground and net label** (7 entries).
+- [x] **Task 7: Passives, independent sources, ground and net label** (7 entries).
   - Resistor, capacitor and inductor: their companion models (`mna.md` §3, with trap and gear left to the integration concept), plus `ic`.
   - V and I sources: DC, AC magnitude and phase, and the pulse, sin and PWL formulas exactly as `tran_value` computes them, including the `td` and `theta` defaults, and the t = 0 operating-point rule (M4 facts).
   - Ground: node 0 as the reference, and why every circuit needs one (the topology checks, `mna.md` §6).
   - Net label: connection by name, which is a netlister rule; ARCHITECTURE §6.2 has the naming rules.
-- [ ] **Task 8: Controlled sources, op-amp and switch** (6 entries).
+- [x] **Task 8: Controlled sources, op-amp and switch** (6 entries).
   - The four controlled sources with their gain symbols ($\mu$, $g_m$, $r$, $\beta$) and the controlling-source rule for CCVS and CCCS.
   - The op-amp as the v1 VCVS macro: gain, the `E` prefix, and what it can't model (no rails, slew or bandwidth).
   - The switch: VT, VH, RON, ROFF and hysteresis, crossing location by step rejection, and the early-switch difference from ngspice (`devices.md` §4 and §5).
-- [ ] **Task 9: Semiconductors** (5 entries; the heaviest task, so use one Sonnet builder per entry).
+- [x] **Task 9: Semiconductors** (5 entries; the heaviest task, so use one Sonnet builder per entry).
   - Diode: the exponential law with `N`, `RS` as an internal node, the depletion charge with `FC` linearisation, transit-time charge, pnjlim in plain words, and the `M` limit (`devices.md` §1).
   - NPN and PNP: the Gummel–Poon subset (transport form, `VAF` as Early, `BF` and `BR`), charges, substrate gmin placement, and the PNP sign mirror.
   - NMOS and PMOS: Level 1 regions (cutoff, linear, saturation) with `LAMBDA` and body effect, overlap capacitances only and no Meyer caps, bulk junction diodes with `IS`, source/drain swap, and the gmbs and limiting deviations.
-- [ ] **Task 10: Analyses and concepts** (8 entries).
+- [x] **Task 10: Analyses and concepts** (8 entries).
   - Op: Newton, then the fallbacks in order (`numerical-methods.md` §1.4).
   - DC sweep: the warm-start continuation and the cold-chain fallback.
   - AC: linearise at the op, the complex MNA, and the frequency grid. Include the `lin` 2-point deviation and the phase rule near zero magnitude.
@@ -287,7 +287,7 @@ Each content task follows the same steps:
 
 ### Task 11: Equation review (Opus) and fixes
 
-- [ ] **Step 1: Dispatch an Opus reviewer.** Give it all 26 entries (Markdown source and a rendered screenshot of each), `docs/reference/*.md`, the engine device and analysis sources, `param-specs.json` and the units table in `paramDocs.ts`. It checks:
+- [x] **Step 1: Dispatch an Opus reviewer.** Give it all 26 entries (Markdown source and a rendered screenshot of each), `docs/reference/*.md`, the engine device and analysis sources, `param-specs.json` and the units table in `paramDocs.ts`. It checks:
   - every equation symbol by symbol;
   - every sign and current direction;
   - every stated unit;
@@ -295,9 +295,9 @@ Each content task follows the same steps:
   - every claim in the prose against a test or the source.
 
   Findings come back as Critical, Important or Minor, with the entry, the line, and the reference that shows the problem.
-- [ ] **Step 2: Fix** every Critical and Important finding (Sonnet builder, Sonnet re-review). Record Minors that aren't fixed in the "Equation review" section below.
-- [ ] **Step 3: Fill in the "Equation review" section** below (date, reviewer model, counts, what was fixed, commit hashes). Run the humanizer.
-- [ ] **Step 4: Commit** `docs(web): codex equation review fixes`, and `docs: record the M10 equation review` for the plan. Push.
+- [x] **Step 2: Fix** every Critical and Important finding (Sonnet builder, Sonnet re-review). Record Minors that aren't fixed in the "Equation review" section below.
+- [x] **Step 3: Fill in the "Equation review" section** below (date, reviewer model, counts, what was fixed, commit hashes). Run the humanizer.
+- [x] **Step 4: Commit** `docs(web): codex equation review fixes`, and `docs: record the M10 equation review` for the plan. Push.
 
 ### Task 12: Docs, version and close
 
@@ -316,15 +316,15 @@ Each content task follows the same steps:
 
   Find them with `grep -rn "1\.1\.0"`, excluding lockfile noise.
 
-- [ ] **Step 1: Docs and screenshots.** Run `pnpm --filter @nodal/web guide:screenshots`, take the README codex shot in dark mode, and run the humanizer on all prose.
-- [ ] **Step 2: Bump the version** and run the full local check:
+- [x] **Step 1: Docs and screenshots.** Run `pnpm --filter @nodal/web guide:screenshots`, take the README codex shot in dark mode, and run the humanizer on all prose.
+- [x] **Step 2: Bump the version** and run the full local check:
   - `cargo test --workspace`;
   - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`;
   - the build, `check-base-path`, `check-first-load`;
   - `e2e`, and `e2e:perf` (local numbers are pessimistic; CI is the evidence).
-- [ ] **Step 3: Commit** `docs: codex in the user guide and README` and `chore: version 1.2.0`. Push. Wait for CI: every job green, including `lighthouse` on the Pages URL and the perf table. Record the run URL, the Lighthouse numbers and the perf numbers.
-- [ ] **Step 4: Opus final whole-milestone review** (Review Focus above). Fix what it finds, push, and wait for CI to go green again.
-- [ ] **Step 5: Close** in a separate `docs: close M10` commit: ROADMAP status "done" with evidence, and this plan's boxes ticked.
+- [x] **Step 3: Commit** `docs: codex in the user guide and README` and `chore: version 1.2.0`. Push. Wait for CI: every job green, including `lighthouse` on the Pages URL and the perf table. Record the run URL, the Lighthouse numbers and the perf numbers.
+- [x] **Step 4: Opus final whole-milestone review** (Review Focus above). Fix what it finds, push, and wait for CI to go green again.
+- [x] **Step 5: Close** in a separate `docs: close M10` commit: ROADMAP status "done" with evidence, and this plan's boxes ticked.
 - [ ] **Step 6 (manual, Tristan):** create the `v1.2.0` tag.
 
 ## Equation review
