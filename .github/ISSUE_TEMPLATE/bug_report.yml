@@ -6,7 +6,7 @@ body:
     id: version
     attributes:
       label: Nodal version
-      description: Shown in the status bar, for example "Engine 1.1.0".
+      description: Shown in the status bar, for example "Engine 1.2.0".
     validations:
       required: true
   - type: input

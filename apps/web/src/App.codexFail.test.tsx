@@ -4,7 +4,7 @@ import { App } from "./App";
 
 vi.mock("./engine/client", () => ({
   EngineClient: class {
-    version = () => Promise.resolve("1.1.0");
+    version = () => Promise.resolve("1.2.0");
     dispose = vi.fn();
   },
 }));

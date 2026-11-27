@@ -24,7 +24,7 @@ fn version_flag() -> Result<(), Box<dyn Error>> {
     assert_eq!(out.status.code(), Some(0));
     assert_eq!(
         String::from_utf8(out.stdout)?,
-        "nodal-cli 1.1.0 (engine 1.1.0)\n"
+        "nodal-cli 1.2.0 (engine 1.2.0)\n"
     );
     Ok(())
 }

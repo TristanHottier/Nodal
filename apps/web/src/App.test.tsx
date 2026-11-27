@@ -32,9 +32,9 @@ describe("App", () => {
   });
 
   it("shows the engine version", async () => {
-    mocked.mockResolvedValue("1.1.0");
+    mocked.mockResolvedValue("1.2.0");
     render(<App />);
-    expect((await screen.findByText("Engine 1.1.0")).textContent).toBe("Engine 1.1.0");
+    expect((await screen.findByText("Engine 1.2.0")).textContent).toBe("Engine 1.2.0");
   });
 
   it("shows an error when the engine fails", async () => {
@@ -46,7 +46,7 @@ describe("App", () => {
   });
 
   it("switches between the editor and the codex on the hash, keeping one store", async () => {
-    mocked.mockResolvedValue("1.1.0");
+    mocked.mockResolvedValue("1.2.0");
     render(<App />);
     expect(screen.getByTestId("engine-status")).toBeTruthy();
     expect(document.title).toBe("Nodal");
@@ -70,14 +70,14 @@ describe("App", () => {
   });
 
   it("opens a codex deep link on first render", async () => {
-    mocked.mockResolvedValue("1.1.0");
+    mocked.mockResolvedValue("1.2.0");
     window.location.hash = "#/codex";
     render(<App />);
     expect((await screen.findByRole("heading", { level: 1 })).textContent).toBe("Codex");
   });
 
   it("keeps the title right across repeated route changes", async () => {
-    mocked.mockResolvedValue("1.1.0");
+    mocked.mockResolvedValue("1.2.0");
     render(<App />);
     for (let i = 0; i < 2; i++) {
       act(() => {
