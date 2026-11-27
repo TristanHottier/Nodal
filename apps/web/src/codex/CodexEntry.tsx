@@ -1,7 +1,7 @@
 // One codex entry: header, symbol, prose, parameter tables, "Try it" and related links.
 // Shared by the codex page and the editor drawer. The KaTeX stylesheet is imported by each
 // `?codex` module, so nothing here pulls it into the editor's first load.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StoreApi } from "zustand/vanilla";
 import { loadExample } from "../editor/projectActions";
 import type { EditorState } from "../editor/store";
@@ -12,6 +12,7 @@ import { ParamTable } from "./ParamTable";
 import { loadEntry } from "./entries";
 import { codexHref } from "./route";
 import { SymbolFigure } from "./SymbolFigure";
+import { useScrollableEquations } from "./useScrollableEquations";
 import "./Codex.css";
 
 const SLOT = '<div data-codex-slot="parameters"></div>';
@@ -92,10 +93,12 @@ export function CodexEntry({
   const [before, after] = html.includes(SLOT)
     ? (html.split(SLOT) as [string, string])
     : [html, null];
+  const articleRef = useRef<HTMLElement>(null);
+  useScrollableEquations(articleRef, html);
   const related = meta.related.flatMap((id) => CODEX.find((e) => e.id === id) ?? []);
 
   return (
-    <article className="nodal-codex-entry" aria-labelledby="nodal-codex-title">
+    <article ref={articleRef} className="nodal-codex-entry" aria-labelledby="nodal-codex-title">
       <header>
         <p className="nodal-panel-title">{KIND_LABEL[meta.kind]}</p>
         <Title id="nodal-codex-title">{meta.title}</Title>
