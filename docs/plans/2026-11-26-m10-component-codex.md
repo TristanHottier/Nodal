@@ -329,4 +329,14 @@ Each content task follows the same steps:
 
 ## Equation review
 
-_To be filled in Task 11._
+- **Date and reviewer:** 2026-11-27, an Opus subagent working as the reviewing engineer. It checked all 26 entries and the units table in `paramDocs.ts` symbol by symbol against `docs/reference/`, the engine sources and the ngspice-42 C sources, and re-derived the device equations, stamps and Jacobians.
+- **Before that review:** four Sonnet reviews (one per content task) found and fixed, among others, a wrong PMOS saturation sign, a reversed PMOS bulk-diode polarity, an incomplete BJT transient charge stamp, a MOSFET convergence "difference" that ngspice shares, the AC `dec` grid in general form and the first transient step.
+- **Result:** 0 Critical, 7 Important, 34 Minor. No equation, sign, current direction, region condition or unit was wrong. The Important items were wording and scope:
+  - the AC `dec` rule below one decade (I1);
+  - the meaning of a source's `dc` field (I2);
+  - the pin polarity of `ic` and the `uic` wording (I3a to I3c);
+  - the resistor's "no difference from ngspice", since ngspice accepts negative values and replaces zero with 1 mΩ (I4);
+  - the MOSFET `fetlim` and `limvds` description (I5).
+- **Fixes:** all 7 Important and 33 of 34 Minor items in `d44b742`. The last Minor item (no units on the VCCS and CCVS gain fields) needed an editor change and is fixed in `76d241e`.
+- **Finding outside the codex:** `numerical-methods.md` §5.1 credited the sub-decade `dec` rule to ngspice, but it first appears in ngspice-43. The section now records it as a deviation from ngspice-42; no golden covers a sub-decade sweep.
+- Tristan may add his own review before the tag.
