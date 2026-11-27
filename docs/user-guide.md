@@ -6,15 +6,15 @@ Nodal is a schematic editor and circuit simulator that runs in your browser. Thi
 
 Open the live editor at https://tristanhottier.github.io/Nodal/. Nothing is installed and no account is needed. The status bar at the bottom shows the engine version once the simulation engine has loaded.
 
-The fastest way to see the app work is an example. A new editor shows a "Start from an example" prompt over the empty canvas with one button per example. The top bar also has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. There are eight examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter and an inverting op-amp amplifier.
+The fastest way to see the app work is an example. A new editor shows a "Start from an example" prompt over the empty canvas with one button per example. The top bar also has an "Examples…" menu (labelled "Open example" for screen readers). Pick "Common-emitter amplifier" to load the circuit below. There are twelve examples: a resistive divider, an RC low-pass, an RLC band-pass, half-wave and full-wave rectifiers, a common-emitter amplifier, a CMOS inverter, an inverting op-amp amplifier, controlled sources, a current source driving an inductor and a capacitor, a switch with hysteresis, and a push-pull emitter follower.
 
 ![The editor with the common-emitter amplifier loaded](user-guide/editor-ce-amplifier.png)
 
 The window has these areas, from top to bottom and left to right:
 
-- The top bar holds the Nodal mark, the project title, the file actions (Examples…, New, Open…, Save as…) and the Theme select. The title is the part of the project name before the first ": ", and the full name appears as a tooltip.
+- The top bar holds the Nodal mark, the project title, the file actions (Examples…, New, Open…, Save as…), the Codex link and the Theme select. The title is the part of the project name before the first ": ", and the full name appears as a tooltip.
 - The tool rail is the narrow icon column at the left edge. It holds Select, Wire and Probe, each with its shortcut under the icon and in its tooltip.
-- The parts panel lists the parts in four groups: Sources, Passives, Semiconductors and Other.
+- The parts panel lists the parts in four groups: Sources, Passives, Semiconductors and Other. Each part has an info button that opens its codex entry.
 - The canvas is in the middle, and the inspector is on the right.
 - The run bar and results sit under the canvas.
 - The status bar at the bottom shows the engine version, messages and the run readout.
@@ -173,6 +173,22 @@ The table lists each signal at A, at B and the difference, followed by Δx and, 
 An AC sweep draws two plots with a shared log frequency axis: magnitude in dB on top and phase in degrees below. The cursor table gives both values at each cursor position.
 
 ![Bode plot of the common-emitter amplifier](user-guide/bode-ce-amplifier.png)
+
+## Codex
+
+The codex explains the parts and analyses. It has 26 entries: 18 parts (including the net label), 4 analyses and 4 concepts (MNA, small-signal models, convergence and integration methods). Each entry has a short description, typical uses and the equations Nodal solves. Part entries add a table of the parameters with their units and defaults, and the pin names drawn on the symbol. Most entries end with a "Try it" link that opens an example using that part or analysis (22 of the 26 do). Equations are typeset with KaTeX, and screen readers get them as MathML.
+
+There are three ways in:
+
+- Click the info button next to a part in the parts panel. The entry opens in a drawer that replaces the inspector.
+- Select a part or look at an analysis card, then choose "About this part" or "About this analysis". The drawer opens on that entry.
+- Choose Codex in the top bar for the full page at `#/codex`. It lists every entry and has a search box that filters by name and keyword.
+
+![The codex drawer showing the NPN transistor next to the common-emitter amplifier](user-guide/codex-drawer-npn.png)
+
+Esc closes the drawer, and your selection stays as it was. "Open full page" in the drawer shows the same entry on its own page. Every entry has its own address, `#/codex/<id>` (for example `#/codex/npn`), so you can link to it.
+
+An engineer review of the equations against `docs/reference/` and the engine sources is recorded in the "Equation review" section of the [M10 plan](plans/2026-11-26-m10-component-codex.md), with its findings. The codex is documentation, so no test checks its prose.
 
 ## Files
 

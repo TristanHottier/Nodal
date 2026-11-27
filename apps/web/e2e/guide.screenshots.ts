@@ -92,3 +92,16 @@ test("Bode view of the CE amplifier", async ({ page }) => {
   await setCursor("Cursor A", "10k");
   await page.screenshot({ path: shot("bode-ce-amplifier") });
 });
+
+test("codex drawer for the NPN transistor", async ({ page }) => {
+  await openExample(page, "ce-amplifier");
+  await page.getByRole("button", { name: "About NPN transistor" }).click();
+  const drawer = page.getByRole("complementary", { name: "Codex" });
+  await expect(drawer.getByRole("heading", { level: 2 })).toBeVisible();
+  await expect(drawer.locator("math").first()).toBeAttached();
+  // Move the pointer off the info button so its tooltip is not in the shot.
+  await page.mouse.move(700, 700);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: shot("codex-drawer-npn") });
+});

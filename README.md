@@ -21,19 +21,22 @@
 
 <p align="center"><a href="https://tristanhottier.github.io/Nodal/"><strong>Try it: tristanhottier.github.io/Nodal</strong></a> (no install, no account)</p>
 
-Nodal draws a schematic and simulates it in the browser. The engine is written in Rust and runs as WebAssembly in a Web Worker. Version 1.1.0 is released.
+Nodal draws a schematic and simulates it in the browser. The engine is written in Rust and runs as WebAssembly in a Web Worker. Version 1.2.0 is released.
 
 ## Features
 
 - Draw a schematic: place parts, rotate and mirror them, draw orthogonal wires, label nets, edit values, and check the problems list. Save and load `.nodal.json` files. Work is autosaved in the browser.
 - Run DC operating point, DC sweep, AC small-signal (linear, decade and octave sweeps) and transient analysis (trapezoidal and Gear integration, pulse, sine and PWL sources, `uic`, switch hysteresis). Runs can be cancelled.
 - See operating-point values on the schematic. Plot results with probes, two cursors and a Bode view. Engine errors are marked on the schematic.
-- Open one of eight examples: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter and inverting op-amp. The [user guide](docs/user-guide.md) walks through drawing and simulating.
+- Open one of twelve examples: divider, RC low-pass, RLC band-pass, half-wave rectifier, full-wave bridge rectifier, common-emitter amplifier, CMOS inverter, inverting op-amp, controlled sources, a current source into an inductor and a capacitor, a switch with hysteresis, and a push-pull emitter follower. The [user guide](docs/user-guide.md) walks through drawing and simulating.
+- Read the codex: 26 entries (18 parts, 4 analyses and 4 concepts) with prose, equations, parameter tables, pin names on the symbol and a "Try it" example. Open it from the info button next to a part, from "About this part" in the inspector, or from the Codex link in the top bar. An engineer review of the equations is recorded in the [M10 plan](docs/plans/2026-11-26-m10-component-codex.md).
 - Switch between light and dark themes (it follows your OS by default). The editor works from 1024 px wide; in narrower windows the schematic is shown read-only.
 - Devices: R, L, C, V, I, E, G, H and F elements, an ideal op-amp, diode, BJT, MOSFET Level 1 and voltage-controlled switch, with junction and overlap capacitances in AC and transient. Sources can be DC, AC, pulse, sine or PWL.
 - `nodal-cli` has three commands: `run` simulates a netlist, `export-spice` prints an ngspice deck, and `validate` compares results with the ngspice goldens in `validation/`.
 
 Not in v1: digital logic, microcontroller emulation, accounts and sharing, PCB layout. Nothing else described in these docs exists unless [`docs/ROADMAP.md`](docs/ROADMAP.md) marks it as done.
+
+![The codex drawer open on the NPN transistor entry, next to the common-emitter amplifier](docs/assets/codex.png)
 
 ![RC low-pass transient response with cursors A and B](docs/assets/transient.png)
 
@@ -161,6 +164,8 @@ If you use Nodal in academic work, cite it with the metadata in [`CITATION.cff`]
 | Inter (UI font, self-hosted Latin and Greek subsets) | [Inter](https://rsms.me/inter/) via `@fontsource-variable/inter` | SIL Open Font License 1.1 |
 | JetBrains Mono (numbers and code, self-hosted Latin and Greek subsets) | [JetBrains Mono](https://www.jetbrains.com/lp/mono/) via `@fontsource-variable/jetbrains-mono` | SIL Open Font License 1.1 |
 | Lucide (UI icons) | [`lucide-react`](https://lucide.dev/) | ISC |
+| KaTeX 0.19.1 (equations in the codex; CSS and fonts shipped) | [KaTeX](https://katex.org/) | MIT |
+| marked 18.2.1 (codex Markdown, rendered at build time only) | [marked](https://marked.js.org/) | MIT |
 | Poppins (outlined in the wordmark) | [Poppins](https://fonts.google.com/specimen/Poppins) | SIL Open Font License 1.1 |
 
 Details and copyright lines are in [`docs/brand/CREDITS.md`](docs/brand/CREDITS.md).

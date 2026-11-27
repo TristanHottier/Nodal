@@ -13,3 +13,8 @@ The font files are served unmodified, self-hosted from the app's own origin. The
 ## Icons (ISC)
 
 - Lucide (https://lucide.dev), `lucide-react` 1.73.0, ISC licence. Some Lucide icons derive from Feather (MIT). Icons are imported one by one, so only the used glyphs ship. Schematic symbols are drawn by hand to IEC 60617 and are not from Lucide.
+
+## Codex (MIT)
+
+- KaTeX (https://katex.org) 0.19.1, MIT licence. The stylesheet and fonts ship with the app so equations render without a network call.
+- marked (https://marked.js.org) 18.2.1, MIT licence. It turns the codex Markdown into HTML at build time and is not part of the shipped bundle.

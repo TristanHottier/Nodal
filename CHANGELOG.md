@@ -11,6 +11,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Community files: contributing guide, code of conduct, security policy, citation metadata, issue and pull request templates, CODEOWNERS, CodeQL analysis and Dependabot updates.
 - README badges and screenshots in `docs/assets/`.
 
+## [1.2.0] - 2026-11-27
+
+### Added
+
+- The component codex: 26 entries (18 parts including the net label, 4 analyses and 4 concepts) with prose, KaTeX equations (MathML for screen readers), generated parameter tables, pin names on the symbol and a "Try it" example. Open it from the info button next to each part in the parts panel, from "About this part" and "About this analysis" in the inspector (a drawer that replaces the inspector), or from the Codex link in the top bar. The full page is at `#/codex` with search, and each entry has its own address, `#/codex/<id>`.
+- Four examples: controlled sources, a current source into an inductor and a capacitor, a switch with hysteresis, and a push-pull emitter follower.
+- Pin names are shown on the symbols in the codex.
+- An engineer review of the codex equations, recorded in the M10 plan.
+
+### Fixed
+
+- The VCCS and CCVS gain fields now show their units (siemens and ohms).
+
+### Changed
+
+- The parts panel is 180 px wide to fit the info buttons.
+- README and user-guide screenshots were retaken.
+
 ## [1.1.0] - 2026-11-23
 
 ### Added
@@ -40,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Content and performance (M7):** eight example projects, the user guide, and a performance budget measured in CI.
 - **Design and release (M8):** one coherent visual design from a single token file, light and dark themes, a read-only schematic view below 1024 px, WCAG 2.2 AA checks with axe-core, contrast tests, visual regression screenshots, and Lighthouse limits on the deployed app.
 
-[Unreleased]: https://github.com/TristanHottier/Nodal/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/TristanHottier/Nodal/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/TristanHottier/Nodal/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/TristanHottier/Nodal/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/TristanHottier/Nodal/releases/tag/v1.0.0
