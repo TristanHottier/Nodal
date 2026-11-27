@@ -15,9 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- The component codex: 26 entries (18 parts including the net label, 4 analyses and 4 concepts) with prose, KaTeX equations (MathML for screen readers), generated parameter tables, pin names on the symbol and a "Try it" example. Open it from the info button next to each part in the parts panel, from "About this part" and "About this analysis" in the inspector (a drawer that replaces the inspector), or from the Codex link in the top bar. The full page is at `#/codex` with search, and each entry has its own address, `#/codex/<id>`.
+- The component codex: 26 entries (18 parts including the net label, 4 analyses and 4 concepts). Each has prose, KaTeX equations (MathML for screen readers) and, for parts, a generated parameter table and the pin names on the symbol. 22 of the entries have a "Try it" example. Open the codex from the info button next to each part in the parts panel, from "About this part", "About this label" and "About this analysis" in the inspector (a drawer that replaces the inspector), or from the Codex link in the top bar. The full page is at `#/codex` with search, and each entry has its own address, `#/codex/<id>`.
 - Four examples: controlled sources, a current source into an inductor and a capacitor, a switch with hysteresis, and a push-pull emitter follower.
-- Pin names are shown on the symbols in the codex.
 - An engineer review of the codex equations, recorded in the M10 plan.
 
 ### Fixed
